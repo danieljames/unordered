@@ -1,9 +1,11 @@
-# An ancient version of Boost, but that should be okay.
-# Later versions of Ubuntu also require libboost-tools-dev.
+sudo: required
+dist: trusty
+
 addons:
     apt:
         packages:
-            - libboost1.48-dev
+            - libboost-dev
+            - libboost-tools-dev
 
 env:
     - BOOST_BUILD_PATH=/usr/share/boost-build/
