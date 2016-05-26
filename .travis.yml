@@ -6,11 +6,11 @@ language: c++
 matrix:
     include:
       - compiler: gcc
-        install:
-          - 'echo "using gcc ;" > ~/user-config.jam'
+        env:
+            - 'JAM_TOOLSET=echo "using gcc : : g++ ;" > ~/user-config.jam'
       - compiler: gcc
-        install:
-          - 'echo "using gcc : : g++ --std=c++11 ;" > ~/user-config.jam'
+        env:
+            - 'JAM_TOOLSET=echo "using gcc : : g++ --std=c++11 ;" > ~/user-config.jam'
 addons:
     apt:
         packages:
@@ -21,5 +21,6 @@ env:
     - BOOST_BUILD_PATH=/usr/share/boost-build/
 
 script:
+    - echo $JAM_TOOLSET > ~/user-config.jam
     - touch Jamroot.jam
     - cd test && bjam include=${TRAVIS_BUILD_DIR}/include
