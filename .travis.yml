@@ -7,10 +7,10 @@ matrix:
     include:
       - compiler: gcc
         env:
-            - 'JAM_TOOLSET=echo "using gcc : : g++ ;" > ~/user-config.jam'
+            - 'JAM_TOOLSET=using gcc : : g++ ;'
       - compiler: gcc
         env:
-            - 'JAM_TOOLSET=echo "using gcc : : g++ --std=c++11 ;" > ~/user-config.jam'
+            - 'JAM_TOOLSET=using gcc : : g++ --std=c++11 ;'
 addons:
     apt:
         packages:
