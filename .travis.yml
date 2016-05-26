@@ -1,0 +1,13 @@
+# An ancient version of Boost, but that should be okay.
+# Later versions of Ubuntu also require libboost-tools-dev.
+addons:
+    apt:
+        packages:
+            - libboost-dev
+
+env:
+    - BOOST_BUILD_PATH=/usr/share/boost-build/
+
+script:
+    - touch Jamroot.jam
+    - cd test && bjam include=${TRAVIS_BUILD_DIR}/include
