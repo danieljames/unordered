@@ -4,7 +4,8 @@
 
 # Very simple test runner using Ubuntu's copy of Boost, rather than downloading
 # our own copy. Probably not appropriate for most libraries as they'll
-# require a more recent version.
+# require a more recent version of Boost, and might worry about accidentaly
+# picking up the wrong file.
 
 # Use Trusty to get a reasonably recent version of Boost.
 sudo: required
@@ -12,15 +13,12 @@ dist: trusty
 
 language: c++
 
-# Install Boost
 addons:
     apt:
         packages:
             - libboost-dev
             - libboost-tools-dev
 
-# Test using default GCC + default GCC in C++11 mode.
-# Note: To use other compilers will need to tweak user-config.jam below.
 matrix:
     include:
       - compiler: gcc
@@ -32,8 +30,7 @@ matrix:
       - compiler: clang
         env: BJAM_TOOLSET=clang-std11
 
-# Run the tests.
-script:
+before_script:
     - |
         echo "using gcc : : g++-4.8 ;" > ~/user-config.jam
         echo "using gcc : std11 : g++-4.8 --std=c++11 ;" >> ~/user-config.jam
@@ -41,4 +38,6 @@ script:
         echo "using clang : std11 : clang++ --std=c++11 ;" >> ~/user-config.jam
     - cat ~/user-config.jam
     - touch Jamroot.jam
+
+script:
     - cd test && bjam -q ${BJAM_TOOLSET} include=${TRAVIS_BUILD_DIR}/include

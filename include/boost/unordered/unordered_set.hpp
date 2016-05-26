@@ -34,6 +34,8 @@
 #endif
 #endif
 
+Force an error here, to check Travis is using the right header.
+
 namespace boost
 {
 namespace unordered
