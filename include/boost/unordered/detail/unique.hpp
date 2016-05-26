@@ -535,6 +535,29 @@ namespace boost { namespace unordered { namespace detail {
             }
         }
 
+        template <typename Key, typename M>
+        emplace_return insert_or_assign(
+            BOOST_FWD_REF(Key) k,
+            BOOST_FWD_REF(M) obj)
+        {
+            std::size_t key_hash = this->hash(k);
+            node_pointer pos = this->find_node(key_hash, k);
+
+            if (pos) {
+                pos->value().second = boost::forward<M>(obj);
+                return emplace_return(iterator(pos), false);
+            }
+            else {
+                return emplace_return(
+                    iterator(this->resize_and_add_node(
+                        boost::unordered::detail::func::construct_pair(
+                            this->node_alloc(), boost::forward<Key>(k),
+                            boost::forward<M>(obj)),
+                        key_hash)),
+                    true);
+            }
+        }
+
         ////////////////////////////////////////////////////////////////////////
         // Insert range methods
         //

@@ -366,6 +366,31 @@ namespace unordered
             return this->emplace_hint(hint, boost::move(x));
         }
 
+        template <class M>
+        std::pair<iterator, bool> insert_or_assign(key_type const& k, BOOST_FWD_REF(M) obj)
+        {
+            return table_.insert_or_assign(k, boost::forward<M>(obj));
+        }
+
+        template <class M>
+        iterator insert_or_assign(const_iterator, key_type const& k, BOOST_FWD_REF(M) obj)
+        {
+            return table_.insert_or_assign(k, boost::forward<M>(obj)).first;
+        }
+
+        template <class M>
+        std::pair<iterator, bool> insert_or_assign(BOOST_RV_REF(key_type) k, BOOST_FWD_REF(M) obj)
+        {
+            return table_.insert_or_assign(boost::move(k), boost::forward<M>(obj));
+        }
+
+        template <class M>
+        iterator insert_or_assign(const_iterator, BOOST_RV_REF(key_type) k, BOOST_FWD_REF(M) obj)
+        {
+            return table_.insert_or_assign(boost::move(k), boost::forward<M>(obj)).first;
+        }
+
+
         template <class InputIt> void insert(InputIt, InputIt);
 
 #if !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
