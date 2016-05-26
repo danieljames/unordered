@@ -370,20 +370,6 @@ namespace boost { namespace unordered { namespace detail {
             return this->add_node(b.release(), key_hash);
         }
 
-        value_type& insert_default(const_key_type& k)
-        {
-            std::size_t key_hash = this->hash(k);
-            node_pointer pos = this->find_node(key_hash, k);
-            if (pos) {
-                return pos->value();
-            }
-            else {
-                return this->resize_and_add_node(
-                    boost::unordered::detail::func::construct_pair(this->node_alloc(), k),
-                    key_hash)->value();
-            }
-        }
-
 #if defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
 #   if defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
         emplace_return emplace_(boost::unordered::detail::emplace_args1<
@@ -535,8 +521,69 @@ namespace boost { namespace unordered { namespace detail {
             }
         }
 
+        template <typename Key>
+        emplace_return try_emplace_(BOOST_FWD_REF(Key) k)
+        {
+            std::size_t key_hash = this->hash(k);
+            node_pointer pos = this->find_node(key_hash, k);
+            if (pos) {
+                return emplace_return(iterator(pos), false);
+            }
+            else {
+                return emplace_return(
+                    iterator(this->resize_and_add_node(
+                        boost::unordered::detail::func::construct_pair(
+                            this->node_alloc(), boost::forward<Key>(k)),
+                        key_hash)),
+                    true);
+            }
+        }
+
+        template <typename Key>
+        iterator try_emplace_hint_(c_iterator hint, BOOST_FWD_REF(Key) k)
+        {
+            if (hint.node_ && this->key_eq()(hint->first, k)) {
+                return iterator(hint.node_);
+            }
+            else {
+                return try_emplace_(k).first;
+            }
+        }
+
+        template <typename Key, BOOST_UNORDERED_EMPLACE_TEMPLATE>
+        emplace_return try_emplace_(BOOST_FWD_REF(Key) k,
+                BOOST_UNORDERED_EMPLACE_ARGS)
+        {
+            std::size_t key_hash = this->hash(k);
+            node_pointer pos = this->find_node(key_hash, k);
+            if (pos) {
+                return emplace_return(iterator(pos), false);
+            }
+            else {
+                return emplace_return(
+                    iterator(this->resize_and_add_node(
+                        boost::unordered::detail::func::construct_pair_generic(
+                            this->node_alloc(), boost::forward<Key>(k),
+                            BOOST_UNORDERED_EMPLACE_FORWARD),
+                        key_hash)),
+                    true);
+            }
+        }
+
+        template <typename Key, BOOST_UNORDERED_EMPLACE_TEMPLATE>
+        iterator try_emplace_hint_(c_iterator hint, BOOST_FWD_REF(Key) k,
+                BOOST_UNORDERED_EMPLACE_ARGS)
+        {
+            if (hint.node_ && this->key_eq()(hint->first, k)) {
+                return iterator(hint.node_);
+            }
+            else {
+                return try_emplace_(k, BOOST_UNORDERED_EMPLACE_FORWARD).first;
+            }
+        }
+
         template <typename Key, typename M>
-        emplace_return insert_or_assign(
+        emplace_return insert_or_assign_(
             BOOST_FWD_REF(Key) k,
             BOOST_FWD_REF(M) obj)
         {

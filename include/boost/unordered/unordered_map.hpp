@@ -212,6 +212,30 @@ namespace unordered
         {
             return this->emplace_hint_(hint, boost::forward<Args>(args)...);
         }
+
+        template <class... Args>
+        std::pair<iterator, bool> try_emplace(key_type const& k, BOOST_FWD_REF(Args)... args)
+        {
+            return this->try_emplace_(k, boost::forward<Args>(args)...);
+        }
+
+        template <class... Args>
+        iterator try_emplace(const_iterator hint, key_type const& k, BOOST_FWD_REF(Args)... args)
+        {
+            return this->try_emplace_hint_(hint, k, boost::forward<Args>(args)...);
+        }
+
+        template <class... Args>
+        std::pair<iterator, bool> try_emplace(BOOST_RV_REF(key_type) k, BOOST_FWD_REF(Args)... args)
+        {
+            return this->try_emplace_(boost::move(k), boost::forward<Args>(args)...);
+        }
+
+        template <class... Args>
+        iterator try_emplace(const_iterator hint, BOOST_RV_REF(key_type) k, BOOST_FWD_REF(Args)... args)
+        {
+            return this->try_emplace_hint_(hint, boost::move(k), boost::forward<Args>(args)...);
+        }
 #else
 
 #if !BOOST_WORKAROUND(__SUNPRO_CC, BOOST_TESTED_AT(0x5100))
@@ -239,6 +263,18 @@ namespace unordered
 
 #endif
 
+        template <typename Key>
+        std::pair<iterator, bool> try_emplace(BOOST_FWD_REF(Key) k)
+        {
+            return this->try_emplace_(boost::forward<Key>(k));
+        }
+
+        template <typename Key>
+        iterator try_emplace(const_iterator hint, BOOST_FWD_REF(Key) k)
+        {
+            return this->try_emplace_hint_(hint, boost::forward<Key>(k));
+        }
+
         template <typename A0>
         std::pair<iterator, bool> emplace(BOOST_FWD_REF(A0) a0)
         {
@@ -257,6 +293,40 @@ namespace unordered
             );
         }
 
+        template <typename A0>
+        std::pair<iterator, bool> try_emplace(key_type const& k,
+            BOOST_FWD_REF(A0) a0)
+        {
+            return this->try_emplace_(k,
+                boost::unordered::detail::create_emplace_args(
+                    boost::forward<A0>(a0))
+            );
+        }
+
+        template <typename A0>
+        iterator try_emplace(const_iterator hint, key_type const& k,
+            BOOST_FWD_REF(A0) a0)
+        {
+            return this->try_emplace_hint_(hint, k,
+                boost::unordered::detail::create_emplace_args(
+                    boost::forward<A0>(a0))
+            );
+        }
+
+        template <typename A0>
+        std::pair<iterator, bool> try_emplace(BOOST_RV_REF(key_type) k,
+            BOOST_FWD_REF(A0) a0)
+        {
+            return this->try_emplace_(boost::move(k), boost::forward<A0>(a0));
+        }
+
+        template <typename A0>
+        iterator try_emplace(const_iterator hint, BOOST_RV_REF(key_type) k,
+            BOOST_FWD_REF(A0) a0)
+        {
+            return this->try_emplace_hint_(hint, boost::move(k), boost::forward<A0>(a0));
+        }
+
         template <typename A0, typename A1>
         std::pair<iterator, bool> emplace(
             BOOST_FWD_REF(A0) a0,
@@ -279,6 +349,50 @@ namespace unordered
                     boost::forward<A0>(a0),
                     boost::forward<A1>(a1))
             );
+        }
+
+        template <typename A0, typename A1>
+        std::pair<iterator, bool> try_emplace(key_type const& k,
+            BOOST_FWD_REF(A0) a0,
+            BOOST_FWD_REF(A1) a1)
+        {
+            return this->try_emplace_(k,
+                boost::unordered::detail::create_emplace_args(
+                    boost::forward<A0>(a0),
+                    boost::forward<A1>(a1)));
+        }
+
+        template <typename A0, typename A1>
+        iterator try_emplace(const_iterator hint, key_type const& k,
+            BOOST_FWD_REF(A0) a0,
+            BOOST_FWD_REF(A1) a1)
+        {
+            return this->try_emplace_hint_(hint, k,
+                boost::unordered::detail::create_emplace_args(
+                    boost::forward<A0>(a0),
+                    boost::forward<A1>(a1)));
+        }
+
+        template <typename A0, typename A1>
+        std::pair<iterator, bool> try_emplace(BOOST_RV_REF(key_type) k,
+            BOOST_FWD_REF(A0) a0,
+            BOOST_FWD_REF(A1) a1)
+        {
+            return this->try_emplace_(boost::move(k),
+                boost::unordered::detail::create_emplace_args(
+                    boost::forward<A0>(a0),
+                    boost::forward<A1>(a1)));
+        }
+
+        template <typename A0, typename A1>
+        iterator try_emplace(const_iterator hint, BOOST_RV_REF(key_type) k,
+            BOOST_FWD_REF(A0) a0,
+            BOOST_FWD_REF(A1) a1)
+        {
+            return this->try_emplace_hint_(hint, boost::move(k),
+                boost::unordered::detail::create_emplace_args(
+                    boost::forward<A0>(a0),
+                    boost::forward<A1>(a1)));
         }
 
         template <typename A0, typename A1, typename A2>
@@ -307,6 +421,58 @@ namespace unordered
                     boost::forward<A1>(a1),
                     boost::forward<A2>(a2))
             );
+        }
+
+        template <typename A0, typename A1, typename A2>
+        std::pair<iterator, bool> try_emplace(key_type const& k,
+            BOOST_FWD_REF(A0) a0,
+            BOOST_FWD_REF(A1) a1,
+            BOOST_FWD_REF(A2) a2)
+        {
+            return this->try_emplace_(k,
+                boost::unordered::detail::create_emplace_args(
+                    boost::forward<A0>(a0),
+                    boost::forward<A1>(a1),
+                    boost::forward<A2>(a2)));
+        }
+
+        template <typename A0, typename A1, typename A2>
+        iterator try_emplace(const_iterator hint, key_type const& k,
+            BOOST_FWD_REF(A0) a0,
+            BOOST_FWD_REF(A1) a1,
+            BOOST_FWD_REF(A2) a2)
+        {
+            return this->try_emplace_impl_(hint, k,
+                boost::unordered::detail::create_emplace_args(
+                    boost::forward<A0>(a0),
+                    boost::forward<A1>(a1),
+                    boost::forward<A2>(a2))).first;
+        }
+
+        template <typename A0, typename A1, typename A2>
+        std::pair<iterator, bool> try_emplace(BOOST_RV_REF(key_type) k,
+            BOOST_FWD_REF(A0) a0,
+            BOOST_FWD_REF(A1) a1,
+            BOOST_FWD_REF(A2) a2)
+        {
+            return this->try_emplace_(boost::move(k),
+                boost::unordered::detail::create_emplace_args(
+                    boost::forward<A0>(a0),
+                    boost::forward<A1>(a1),
+                    boost::forward<A2>(a2)));
+        }
+
+        template <typename A0, typename A1, typename A2>
+        iterator try_emplace(const_iterator hint, BOOST_RV_REF(key_type) k,
+            BOOST_FWD_REF(A0) a0,
+            BOOST_FWD_REF(A1) a1,
+            BOOST_FWD_REF(A2) a2)
+        {
+            return this->try_emplace_hint_(hint, boost::move(k),
+                boost::unordered::detail::create_emplace_args(
+                    boost::forward<A0>(a0),
+                    boost::forward<A1>(a1),
+                    boost::forward<A2>(a2)));
         }
 
 #define BOOST_UNORDERED_EMPLACE(z, n, _)                                    \
@@ -333,6 +499,68 @@ namespace unordered
             )                                                               \
             {                                                               \
                 return this->emplace_hint_(hint,                            \
+                    boost::unordered::detail::create_emplace_args(          \
+                        BOOST_PP_ENUM_##z(n, BOOST_UNORDERED_CALL_FORWARD,  \
+                            a)                                              \
+                ));                                                         \
+            }                                                               \
+                                                                            \
+            template <                                                      \
+                BOOST_PP_ENUM_PARAMS_Z(z, n, typename A)                    \
+            >                                                               \
+            std::pair<iterator, bool> try_emplace(                          \
+                    key_type const& k,                                      \
+                    BOOST_PP_ENUM_##z(n, BOOST_UNORDERED_FWD_PARAM, a)      \
+            )                                                               \
+            {                                                               \
+                return this->try_emplace_(k,                                \
+                    boost::unordered::detail::create_emplace_args(          \
+                        BOOST_PP_ENUM_##z(n, BOOST_UNORDERED_CALL_FORWARD,  \
+                            a)                                              \
+                ));                                                         \
+            }                                                               \
+                                                                            \
+            template <                                                      \
+                BOOST_PP_ENUM_PARAMS_Z(z, n, typename A)                    \
+            >                                                               \
+            iterator try_emplace(                                           \
+                    const_iterator hint,                                    \
+                    key_type const& k,                                      \
+                    BOOST_PP_ENUM_##z(n, BOOST_UNORDERED_FWD_PARAM, a)      \
+            )                                                               \
+            {                                                               \
+                return this->try_emplace_hint_(hint, k,                     \
+                    boost::unordered::detail::create_emplace_args(          \
+                        BOOST_PP_ENUM_##z(n, BOOST_UNORDERED_CALL_FORWARD,  \
+                            a)                                              \
+                ));                                                         \
+            }                                                               \
+                                                                            \
+            template <                                                      \
+                BOOST_PP_ENUM_PARAMS_Z(z, n, typename A)                    \
+            >                                                               \
+            std::pair<iterator, bool> try_emplace(                          \
+                    BOOST_RV_REF(key_type) k,                               \
+                    BOOST_PP_ENUM_##z(n, BOOST_UNORDERED_FWD_PARAM, a)      \
+            )                                                               \
+            {                                                               \
+                return this->try_emplace_(boost::move(k),                   \
+                    boost::unordered::detail::create_emplace_args(          \
+                        BOOST_PP_ENUM_##z(n, BOOST_UNORDERED_CALL_FORWARD,  \
+                            a)                                              \
+                ));                                                         \
+            }                                                               \
+                                                                            \
+            template <                                                      \
+                BOOST_PP_ENUM_PARAMS_Z(z, n, typename A)                    \
+            >                                                               \
+            iterator try_emplace(                                           \
+                    const_iterator hint,                                    \
+                    BOOST_RV_REF(key_type) k,                               \
+                    BOOST_PP_ENUM_##z(n, BOOST_UNORDERED_FWD_PARAM, a)      \
+            )                                                               \
+            {                                                               \
+                return this->try_emplace_hint_(hint, boost::move(k),        \
                     boost::unordered::detail::create_emplace_args(          \
                         BOOST_PP_ENUM_##z(n, BOOST_UNORDERED_CALL_FORWARD,  \
                             a)                                              \
@@ -369,27 +597,26 @@ namespace unordered
         template <class M>
         std::pair<iterator, bool> insert_or_assign(key_type const& k, BOOST_FWD_REF(M) obj)
         {
-            return table_.insert_or_assign(k, boost::forward<M>(obj));
+            return this->insert_or_assign_(k, boost::forward<M>(obj));
         }
 
         template <class M>
         iterator insert_or_assign(const_iterator, key_type const& k, BOOST_FWD_REF(M) obj)
         {
-            return table_.insert_or_assign(k, boost::forward<M>(obj)).first;
+            return this->insert_or_assign_(k, boost::forward<M>(obj)).first;
         }
 
         template <class M>
         std::pair<iterator, bool> insert_or_assign(BOOST_RV_REF(key_type) k, BOOST_FWD_REF(M) obj)
         {
-            return table_.insert_or_assign(boost::move(k), boost::forward<M>(obj));
+            return this->insert_or_assign_(boost::move(k), boost::forward<M>(obj));
         }
 
         template <class M>
         iterator insert_or_assign(const_iterator, BOOST_RV_REF(key_type) k, BOOST_FWD_REF(M) obj)
         {
-            return table_.insert_or_assign(boost::move(k), boost::forward<M>(obj)).first;
+            return this->insert_or_assign_(boost::move(k), boost::forward<M>(obj)).first;
         }
-
 
         template <class InputIt> void insert(InputIt, InputIt);
 
@@ -1043,7 +1270,7 @@ namespace unordered
     typename unordered_map<K,T,H,P,A>::mapped_type&
         unordered_map<K,T,H,P,A>::operator[](const key_type &k)
     {
-        return this->insert_default(k).second;
+        return this->try_emplace(k).first->second;
     }
 
     template <class K, class T, class H, class P, class A>

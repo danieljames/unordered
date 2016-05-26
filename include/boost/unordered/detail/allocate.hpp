@@ -1369,6 +1369,22 @@ namespace boost { namespace unordered { namespace detail { namespace func {
                 boost::forward<Mapped>(m));
         return a.release();
     }
+
+    template <typename Alloc, typename Key, BOOST_UNORDERED_EMPLACE_TEMPLATE>
+    inline typename boost::unordered::detail::allocator_traits<Alloc>::pointer
+    construct_pair_generic(Alloc& alloc, BOOST_FWD_REF(Key) k,
+            BOOST_UNORDERED_EMPLACE_ARGS)
+    {
+        node_constructor<Alloc> a(alloc);
+        a.create_node();
+        boost::unordered::detail::func::call_construct(
+                alloc, boost::addressof(a.node_->value_ptr()->first),
+                boost::forward<Key>(k));
+        boost::unordered::detail::func::construct_value_impl(
+                alloc, boost::addressof(a.node_->value_ptr()->second),
+                BOOST_UNORDERED_EMPLACE_FORWARD);
+        return a.release();
+    }
 }}}}
 
 #if defined(BOOST_MSVC)
