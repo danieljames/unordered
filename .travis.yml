@@ -17,9 +17,6 @@ addons:
             - libboost-dev
             - libboost-tools-dev
 
-env:
-    - BOOST_BUILD_PATH=/usr/share/boost-build/
-
 script:
     - echo $JAM_TOOLSET > ~/user-config.jam
     - touch Jamroot.jam
