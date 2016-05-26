@@ -3,7 +3,7 @@
 addons:
     apt:
         packages:
-            - libboost-dev
+            - libboost1.48-dev
 
 env:
     - BOOST_BUILD_PATH=/usr/share/boost-build/
