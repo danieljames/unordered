@@ -3,9 +3,10 @@
 # file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 # Very simple test runner using Ubuntu's copy of Boost, rather than downloading
-# our own copy.
+# our own copy. Probably not appropriate for most libraries as they'll
+# require a more recent version.
 
-# Use Trusty to get a recent version of Boost.
+# Use Trusty to get a reasonably recent version of Boost.
 sudo: required
 dist: trusty
 
@@ -23,13 +24,24 @@ addons:
 matrix:
     include:
       - compiler: gcc
+        env:
+          - BJAM_COMPILER=gcc-4.8
       - compiler: gcc
         env:
-            - COMPILE_FLAGS="--std=c++11"
+          - BJAM_COMPILER=gcc-4.8x
+      - compiler: clang
+        env:
+          - BJAM_COMPILER=clang-3.4
+      - compiler: clang
+        env:
+          - BJAM_COMPILER=clang-3.4x
 
 # Run the tests.
 script:
-    - 'echo "using gcc : : g++ ${COMPILE_FLAGS} ;" > ~/user-config.jam'
+    - 'echo "using gcc : 4.8 : g++-4.8 ;" > ~/user-config.jam'
+    - 'echo "using gcc : 4.8x : g++-4.8 --std=c++11 ;" >> ~/user-config.jam'
+    - 'echo "using clang : 3.4 : clang++ ;" >> ~/user-config.jam'
+    - 'echo "using clang : 3.4x : clang++ --std=c++11 ;" >> ~/user-config.jam'
     - cat ~/user-config.jam
     - touch Jamroot.jam
-    - cd test && bjam include=${TRAVIS_BUILD_DIR}/include
+    - cd test && bjam -q ${BJAM_COMPILER} include=${TRAVIS_BUILD_DIR}/include
