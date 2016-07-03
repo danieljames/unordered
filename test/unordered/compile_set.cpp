@@ -21,23 +21,29 @@
 
 // Explicit instantiation to catch compile-time errors
 
-template class UNORDERED_NAMESPACE::unordered_set<
+#if UNORDERED_TEST_STD
+#define INSTANTIATE(type) template class std::unordered_##type
+#else
+#define INSTANTIATE(type) template class boost::unordered::detail::instantiate_##type
+#endif
+
+INSTANTIATE(set)<
     int,
     UNORDERED_NAMESPACE::hash<int>,
     std::equal_to<int>,
     test::minimal::allocator<int> >;
-template class UNORDERED_NAMESPACE::unordered_multiset<
+INSTANTIATE(multiset)<
     int,
     UNORDERED_NAMESPACE::hash<int>,
     std::equal_to<int>,
     test::minimal::allocator<int> >;
 
-template class UNORDERED_NAMESPACE::unordered_set<
+INSTANTIATE(set)<
     test::minimal::assignable,
     test::minimal::hash<test::minimal::assignable>,
     test::minimal::equal_to<test::minimal::assignable>,
     test::minimal::allocator<test::minimal::assignable> >;
-template class UNORDERED_NAMESPACE::unordered_multiset<
+INSTANTIATE(multiset)<
     test::minimal::assignable,
     test::minimal::hash<test::minimal::assignable>,
     test::minimal::equal_to<test::minimal::assignable>,

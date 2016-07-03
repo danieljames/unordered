@@ -206,10 +206,8 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename table::extractor extractor;
         typedef typename table::iterator iterator;
         typedef typename table::const_iterator c_iterator;
-
         typedef typename table::node_constructor node_constructor;
         typedef typename table::node_tmp node_tmp;
-
         typedef std::pair<iterator, bool> emplace_return;
 
         // Constructors
@@ -605,6 +603,43 @@ namespace boost { namespace unordered { namespace detail {
             }
         }
 
+        template <typename NodeType, typename InsertReturnType>
+        void move_insert_node_type(NodeType& np, InsertReturnType& result) {
+            if (np) {
+                const_key_type& k = this->get_key(np.ptr_->value());
+                std::size_t key_hash = this->hash(k);
+                node_pointer pos = this->find_node(key_hash, k);
+
+                if (pos) {
+                    result.node = boost::move(np);
+                    result.position = iterator(pos);
+                }
+                else {
+                    this->reserve_for_insert(this->size_ + 1);
+                    result.position = iterator(this->add_node(np.ptr_, key_hash));
+                    result.inserted = true;
+                    np.ptr_ = node_pointer();
+                }
+            }
+        }
+
+        template <typename NodeType>
+        iterator move_insert_node_type_with_hint(c_iterator hint, NodeType& np) {
+            if (!np) { return iterator(); }
+            const_key_type& k = this->get_key(np.ptr_->value());
+            if (hint.node_ && this->key_eq()(k, this->get_key(*hint))) {
+                return iterator(hint.node_);
+            }
+            std::size_t key_hash = this->hash(k);
+            node_pointer pos = this->find_node(key_hash, k);
+            if (!pos) {
+                this->reserve_for_insert(this->size_ + 1);
+                pos = this->add_node(np.ptr_, key_hash);
+                np.ptr_ = node_pointer();
+            }
+            return iterator(pos);
+        }
+
         ////////////////////////////////////////////////////////////////////////
         // Insert range methods
         //
@@ -682,37 +717,77 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         ////////////////////////////////////////////////////////////////////////
+        // Extract
+
+        inline node_pointer extract_by_key(const_key_type& k)
+        {
+            if (!this->size_) { return node_pointer(); }
+            std::size_t key_hash = this->hash(k);
+            std::size_t bucket_index = this->hash_to_bucket(key_hash);
+            link_pointer prev = find_previous_node(k, key_hash, bucket_index);
+            if (!prev) { return node_pointer(); }
+            node_pointer n = next_node(prev);
+            prev->next_ = n->next_;
+            --this->size_;
+            this->fix_bucket(bucket_index, prev);
+            n->next_ = link_pointer();
+            return n;
+        }
+
+        inline node_pointer extract_by_iterator(c_iterator i)
+        {
+            node_pointer n = i.node_;
+            BOOST_ASSERT(n);
+            std::size_t key_hash = n->hash_;
+            std::size_t bucket_index = this->hash_to_bucket(key_hash);
+            link_pointer prev = this->get_previous_start(bucket_index);
+            while(prev->next_ != n) { prev = prev->next_; }
+            prev->next_ = n->next_;
+            --this->size_;
+            this->fix_bucket(bucket_index, prev);
+            n->next_ = link_pointer();
+            return n;
+        }
+
+        ////////////////////////////////////////////////////////////////////////
         // Erase
         //
         // no throw
 
-        std::size_t erase_key(const_key_type& k)
+        link_pointer find_previous_node(const_key_type& k,
+                std::size_t key_hash,
+                std::size_t bucket_index)
         {
-            if(!this->size_) return 0;
-
-            std::size_t key_hash = this->hash(k);
-            std::size_t bucket_index = this->hash_to_bucket(key_hash);
             link_pointer prev = this->get_previous_start(bucket_index);
-            if (!prev) return 0;
+            if (!prev) { return prev; }
 
             for (;;)
             {
-                if (!prev->next_) return 0;
+                if (!prev->next_) { return link_pointer(); }
                 std::size_t node_hash = next_node(prev)->hash_;
-                if (this->hash_to_bucket(node_hash) != bucket_index)
-                    return 0;
+                if (this->hash_to_bucket(node_hash) != bucket_index) {
+                    return link_pointer();
+                }
                 if (node_hash == key_hash &&
                         this->key_eq()(k, this->get_key(
-                        next_node(prev)->value())))
-                    break;
+                        next_node(prev)->value()))) {
+                    return prev;
+                }
                 prev = prev->next_;
             }
+        }
 
+        std::size_t erase_key(const_key_type& k)
+        {
+            if (!this->size_) return 0;
+            std::size_t key_hash = this->hash(k);
+            std::size_t bucket_index = this->hash_to_bucket(key_hash);
+            link_pointer prev = find_previous_node(k, key_hash, bucket_index);
+            if (!prev) return 0;
             link_pointer next = next_node(prev)->next_;
-
-            std::size_t deleted_count = this->delete_nodes(prev, next);
+            this->delete_nodes(prev, next);
             this->fix_bucket(bucket_index, prev);
-            return deleted_count;
+            return 1;
         }
 
         iterator erase_(c_iterator r)

@@ -247,18 +247,20 @@ namespace boost { namespace unordered { namespace detail {
 
 
     ////////////////////////////////////////////////////////////////////////////
-    // get_key_type
+    // pair_traits
     //
-    // Used to get the first type of a pair without instantiating it.
+    // Used to get the types from a pair without instantiating it.
 
     template <typename Pair>
-    struct get_key_type {
-        typedef typename Pair::first_type type;
+    struct pair_traits {
+        typedef typename Pair::first_type first_type;
+        typedef typename Pair::second_type second_type;
     };
 
     template <typename K, typename M>
-    struct get_key_type<std::pair<K, M> > {
-        typedef K type;
+    struct pair_traits<std::pair<K, M> > {
+        typedef K first_type;
+        typedef K second_type;
     };
 
     template <typename Node>

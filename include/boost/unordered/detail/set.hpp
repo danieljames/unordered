@@ -35,7 +35,6 @@ namespace boost { namespace unordered { namespace detail {
             typedef boost::unordered::detail::set_extractor<ValueType> extractor;
         };
     };
-
     struct set_policy : boost::unordered::detail::u
     {
         typedef set_iterator_policy set_map_policies;
@@ -64,6 +63,10 @@ namespace boost { namespace unordered { namespace detail {
 
         typedef boost::unordered::detail::table_impl<
             set_policy, H, P, value_allocator> base;
+
+        typedef boost::unordered::detail::u p;
+        typedef boost::unordered::node_handle_set<p, T, A> node_type;
+        typedef boost::unordered::insert_return_type_set<p, T, A> insert_return_type;
     };
 
     template <typename T, typename H, typename P, typename A>
@@ -74,5 +77,25 @@ namespace boost { namespace unordered { namespace detail {
 
         typedef boost::unordered::detail::grouped_table_impl<
             multiset_policy, H, P, value_allocator> base;
+
+        typedef boost::unordered::detail::g p;
+        typedef boost::unordered::node_handle_set<p, T, A> node_type;
+    };
+
+    template <typename T, typename H, typename P, typename A>
+    class instantiate_set
+    {
+        typedef boost::unordered_set<T, H, P, A> container;
+        container x;
+        typename container::node_type node_type;
+        typename container::insert_return_type insert_return_type;
+    };
+
+    template <typename T, typename H, typename P, typename A>
+    class instantiate_multiset
+    {
+        typedef boost::unordered_multiset<T, H, P, A> container;
+        container x;
+        typename container::node_type node_type;
     };
 }}}

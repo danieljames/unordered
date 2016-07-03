@@ -87,7 +87,7 @@ namespace detail {
     {
         typedef ValueType value_type;
         typedef typename boost::remove_const<
-            typename boost::unordered::detail::get_key_type<ValueType>::type
+            typename boost::unordered::detail::pair_traits<ValueType>::first_type
         >::type key_type;
 
         static key_type const& extract(value_type const& v)

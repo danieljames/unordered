@@ -31,7 +31,8 @@ namespace boost { namespace unordered { namespace detail {
         template <typename ValueType>
         struct value_things
         {
-            typedef typename boost::unordered::detail::get_key_type<ValueType>::type const const_key_type;
+            typedef typename boost::unordered::detail::pair_traits<ValueType>::first_type const const_key_type;
+            typedef typename boost::unordered::detail::pair_traits<ValueType>::second_type mapped_type;
             typedef boost::unordered::detail::map_extractor<ValueType> extractor;
         };
     };
@@ -64,6 +65,10 @@ namespace boost { namespace unordered { namespace detail {
 
         typedef boost::unordered::detail::table_impl<
             map_policy, H, P, value_allocator> base;
+
+        typedef boost::unordered::detail::u p;
+        typedef boost::unordered::node_handle_map<p, K, M, A> node_type;
+        typedef boost::unordered::insert_return_type_map<p, K, M, A> insert_return_type;
     };
 
     template <typename K, typename M, typename H, typename P, typename A>
@@ -74,5 +79,25 @@ namespace boost { namespace unordered { namespace detail {
 
         typedef boost::unordered::detail::grouped_table_impl<
             multimap_policy, H, P, value_allocator> base;
+
+        typedef boost::unordered::detail::g p;
+        typedef boost::unordered::node_handle_map<p, K, M, A> node_type;
+    };
+
+    template <typename K, typename M, typename H, typename P, typename A>
+    class instantiate_map
+    {
+        typedef boost::unordered_map<K, M, H, P, A> container;
+        container x;
+        typename container::node_type node_type;
+        typename container::insert_return_type insert_return_type;
+    };
+
+    template <typename K, typename M, typename H, typename P, typename A>
+    class instantiate_multimap
+    {
+        typedef boost::unordered_multimap<K, M, H, P, A> container;
+        container x;
+        typename container::node_type node_type;
     };
 }}}
