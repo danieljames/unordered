@@ -51,6 +51,11 @@ namespace boost
         template <class T, class H, class P, class A>
         inline void swap(unordered_multiset<T, H, P, A> &m1,
                 unordered_multiset<T, H, P, A> &m2);
+
+        template <class P, class T, class A>
+        class node_handle_set;
+        template <class P, class T, class A>
+        struct insert_return_type_set;
     }
 
     using boost::unordered::unordered_set;

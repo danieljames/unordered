@@ -21,26 +21,32 @@
 
 // Explicit instantiation to catch compile-time errors
 
-template class UNORDERED_NAMESPACE::unordered_map<
+#if UNORDERED_TEST_STD
+#define INSTANTIATE(type) template class std::unordered_##type
+#else
+#define INSTANTIATE(type) template class boost::unordered::detail::instantiate_##type
+#endif
+
+INSTANTIATE(map)<
     int,
     int,
     UNORDERED_NAMESPACE::hash<int>,
     std::equal_to<int>,
     test::minimal::allocator<std::pair<int const, int> > >;
-template class UNORDERED_NAMESPACE::unordered_multimap<
+INSTANTIATE(multimap)<
     int,
     int,
     UNORDERED_NAMESPACE::hash<int>,
     std::equal_to<int>,
     test::minimal::allocator<std::pair<int const, int> > >;
 
-template class UNORDERED_NAMESPACE::unordered_map<
+INSTANTIATE(map)<
     test::minimal::assignable,
     test::minimal::default_assignable,
     test::minimal::hash<test::minimal::assignable>,
     test::minimal::equal_to<test::minimal::assignable>,
     test::minimal::allocator<int> >;
-template class UNORDERED_NAMESPACE::unordered_multimap<
+INSTANTIATE(multimap)<
     test::minimal::assignable,
     test::minimal::assignable,
     test::minimal::hash<test::minimal::assignable>,
