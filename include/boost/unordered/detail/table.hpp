@@ -90,11 +90,11 @@ namespace boost { namespace unordered { namespace detail {
             typename Types::key_equal> functions;
         typedef typename functions::set_hash_functions set_hash_functions;
 
-        typedef typename Types::allocator allocator;
+        typedef typename Types::value_allocator value_allocator;
         typedef typename boost::unordered::detail::
-            rebind_wrap<allocator, node>::type node_allocator;
+            rebind_wrap<value_allocator, node>::type node_allocator;
         typedef typename boost::unordered::detail::
-            rebind_wrap<allocator, bucket>::type bucket_allocator;
+            rebind_wrap<value_allocator, bucket>::type bucket_allocator;
         typedef boost::unordered::detail::allocator_traits<node_allocator>
             node_allocator_traits;
         typedef boost::unordered::detail::allocator_traits<bucket_allocator>
