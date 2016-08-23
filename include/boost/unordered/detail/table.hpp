@@ -3109,17 +3109,6 @@ namespace boost { namespace unordered { namespace detail {
                 find_node_impl(hash(k), k, this->key_eq());
         }
 
-        node_pointer find_matching_node(iterator n) const
-        {
-            // TODO: Does this apply to C++11?
-            //
-            // For some stupid reason, I decided to support equality comparison
-            // when different hash functions are used. So I can't use the hash
-            // value from the node here.
-
-            return find_node(get_key(*n));
-        }
-
         // Reserve and rehash
 
         void reserve_for_insert(std::size_t);
@@ -3585,7 +3574,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
             for(iterator n1(this->begin()); n1.node_; ++n1)
             {
-                node_pointer n2 = other.find_matching_node(n1);
+                node_pointer n2 = other.find_node(other.get_key(*n1));
 
                 if (!n2 || *n1 != n2->value())
                     return false;
@@ -4250,7 +4239,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
             for(iterator n1(this->begin()); n1.node_;)
             {
-                iterator n2(other.find_matching_node(n1));
+                iterator n2(other.find_node(other.get_key(*n1)));
                 if (!n2.node_) return false;
                 iterator end1(next_group(n1.node_));
                 iterator end2(next_group(n2.node_));
