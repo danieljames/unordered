@@ -221,12 +221,12 @@ namespace unordered
 
         iterator begin() BOOST_NOEXCEPT
         {
-            return table_.begin();
+            return iterator(table_.begin());
         }
 
         const_iterator begin() const BOOST_NOEXCEPT
         {
-            return table_.begin();
+            return const_iterator(table_.begin());
         }
 
         iterator end() BOOST_NOEXCEPT
@@ -241,7 +241,7 @@ namespace unordered
 
         const_iterator cbegin() const BOOST_NOEXCEPT
         {
-            return table_.begin();
+            return const_iterator(table_.begin());
         }
 
         const_iterator cend() const BOOST_NOEXCEPT
@@ -1254,7 +1254,7 @@ namespace unordered
     typename unordered_set<T,H,P,A>::const_iterator
         unordered_set<T,H,P,A>::find(const key_type& k) const
     {
-        return table_.find_node(k);
+        return const_iterator(table_.find_node(k));
     }
 
     template <class T, class H, class P, class A>
@@ -1266,7 +1266,7 @@ namespace unordered
             CompatibleHash const& hash,
             CompatiblePredicate const& eq) const
     {
-        return table_.generic_find_node(k, hash, eq);
+        return const_iterator(table_.generic_find_node(k, hash, eq));
     }
 
     template <class T, class H, class P, class A>
@@ -1587,7 +1587,7 @@ namespace unordered
     typename unordered_multiset<T,H,P,A>::const_iterator
         unordered_multiset<T,H,P,A>::find(const key_type& k) const
     {
-        return table_.find_node(k);
+        return const_iterator(table_.find_node(k));
     }
 
     template <class T, class H, class P, class A>
@@ -1599,7 +1599,7 @@ namespace unordered
             CompatibleHash const& hash,
             CompatiblePredicate const& eq) const
     {
-        return table_.generic_find_node(k, hash, eq);
+        return const_iterator(table_.generic_find_node(k, hash, eq));
     }
 
     template <class T, class H, class P, class A>
