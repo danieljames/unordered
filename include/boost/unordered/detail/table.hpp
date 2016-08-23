@@ -2471,8 +2471,16 @@ namespace boost { namespace unordered { namespace detail {
             return *(ValueType*) this;
         }
 
+        value_type const& value() const {
+            return *(ValueType const*) this;
+        }
+
         value_type* value_ptr() {
             return (ValueType*) this;
+        }
+
+        value_type const* value_ptr() const {
+            return (ValueType const*) this;
         }
 
     private:
