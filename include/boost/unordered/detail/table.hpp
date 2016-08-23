@@ -2465,6 +2465,10 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename Types::table table_impl;
         typedef typename Types::link_pointer link_pointer;
         typedef typename Types::policy policy;
+        typedef typename Types::iterator iterator;
+        typedef typename Types::c_iterator c_iterator;
+        typedef typename Types::l_iterator l_iterator;
+        typedef typename Types::cl_iterator cl_iterator;
 
         typedef boost::unordered::detail::functions<
             typename Types::hasher,
@@ -2490,15 +2494,6 @@ namespace boost { namespace unordered { namespace detail {
             node_constructor;
         typedef boost::unordered::detail::node_tmp<node_allocator>
             node_tmp;
-
-        typedef boost::unordered::iterator_detail::
-            iterator<node> iterator;
-        typedef boost::unordered::iterator_detail::
-            c_iterator<node> c_iterator;
-        typedef boost::unordered::iterator_detail::
-            l_iterator<node, policy> l_iterator;
-        typedef boost::unordered::iterator_detail::
-            cl_iterator<node, policy> cl_iterator;
 
         ////////////////////////////////////////////////////////////////////////
         // Members
@@ -4735,6 +4730,15 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef boost::unordered::detail::set_extractor<value_type> extractor;
 
         typedef typename boost::unordered::detail::pick_policy<T>::type policy;
+
+        typedef boost::unordered::iterator_detail::
+            c_iterator<node> iterator;
+        typedef boost::unordered::iterator_detail::
+            c_iterator<node> c_iterator;
+        typedef boost::unordered::iterator_detail::
+            cl_iterator<node, policy> l_iterator;
+        typedef boost::unordered::iterator_detail::
+            cl_iterator<node, policy> cl_iterator;
     };
 
     template <typename A, typename T, typename H, typename P>
@@ -4761,6 +4765,15 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef boost::unordered::detail::set_extractor<value_type> extractor;
 
         typedef typename boost::unordered::detail::pick_policy<T>::type policy;
+
+        typedef boost::unordered::iterator_detail::
+            c_iterator<node> iterator;
+        typedef boost::unordered::iterator_detail::
+            c_iterator<node> c_iterator;
+        typedef boost::unordered::iterator_detail::
+            cl_iterator<node, policy> l_iterator;
+        typedef boost::unordered::iterator_detail::
+            cl_iterator<node, policy> cl_iterator;
     };
 
     template <typename A, typename K, typename M, typename H, typename P>
@@ -4788,6 +4801,15 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             extractor;
 
         typedef typename boost::unordered::detail::pick_policy<K>::type policy;
+
+        typedef boost::unordered::iterator_detail::
+            iterator<node> iterator;
+        typedef boost::unordered::iterator_detail::
+            c_iterator<node> c_iterator;
+        typedef boost::unordered::iterator_detail::
+            l_iterator<node, policy> l_iterator;
+        typedef boost::unordered::iterator_detail::
+            cl_iterator<node, policy> cl_iterator;
     };
 
     template <typename A, typename K, typename M, typename H, typename P>
@@ -4815,6 +4837,15 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             extractor;
 
         typedef typename boost::unordered::detail::pick_policy<K>::type policy;
+
+        typedef boost::unordered::iterator_detail::
+            iterator<node> iterator;
+        typedef boost::unordered::iterator_detail::
+            c_iterator<node> c_iterator;
+        typedef boost::unordered::iterator_detail::
+            l_iterator<node, policy> l_iterator;
+        typedef boost::unordered::iterator_detail::
+            cl_iterator<node, policy> cl_iterator;
     };
 }}}
 
