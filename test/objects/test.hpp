@@ -502,6 +502,8 @@ namespace test {
     ptr() : ptr_(0) {}
     explicit ptr(void_ptr const& x) : ptr_((T*)x.ptr_) {}
 
+    static ptr<T> pointer_to(T& x) { return ptr(boost::addressof(x)); }
+
     T& operator*() const { return *ptr_; }
     T* operator->() const { return ptr_; }
     ptr& operator++()
