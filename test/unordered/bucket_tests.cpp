@@ -4,8 +4,13 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_set>
+#include <unordered_map>
+#else
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include "../helpers/test.hpp"
@@ -70,22 +75,22 @@ void tests(X*, test::random_generator generator)
     }
 }
 
-boost::unordered_multimap<test::object, test::object,
+UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
     test::hash, test::equal_to,
-    std::allocator<test::object> >* test_multimap_std_alloc;
+    std::allocator<std::pair<test::object const, test::object> > >* test_multimap_std_alloc;
 
-boost::unordered_set<test::object,
+UNORDERED_NAMESPACE::unordered_set<test::object,
     test::hash, test::equal_to,
     test::allocator2<test::object> >* test_set;
-boost::unordered_multiset<test::object,
+UNORDERED_NAMESPACE::unordered_multiset<test::object,
     test::hash, test::equal_to,
     test::allocator1<test::object> >* test_multiset;
-boost::unordered_map<test::object, test::object,
+UNORDERED_NAMESPACE::unordered_map<test::object, test::object,
     test::hash, test::equal_to,
-    test::allocator1<test::object> >* test_map;
-boost::unordered_multimap<test::object, test::object,
+    test::allocator1<std::pair<test::object const, test::object> > >* test_map;
+UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
     test::hash, test::equal_to,
-    test::allocator2<test::object> >* test_multimap;
+    test::allocator2<std::pair<test::object const, test::object> > >* test_multimap;
 
 using test::default_generator;
 using test::generate_collisions;

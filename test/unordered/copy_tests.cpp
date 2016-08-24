@@ -4,8 +4,13 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_set>
+#include <unordered_map>
+#else
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include "../helpers/test.hpp"
@@ -73,7 +78,7 @@ void copy_construct_tests1(T*, test::random_generator const& generator)
         test::unordered_equivalence_tester<T> equivalent(x);
         BOOST_TEST(equivalent(y));
         // This isn't guaranteed:
-        BOOST_TEST(y.load_factor() < y.max_load_factor());
+        BOOST_TEST(y.load_factor() <= y.max_load_factor());
         BOOST_TEST(test::selected_count(y.get_allocator()) ==
             (allocator_type::is_select_on_copy));
         test::check_equivalent_keys(y);
@@ -149,51 +154,51 @@ void copy_construct_tests2(T*, test::random_generator const& generator)
     }
 }
 
-boost::unordered_set<test::object,
+UNORDERED_NAMESPACE::unordered_set<test::object,
     test::hash, test::equal_to,
     test::allocator1<test::object> >* test_set;
-boost::unordered_multiset<test::object,
+UNORDERED_NAMESPACE::unordered_multiset<test::object,
     test::hash, test::equal_to,
     test::allocator2<test::object> >* test_multiset;
-boost::unordered_map<test::object, test::object,
+UNORDERED_NAMESPACE::unordered_map<test::object, test::object,
     test::hash, test::equal_to,
-    test::allocator1<test::object> >* test_map;
-boost::unordered_multimap<test::object, test::object,
+    test::allocator1<std::pair<test::object const, test::object> > >* test_map;
+UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
     test::hash, test::equal_to,
-    test::allocator2<test::object> >* test_multimap;
+    test::allocator2<std::pair<test::object const, test::object> > >* test_multimap;
 
-boost::unordered_set<test::object,
+UNORDERED_NAMESPACE::unordered_set<test::object,
         test::hash, test::equal_to,
         test::cxx11_allocator<test::object, test::select_copy> >*
     test_set_select_copy;
-boost::unordered_multiset<test::object,
+UNORDERED_NAMESPACE::unordered_multiset<test::object,
         test::hash, test::equal_to,
         test::cxx11_allocator<test::object, test::select_copy> >*
     test_multiset_select_copy;
-boost::unordered_map<test::object, test::object,
+UNORDERED_NAMESPACE::unordered_map<test::object, test::object,
         test::hash, test::equal_to,
-        test::cxx11_allocator<test::object, test::select_copy> >*
+        test::cxx11_allocator<std::pair<test::object const, test::object>, test::select_copy> >*
     test_map_select_copy;
-boost::unordered_multimap<test::object, test::object,
+UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
         test::hash, test::equal_to,
-        test::cxx11_allocator<test::object, test::select_copy> >*
+        test::cxx11_allocator<std::pair<test::object const, test::object>, test::select_copy> >*
     test_multimap_select_copy;
 
-boost::unordered_set<test::object,
+UNORDERED_NAMESPACE::unordered_set<test::object,
         test::hash, test::equal_to,
         test::cxx11_allocator<test::object, test::no_select_copy> >*
     test_set_no_select_copy;
-boost::unordered_multiset<test::object,
+UNORDERED_NAMESPACE::unordered_multiset<test::object,
         test::hash, test::equal_to,
         test::cxx11_allocator<test::object, test::no_select_copy> >*
     test_multiset_no_select_copy;
-boost::unordered_map<test::object, test::object,
+UNORDERED_NAMESPACE::unordered_map<test::object, test::object,
         test::hash, test::equal_to,
-        test::cxx11_allocator<test::object, test::no_select_copy> >*
+        test::cxx11_allocator<std::pair<test::object const, test::object>, test::no_select_copy> >*
     test_map_no_select_copy;
-boost::unordered_multimap<test::object, test::object,
+UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
         test::hash, test::equal_to,
-        test::cxx11_allocator<test::object, test::no_select_copy> >*
+        test::cxx11_allocator<std::pair<test::object const, test::object>, test::no_select_copy> >*
     test_multimap_no_select_copy;
 
 using test::default_generator;

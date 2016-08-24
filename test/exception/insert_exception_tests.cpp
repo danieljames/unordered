@@ -128,9 +128,8 @@ struct insert_test_rehash1 : public insert_test_base<T>
         using namespace std;
         typedef BOOST_DEDUCED_TYPENAME T::size_type size_type;
 
-        T x;
+        T x(1);
         x.max_load_factor(0.25);
-        // TODO: This doesn't really work is bucket_count is 0
         size_type bucket_count = x.bucket_count();
         size_type initial_elements = static_cast<size_type>(
             ceil((double) bucket_count * (double) x.max_load_factor()) - 1);
@@ -197,7 +196,7 @@ struct insert_test_rehash3 : public insert_test_base<T>
         using namespace std;
         typedef BOOST_DEDUCED_TYPENAME T::size_type size_type;
 
-        T x;
+        T x(10);
         x.max_load_factor(0.25);
 
         original_bucket_count = x.bucket_count();

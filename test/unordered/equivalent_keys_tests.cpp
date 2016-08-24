@@ -4,8 +4,13 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_set>
+#include <unordered_map>
+#else
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include "../helpers/test.hpp"
@@ -45,8 +50,8 @@ UNORDERED_AUTO_TEST(set_tests)
         {986, 25, 986}
     };
 
-    typedef boost::unordered_set<int> set;
-    typedef boost::unordered_multiset<int> multiset;
+    typedef UNORDERED_NAMESPACE::unordered_set<int> set;
+    typedef UNORDERED_NAMESPACE::unordered_multiset<int> multiset;
 
     test_equal_insertion<set>(values[0], values[0] + 1);
     test_equal_insertion<set>(values[1], values[1] + 2);
@@ -74,11 +79,11 @@ UNORDERED_AUTO_TEST(map_tests)
     v[2].push_back(std::pair<int const, int>(432,24));
 
     for(int i = 0; i < 5; ++i)
-        test_equal_insertion<boost::unordered_map<int, int> >(
+        test_equal_insertion<UNORDERED_NAMESPACE::unordered_map<int, int> >(
             v[i].begin(), v[i].end());
 
     for(int i2 = 0; i2 < 5; ++i2)
-        test_equal_insertion<boost::unordered_multimap<int, int> >(
+        test_equal_insertion<UNORDERED_NAMESPACE::unordered_multimap<int, int> >(
             v[i2].begin(), v[i2].end());
 }
 

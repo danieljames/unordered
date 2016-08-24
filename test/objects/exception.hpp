@@ -25,6 +25,10 @@ namespace exception
     template <class T> class allocator;
     object generate(object const*);
 
+#if UNORDERED_TEST_STD
+    typedef std::true_type true_type;
+    typedef std::false_type false_type;
+#else
     struct true_type
     {
         enum { value = true };
@@ -34,6 +38,7 @@ namespace exception
     {
         enum { value = false };
     };
+#endif
 
     class object
     {
@@ -127,16 +132,22 @@ namespace exception
             : tag_(x.tag_)
         {
             UNORDERED_SCOPE(hash::hash(hash)) {
+#if !UNORDERED_TEST_LOOSE
                 UNORDERED_EPOINT("Mock hash copy constructor.");
+#endif
             }
         }
 
         hash& operator=(hash const& x)
         {
             UNORDERED_SCOPE(hash::operator=(hash)) {
+#if UNORDERED_TEST_LOOSE
+                tag_ = x.tag_;
+#else
                 UNORDERED_EPOINT("Mock hash assign operator 1.");
                 tag_ = x.tag_;
                 UNORDERED_EPOINT("Mock hash assign operator 2.");
+#endif
             }
             return *this;
         }
@@ -186,16 +197,22 @@ namespace exception
             : tag_(x.tag_)
         {
             UNORDERED_SCOPE(equal_to::equal_to(equal_to)) {
+#if !UNORDERED_TEST_LOOSE
                 UNORDERED_EPOINT("Mock equal_to copy constructor.");
+#endif
             }
         }
 
         equal_to& operator=(equal_to const& x)
         {
             UNORDERED_SCOPE(equal_to::operator=(equal_to)) {
+#if UNORDERED_TEST_LOOSE
+                tag_ = x.tag_;
+#else
                 UNORDERED_EPOINT("Mock equal_to assign operator 1.");
                 tag_ = x.tag_;
                 UNORDERED_EPOINT("Mock equal_to assign operator 2.");
+#endif
             }
             return *this;
         }
@@ -248,7 +265,12 @@ namespace exception
         explicit allocator(int t = 0) : tag_(t)
         {
             UNORDERED_SCOPE(allocator::allocator()) {
+#if !UNORDERED_TEST_LOOSE
+                // TODO: I don't think the standard actually requires this
+                //       to not throw. In fact, I don't think it's required
+                //       at all. But is seems to cause libc++ to fail.
                 UNORDERED_EPOINT("Mock allocator default constructor.");
+#endif
             }
             test::detail::tracker.allocator_ref();
         }
@@ -256,7 +278,9 @@ namespace exception
         template <class Y> allocator(allocator<Y> const& x) : tag_(x.tag_)
         {
             UNORDERED_SCOPE(allocator::allocator()) {
+#if !UNORDERED_TEST_LOOSE
                 UNORDERED_EPOINT("Mock allocator template copy constructor.");
+#endif
             }
             test::detail::tracker.allocator_ref();
         }
@@ -264,7 +288,9 @@ namespace exception
         allocator(allocator const& x) : tag_(x.tag_)
         {
             UNORDERED_SCOPE(allocator::allocator()) {
+#if !UNORDERED_TEST_LOOSE
                 UNORDERED_EPOINT("Mock allocator copy constructor.");
+#endif
             }
             test::detail::tracker.allocator_ref();
         }
@@ -420,7 +446,9 @@ namespace exception
         explicit allocator2(int t = 0) : tag_(t)
         {
             UNORDERED_SCOPE(allocator2::allocator2()) {
+#if !UNORDERED_TEST_LOOSE
                 UNORDERED_EPOINT("Mock allocator2 default constructor.");
+#endif
             }
             test::detail::tracker.allocator_ref();
         }
@@ -428,7 +456,9 @@ namespace exception
         allocator2(allocator<T> const& x) : tag_(x.tag_)
         {
             UNORDERED_SCOPE(allocator2::allocator2()) {
+#if !UNORDERED_TEST_LOOSE
                 UNORDERED_EPOINT("Mock allocator2 constructor from allocator.");
+#endif
             }
             test::detail::tracker.allocator_ref();
         }
@@ -436,7 +466,9 @@ namespace exception
         template <class Y> allocator2(allocator2<Y> const& x) : tag_(x.tag_)
         {
             UNORDERED_SCOPE(allocator2::allocator2()) {
+#if !UNORDERED_TEST_LOOSE
                 UNORDERED_EPOINT("Mock allocator2 template copy constructor.");
+#endif
             }
             test::detail::tracker.allocator_ref();
         }
@@ -444,7 +476,9 @@ namespace exception
         allocator2(allocator2 const& x) : tag_(x.tag_)
         {
             UNORDERED_SCOPE(allocator2::allocator2()) {
+#if !UNORDERED_TEST_LOOSE
                 UNORDERED_EPOINT("Mock allocator2 copy constructor.");
+#endif
             }
             test::detail::tracker.allocator_ref();
         }

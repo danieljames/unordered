@@ -6,8 +6,13 @@
 // This test checks the runtime requirements of containers.
 
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_set>
+#include <unordered_map>
+#else
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include "../helpers/test.hpp"
@@ -94,14 +99,14 @@ UNORDERED_AUTO_TEST(simple_tests)
     srand(14878);
 
     std::cout<<"Test unordered_set.\n";
-    boost::unordered_set<int> set;
+    UNORDERED_NAMESPACE::unordered_set<int> set;
     simple_test(set);
 
     set.insert(1); set.insert(2); set.insert(1456);
     simple_test(set);
 
     std::cout<<"Test unordered_multiset.\n";
-    boost::unordered_multiset<int> multiset;
+    UNORDERED_NAMESPACE::unordered_multiset<int> multiset;
     simple_test(multiset);
     
     for(int i1 = 0; i1 < 1000; ++i1) {
@@ -112,7 +117,7 @@ UNORDERED_AUTO_TEST(simple_tests)
     simple_test(multiset);
     
     std::cout<<"Test unordered_map.\n";
-    boost::unordered_map<int, int> map;
+    UNORDERED_NAMESPACE::unordered_map<int, int> map;
 
     for(int i2 = 0; i2 < 1000; ++i2) {
         map.insert(std::pair<const int, int>(rand(), rand()));
@@ -120,7 +125,7 @@ UNORDERED_AUTO_TEST(simple_tests)
     simple_test(map);
 
     std::cout<<"Test unordered_multimap.\n";
-    boost::unordered_multimap<int, int> multimap;
+    UNORDERED_NAMESPACE::unordered_multimap<int, int> multimap;
 
     for(int i3 = 0; i3 < 1000; ++i3) {
         int count = rand() % 10, index = rand();

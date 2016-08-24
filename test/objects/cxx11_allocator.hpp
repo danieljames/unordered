@@ -15,6 +15,17 @@
 
 namespace test
 {
+// I believe that the crappy enum thing should work, but doesn't
+// with g++ 5.4 library, which expects
+// std::integral_constant<bool,...>
+#if UNORDERED_TEST_LOOSE
+#define BOOLEAN_CONSTANT(name, value) \
+    typedef std::integral_constant<bool, value> name;
+#else
+#define BOOLEAN_CONSTANT(name, value_) \
+    struct name { enum { value = value_ }; };
+#endif
+
     struct allocator_false
     {
         enum {
@@ -58,22 +69,22 @@ namespace test
     template <typename Flag>
     struct swap_allocator_base
     {
-        struct propagate_on_container_swap {
-            enum { value = Flag::is_propagate_on_swap }; };
+        BOOLEAN_CONSTANT(propagate_on_container_swap,
+            Flag::is_propagate_on_swap)
     };
 
     template <typename Flag>
     struct assign_allocator_base
     {
-        struct propagate_on_container_copy_assignment {
-            enum { value = Flag::is_propagate_on_assign }; };
+        BOOLEAN_CONSTANT(propagate_on_container_copy_assignment,
+            Flag::is_propagate_on_assign)
     };
 
     template <typename Flag>
     struct move_allocator_base
     {
-        struct propagate_on_container_move_assignment {
-            enum { value = Flag::is_propagate_on_move }; };
+        BOOLEAN_CONSTANT(propagate_on_container_move_assignment,
+            Flag::is_propagate_on_move)
     };
 
     namespace

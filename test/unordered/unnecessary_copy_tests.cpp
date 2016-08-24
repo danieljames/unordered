@@ -4,12 +4,19 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_set>
+#include <unordered_map>
+#else
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include <iostream>
 #include "../helpers/test.hpp"
+#include <boost/move/move.hpp>
+#include <boost/functional/hash.hpp>
 
 namespace unnecessary_copy_tests
 {
@@ -188,10 +195,10 @@ namespace unnecessary_copy_tests
         COPY_COUNT(1);
     }
 
-    boost::unordered_set<count_copies>* set;
-    boost::unordered_multiset<count_copies>* multiset;
-    boost::unordered_map<int, count_copies>* map;
-    boost::unordered_multimap<int, count_copies>* multimap;
+    UNORDERED_NAMESPACE::unordered_set<count_copies, boost::hash<count_copies> >* set;
+    UNORDERED_NAMESPACE::unordered_multiset<count_copies, boost::hash<count_copies> >* multiset;
+    UNORDERED_NAMESPACE::unordered_map<int, count_copies>* map;
+    UNORDERED_NAMESPACE::unordered_multimap<int, count_copies>* multimap;
 
     UNORDERED_TEST(unnecessary_copy_insert_test,
             ((set)(multiset)(map)(multimap)))
@@ -305,7 +312,7 @@ namespace unnecessary_copy_tests
         //
 
         reset();
-        boost::unordered_set<count_copies> x;
+        UNORDERED_NAMESPACE::unordered_set<count_copies, boost::hash<count_copies> > x;
         count_copies a;
         x.insert(a);
         COPY_COUNT(2); MOVE_COUNT(0);
@@ -394,7 +401,7 @@ namespace unnecessary_copy_tests
         //
 
         reset();
-        boost::unordered_map<count_copies, count_copies> x;
+        UNORDERED_NAMESPACE::unordered_map<count_copies, count_copies, boost::hash<count_copies> > x;
         // TODO: Run tests for pairs without const etc.
         std::pair<count_copies const, count_copies> a;
         x.emplace(a);
@@ -420,12 +427,13 @@ namespace unnecessary_copy_tests
 #   endif
 #endif
 
+#if !UNORDERED_TEST_STD
         reset();
         x.emplace(boost::unordered::piecewise_construct,
                 boost::make_tuple(),
                 boost::make_tuple());
         COPY_COUNT(2); MOVE_COUNT(0);
-
+#endif
 
         //
         // 1 argument
@@ -480,16 +488,18 @@ namespace unnecessary_copy_tests
         x.emplace(count_copies(b.first.tag_), count_copies(b.second.tag_));
         COPY_COUNT(2); MOVE_COUNT(0);        
 
+#if !UNORDERED_TEST_STD
         reset();
         x.emplace(boost::unordered::piecewise_construct,
                 boost::make_tuple(boost::ref(b.first)),
                 boost::make_tuple(boost::ref(b.second)));
         COPY_COUNT(0); MOVE_COUNT(0);
+#endif
         
 #if !defined(BOOST_NO_CXX11_HDR_TUPLE) || defined(BOOST_HAS_TR1_TUPLE)
 
         reset();
-        x.emplace(boost::unordered::piecewise_construct,
+        x.emplace(std::piecewise_construct,
                 std::make_tuple(std::ref(b.first)),
                 std::make_tuple(std::ref(b.second)));
         COPY_COUNT(0); MOVE_COUNT(0);
@@ -503,7 +513,7 @@ namespace unnecessary_copy_tests
 
         std::pair<count_copies const, count_copies> move_source;
         reset();
-        x.emplace(boost::unordered::piecewise_construct,
+        x.emplace(std::piecewise_construct,
                 std::make_tuple(std::move(move_source.first)),
                 std::make_tuple(std::move(move_source.second)));
         COPY_COUNT(tuple_copy_cost);
@@ -513,7 +523,7 @@ namespace unnecessary_copy_tests
     !(defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ < 6) && \
     !(defined(BOOST_MSVC) && BOOST_MSVC < 1700)
         reset();
-        x.emplace(boost::unordered::piecewise_construct,
+        x.emplace(std::piecewise_construct,
                 std::forward_as_tuple(b.first),
                 std::forward_as_tuple(b.second));
         COPY_COUNT(0); MOVE_COUNT(0);

@@ -23,6 +23,7 @@
 #include <boost/limits.hpp>
 #include <boost/utility/swap.hpp>
 #include "../helpers/check_return_type.hpp"
+#include <iostream>
 
 typedef long double comparison_type;
 
@@ -211,11 +212,13 @@ void unordered_set_test(X&, Key const&)
     typedef BOOST_DEDUCED_TYPENAME
         boost::iterator_pointer<const_local_iterator>::type
             const_local_iterator_pointer;
-
+#if !UNORDERED_TEST_LOOSE
+    // TODO: Is this wrong? Why was I requiring raw pointers?
     BOOST_STATIC_ASSERT((boost::is_same<value_type const*, iterator_pointer>::value));
     BOOST_STATIC_ASSERT((boost::is_same<value_type const*, const_iterator_pointer>::value));
     BOOST_STATIC_ASSERT((boost::is_same<value_type const*, local_iterator_pointer>::value));
     BOOST_STATIC_ASSERT((boost::is_same<value_type const*, const_local_iterator_pointer>::value));
+#endif
 }
 
 template <class X, class Key, class T>
@@ -244,10 +247,18 @@ void unordered_map_test(X& r, Key const& k, T const& v)
         boost::iterator_pointer<const_local_iterator>::type
             const_local_iterator_pointer;
 
+#if !UNORDERED_TEST_LOOSE
+    // TODO: Is this wrong? Why was I requiring raw pointers?
     BOOST_STATIC_ASSERT((boost::is_same<value_type*, iterator_pointer>::value));
     BOOST_STATIC_ASSERT((boost::is_same<value_type const*, const_iterator_pointer>::value));
     BOOST_STATIC_ASSERT((boost::is_same<value_type*, local_iterator_pointer>::value));
     BOOST_STATIC_ASSERT((boost::is_same<value_type const*, const_local_iterator_pointer>::value));
+#endif
+
+    BOOST_STATIC_ASSERT((boost::is_same<local_iterator_pointer, iterator_pointer>::value));
+    BOOST_STATIC_ASSERT((boost::is_same<const_local_iterator_pointer, const_iterator_pointer>::value));
+
+#if !UNORDERED_TEST_STD
 
     // Calling functions
 
@@ -259,6 +270,8 @@ void unordered_map_test(X& r, Key const& k, T const& v)
     r.emplace(k, v);
     r.emplace(k_lvalue, v_lvalue);
     r.emplace(rvalue(k), rvalue(v));
+
+#endif
 }
 
 template <class X>
@@ -268,8 +281,8 @@ void equality_test(X& r)
 
     test::check_return_type<bool>::equals(a == b);
     test::check_return_type<bool>::equals(a != b);
-    test::check_return_type<bool>::equals(boost::operator==(a, b));
-    test::check_return_type<bool>::equals(boost::operator!=(a, b));
+    test::check_return_type<bool>::equals(UNORDERED_NAMESPACE::operator==(a, b));
+    test::check_return_type<bool>::equals(UNORDERED_NAMESPACE::operator!=(a, b));
 }
 
 template <class X, class T>
@@ -415,7 +428,9 @@ void unordered_test(X& x, Key& k, Hash& hf, Pred& eq)
 
     a.clear();
 
-    X const b;
+    // Default constructed container has 0 buckets in libc++, which makes
+    // several functions undefined. So need to specify minimum buckets.
+    X const b(1);
 
     test::check_return_type<hasher>::equals(b.hash_function());
     test::check_return_type<key_equal>::equals(b.key_eq());
@@ -469,7 +484,7 @@ void unordered_copyable_test(X& x, Key& k, T& t, Hash& hf, Pred& eq)
 
     BOOST_DEDUCED_TYPENAME X::value_type* i = 0;
     BOOST_DEDUCED_TYPENAME X::value_type* j = 0;
-
+    std::cout << "CONSTRUCTORS" << std::endl;
     X(i, j, 10, hf, eq);
     X a5(i, j, 10, hf, eq);
     X(i, j, 10, hf);
@@ -495,11 +510,13 @@ void unordered_copyable_test(X& x, Key& k, T& t, Hash& hf, Pred& eq)
     X({t}, min_buckets, hf, eq, m);
 #endif
 
+    std::cout << "COPY" << std::endl;
     X const b;
     sink(X(b));
     X a9(b);
     a = b;
 
+    std::cout << "INSERT" << std::endl;
     const_iterator q = a.cbegin();
 
     test::check_return_type<iterator>::equals(a.insert(q, t));
@@ -520,8 +537,10 @@ void unordered_copyable_test(X& x, Key& k, T& t, Hash& hf, Pred& eq)
 
     X a10;
     a10.insert(t);
+    std::cout <<"ERASE" << a10.size() << std::endl;
     q = a10.cbegin();
     test::check_return_type<iterator>::equals(a10.erase(q));
+    std::cout << "END" << std::endl;
 
     // Avoid unused variable warnings:
 

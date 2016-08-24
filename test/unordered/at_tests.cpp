@@ -4,7 +4,11 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#else
 #include <boost/unordered_map.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include "../helpers/test.hpp"
@@ -15,7 +19,7 @@ namespace at_tests {
 UNORDERED_AUTO_TEST(at_tests) {
     BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Create Map" << std::endl;
 
-    boost::unordered_map<std::string, int> x;
+    UNORDERED_NAMESPACE::unordered_map<std::string, int> x;
 
     BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Add elements" << std::endl;
 

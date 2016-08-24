@@ -7,7 +7,11 @@
 // requirements. Makes sure everything compiles and is defined correctly.
 
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#else
 #include <boost/unordered_map.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include <iostream>
@@ -17,31 +21,31 @@
 
 // Explicit instantiation to catch compile-time errors
 
-template class boost::unordered_map<
+template class UNORDERED_NAMESPACE::unordered_map<
     int,
     int,
-    boost::hash<int>,
+    UNORDERED_NAMESPACE::hash<int>,
     std::equal_to<int>,
-    test::minimal::allocator<int> >;
-template class boost::unordered_multimap<
+    test::minimal::allocator<std::pair<int const, int> > >;
+template class UNORDERED_NAMESPACE::unordered_multimap<
     int,
     int,
-    boost::hash<int>,
+    UNORDERED_NAMESPACE::hash<int>,
     std::equal_to<int>,
-    test::minimal::allocator<int> >;
+    test::minimal::allocator<std::pair<int const, int> > >;
 
-template class boost::unordered_map<
+template class UNORDERED_NAMESPACE::unordered_map<
     test::minimal::assignable,
     test::minimal::default_assignable,
     test::minimal::hash<test::minimal::assignable>,
     test::minimal::equal_to<test::minimal::assignable>,
     test::minimal::allocator<int> >;
-template class boost::unordered_multimap<
+template class UNORDERED_NAMESPACE::unordered_multimap<
     test::minimal::assignable,
     test::minimal::assignable,
     test::minimal::hash<test::minimal::assignable>,
     test::minimal::equal_to<test::minimal::assignable>,
-    test::minimal::allocator<int> >;
+    test::minimal::allocator<std::pair<test::minimal::assignable const, test::minimal::assignable> > >;
 
 UNORDERED_AUTO_TEST(test0)
 {
@@ -53,14 +57,14 @@ UNORDERED_AUTO_TEST(test0)
 
     std::cout<<"Test unordered_map.\n";
 
-    boost::unordered_map<int, int> int_map;
+    UNORDERED_NAMESPACE::unordered_map<int, int> int_map;
 
-    boost::unordered_map<int, int,
-        boost::hash<int>, std::equal_to<int>,
+    UNORDERED_NAMESPACE::unordered_map<int, int,
+        UNORDERED_NAMESPACE::hash<int>, std::equal_to<int>,
         test::minimal::cxx11_allocator<std::pair<int const, int> >
         > int_map2;
 
-    boost::unordered_map<
+    UNORDERED_NAMESPACE::unordered_map<
         test::minimal::assignable,
         test::minimal::assignable,
         test::minimal::hash<test::minimal::assignable>,
@@ -73,14 +77,14 @@ UNORDERED_AUTO_TEST(test0)
 
     std::cout<<"Test unordered_multimap.\n";
 
-    boost::unordered_multimap<int, int> int_multimap;
+    UNORDERED_NAMESPACE::unordered_multimap<int, int> int_multimap;
 
-    boost::unordered_multimap<int, int,
-        boost::hash<int>, std::equal_to<int>,
+    UNORDERED_NAMESPACE::unordered_multimap<int, int,
+        UNORDERED_NAMESPACE::hash<int>, std::equal_to<int>,
         test::minimal::cxx11_allocator<std::pair<int const, int> >
         > int_multimap2;
 
-    boost::unordered_multimap<
+    UNORDERED_NAMESPACE::unordered_multimap<
         test::minimal::assignable,
         test::minimal::assignable,
         test::minimal::hash<test::minimal::assignable>,
@@ -97,14 +101,14 @@ UNORDERED_AUTO_TEST(equality_tests) {
             test::minimal::copy_constructible_equality_comparable const,
             test::minimal::copy_constructible_equality_comparable> value_type;
 
-    boost::unordered_map<int, int> int_map;
+    UNORDERED_NAMESPACE::unordered_map<int, int> int_map;
 
-    boost::unordered_map<int, int,
-        boost::hash<int>, std::equal_to<int>,
+    UNORDERED_NAMESPACE::unordered_map<int, int,
+        UNORDERED_NAMESPACE::hash<int>, std::equal_to<int>,
         test::minimal::cxx11_allocator<std::pair<int const, int> >
         > int_map2;
 
-    boost::unordered_map<
+    UNORDERED_NAMESPACE::unordered_map<
         test::minimal::copy_constructible_equality_comparable,
         test::minimal::copy_constructible_equality_comparable,
         test::minimal::hash<test::minimal::copy_constructible_equality_comparable>,
@@ -115,14 +119,14 @@ UNORDERED_AUTO_TEST(equality_tests) {
     equality_test(int_map2);
     equality_test(map);
 
-    boost::unordered_multimap<int, int> int_multimap;
+    UNORDERED_NAMESPACE::unordered_multimap<int, int> int_multimap;
 
-    boost::unordered_multimap<int, int,
-        boost::hash<int>, std::equal_to<int>,
+    UNORDERED_NAMESPACE::unordered_multimap<int, int,
+        UNORDERED_NAMESPACE::hash<int>, std::equal_to<int>,
         test::minimal::cxx11_allocator<std::pair<int const, int> >
         > int_multimap2;
 
-    boost::unordered_multimap<
+    UNORDERED_NAMESPACE::unordered_multimap<
         test::minimal::copy_constructible_equality_comparable,
         test::minimal::copy_constructible_equality_comparable,
         test::minimal::hash<test::minimal::copy_constructible_equality_comparable>,
@@ -135,17 +139,17 @@ UNORDERED_AUTO_TEST(equality_tests) {
 }
 
 UNORDERED_AUTO_TEST(test1) {
-    boost::hash<int> hash;
+    UNORDERED_NAMESPACE::hash<int> hash;
     std::equal_to<int> equal_to;
     int value = 0;
     std::pair<int const, int> map_value(0, 0);
 
     std::cout<<"Test unordered_map.\n";
 
-    boost::unordered_map<int, int> map;
+    UNORDERED_NAMESPACE::unordered_map<int, int> map;
 
-    boost::unordered_map<int, int,
-        boost::hash<int>, std::equal_to<int>,
+    UNORDERED_NAMESPACE::unordered_map<int, int,
+        UNORDERED_NAMESPACE::hash<int>, std::equal_to<int>,
         test::minimal::cxx11_allocator<std::pair<int const, int> >
         > map2;
 
@@ -161,10 +165,10 @@ UNORDERED_AUTO_TEST(test1) {
 
     std::cout<<"Test unordered_multimap.\n";
 
-    boost::unordered_multimap<int, int> multimap;
+    UNORDERED_NAMESPACE::unordered_multimap<int, int> multimap;
 
-    boost::unordered_multimap<int, int,
-        boost::hash<int>, std::equal_to<int>,
+    UNORDERED_NAMESPACE::unordered_multimap<int, int,
+        UNORDERED_NAMESPACE::hash<int>, std::equal_to<int>,
         test::minimal::cxx11_allocator<std::pair<int const, int> >
         > multimap2;
 
@@ -192,7 +196,7 @@ UNORDERED_AUTO_TEST(test2)
 
     std::cout<<"Test unordered_map.\n";
 
-    boost::unordered_map<
+    UNORDERED_NAMESPACE::unordered_map<
         test::minimal::assignable,
         test::minimal::assignable,
         test::minimal::hash<test::minimal::assignable>,
@@ -204,12 +208,12 @@ UNORDERED_AUTO_TEST(test2)
     unordered_copyable_test(map, assignable, map_value, hash, equal_to);
     unordered_map_member_test(map, map_value);
 
-    boost::unordered_map<
+    UNORDERED_NAMESPACE::unordered_map<
         test::minimal::assignable,
         test::minimal::default_assignable,
         test::minimal::hash<test::minimal::assignable>,
         test::minimal::equal_to<test::minimal::assignable>,
-        test::minimal::allocator<map_value_type> > map2;
+        test::minimal::allocator<std::pair<test::minimal::assignable const, test::minimal::default_assignable> > > map2;
 
     test::minimal::default_assignable default_assignable;
 
@@ -217,7 +221,7 @@ UNORDERED_AUTO_TEST(test2)
 
     std::cout<<"Test unordered_multimap.\n";
 
-    boost::unordered_multimap<
+    UNORDERED_NAMESPACE::unordered_multimap<
         test::minimal::assignable,
         test::minimal::assignable,
         test::minimal::hash<test::minimal::assignable>,
