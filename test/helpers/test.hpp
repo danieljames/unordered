@@ -127,20 +127,32 @@ namespace test {
 #define BOOST_UNORDERED_CPLUSPLUS "(not defined)"
 #endif
 
+#if defined(UNORDERED_TEST_STD) && UNORDERED_TEST_STD
+#define BOOST_UNORDERED_TEST_INFO                                              \
+  "testing standard library"                                                   \
+    << "\n"
+#else
+#define BOOST_UNORDERED_TEST_INFO                                              \
+  "testing boost"                                                              \
+    << "\n"                                                                    \
+    << "BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT: "                            \
+    << BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT << "\n"                        \
+    << "BOOST_UNORDERED_EMPLACE_LIMIT: " << BOOST_UNORDERED_EMPLACE_LIMIT      \
+    << "\n"                                                                    \
+    << "BOOST_UNORDERED_USE_ALLOCATOR_TRAITS: "                                \
+    << BOOST_UNORDERED_USE_ALLOCATOR_TRAITS << "\n"                            \
+    << "BOOST_UNORDERED_CXX11_CONSTRUCTION: "                                  \
+    << BOOST_UNORDERED_CXX11_CONSTRUCTION << "\n"
+
+#endif
+
 #define BOOST_UNORDERED_TEST_COMPILER_INFO()                                   \
   {                                                                            \
     BOOST_LIGHTWEIGHT_TEST_OSTREAM                                             \
       << "Compiler: " << BOOST_COMPILER << "\n"                                \
       << "Library: " << BOOST_STDLIB << "\n"                                   \
-      << "__cplusplus: " << BOOST_UNORDERED_CPLUSPLUS << "\n\n"                \
-      << "BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT: "                          \
-      << BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT << "\n"                      \
-      << "BOOST_UNORDERED_EMPLACE_LIMIT: " << BOOST_UNORDERED_EMPLACE_LIMIT    \
-      << "\n"                                                                  \
-      << "BOOST_UNORDERED_USE_ALLOCATOR_TRAITS: "                              \
-      << BOOST_UNORDERED_USE_ALLOCATOR_TRAITS << "\n"                          \
-      << "BOOST_UNORDERED_CXX11_CONSTRUCTION: "                                \
-      << BOOST_UNORDERED_CXX11_CONSTRUCTION << "\n\n"                          \
+      << "__cplusplus: " << BOOST_UNORDERED_CPLUSPLUS                          \
+      << BOOST_UNORDERED_TEST_INFO << "\n"                                     \
       << std::flush;                                                           \
   }
 

@@ -13,6 +13,8 @@
 #include <boost/preprocessor/seq/elem.hpp>
 #include <boost/preprocessor/seq/for_each_product.hpp>
 
+#include <iostream>
+
 #define UNORDERED_EXCEPTION_TEST_CASE(name, test_func, type)                   \
   UNORDERED_AUTO_TEST (name) {                                                 \
     test_func<type> fixture;                                                   \
@@ -226,6 +228,7 @@ namespace test {
     {
       ++count;
       if (count == iteration) {
+        BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Exception: " << name << std::endl;
         throw test_exception(name);
       }
     }

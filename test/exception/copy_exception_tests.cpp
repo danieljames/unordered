@@ -87,7 +87,7 @@ template <class T> struct copy_with_allocator_test : public test::exception_base
 {
   test::random_values<T> values;
   T x;
-  test::exception::allocator<test::exception::object> allocator;
+  typename T::allocator_type allocator;
 
   copy_with_allocator_test() : values(100), x(values.begin(), values.end()) {}
 

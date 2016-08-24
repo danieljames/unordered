@@ -3,11 +3,15 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
+#if UNORDERED_TEST_STD
+#include <memory>
+#else
+#include <boost/unordered/detail/implementation.hpp>
+#endif
 #include "../objects/test.hpp"
 #include <boost/detail/lightweight_test.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_same.hpp>
-#include <boost/unordered/detail/implementation.hpp>
 
 template <class Tp> struct SimpleAllocator
 {
@@ -29,8 +33,12 @@ template <typename T> void test_simple_allocator()
 {
   test::check_instances check_;
 
+#if UNORDERED_TEST_STD
+  typedef std::allocator_traits<SimpleAllocator<T> > traits;
+#else
   typedef boost::unordered::detail::allocator_traits<SimpleAllocator<T> >
     traits;
+#endif
 
   BOOST_STATIC_ASSERT((boost::is_same<typename traits::allocator_type,
     SimpleAllocator<T> >::value));
@@ -48,7 +56,7 @@ template <typename T> void test_simple_allocator()
   BOOST_STATIC_ASSERT(
     (boost::is_same<typename traits::difference_type, std::ptrdiff_t>::value));
 
-#if BOOST_UNORDERED_USE_ALLOCATOR_TRAITS == 1
+#if UNORDERED_TEST_STD || BOOST_UNORDERED_USE_ALLOCATOR_TRAITS == 1
   BOOST_STATIC_ASSERT((boost::is_same<typename traits::size_type,
     std::make_unsigned<std::ptrdiff_t>::type>::value));
 #else

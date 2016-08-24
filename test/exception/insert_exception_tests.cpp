@@ -107,11 +107,15 @@ void insert_rehash_exception_test(
 
 struct inserter_base
 {
+  bool is_strong;
+
+  explicit inserter_base(bool is_strong_ = true) : is_strong(is_strong_) {}
+
   template <typename T> void exception_check(T& x, test::strong<T>& strong)
   {
     std::string scope(test::scope);
 
-    if (scope.find("hash::operator()") == std::string::npos)
+    if (is_strong && scope.find("hash::operator()") == std::string::npos)
       strong.test(x, test::detail::tracker.count_allocations);
   }
 
@@ -168,6 +172,15 @@ struct insert_lvalue_pos_type
 
 struct insert_single_item_range_type : inserter_base
 {
+#if UNORDERED_TEST_STD
+  // I interpreted the standard as saying that inserting a single element
+  // from a range had strong exception safety, but I don't think other
+  // implementers did, and perhaps they're right?
+  //
+  // So this tells the base class not to do the strong exception check.
+  insert_single_item_range_type() : inserter_base(false) {}
+#endif
+
   template <typename T, typename Iterator> void operator()(T& x, Iterator it)
   {
     x.insert(it, test::next(it));
@@ -257,8 +270,8 @@ struct pair_emplace_type : inserter_base
 {
   template <typename T, typename Iterator> void operator()(T& x, Iterator it)
   {
-    x.emplace(boost::unordered::piecewise_construct,
-      boost::make_tuple(it->first), boost::make_tuple(it->second));
+    x.emplace(UNORDERED_PIECEWISE, UNORDERED_NAMESPACE::make_tuple(it->first),
+      UNORDERED_NAMESPACE::make_tuple(it->second));
   }
 } pair_emplace;
 
@@ -266,9 +279,9 @@ struct pair_emplace2_type : inserter_base
 {
   template <typename T, typename Iterator> void operator()(T& x, Iterator it)
   {
-    x.emplace_hint(x.begin(), boost::unordered::piecewise_construct,
-      boost::make_tuple(it->first),
-      boost::make_tuple(it->second.tag1_, it->second.tag2_));
+    x.emplace_hint(x.begin(), UNORDERED_PIECEWISE,
+      UNORDERED_NAMESPACE::make_tuple(it->first),
+      UNORDERED_NAMESPACE::make_tuple(it->second.tag1_, it->second.tag2_));
   }
 } pair_emplace2;
 
@@ -343,6 +356,8 @@ struct map_insert_or_assign_type : map_inserter_base
 } map_insert_or_assign;
 
 // clang-format off
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
+
 UNORDERED_TEST(insert_exception_test,
     ((test_map_))
     ((try_emplace)(try_emplace2)(map_insert_operator)(map_insert_or_assign))
@@ -353,6 +368,22 @@ UNORDERED_TEST(insert_rehash_exception_test,
     ((try_emplace)(try_emplace2)(map_insert_operator)(map_insert_or_assign))
     ((default_generator)(limited_range)(generate_collisions))
 )
+
+#else
+
+UNORDERED_TEST(insert_exception_test,
+    ((test_map_))
+    ((map_insert_operator))
+    ((default_generator)(limited_range)(generate_collisions))
+)
+UNORDERED_TEST(insert_rehash_exception_test,
+    ((test_map_))
+    ((map_insert_operator))
+    ((default_generator)(limited_range)(generate_collisions))
+)
+
+#endif
+
 // clang-format on
 
 // Range insert tests

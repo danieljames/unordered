@@ -27,6 +27,10 @@ namespace test {
     std::pair<object, object> generate(
       std::pair<object, object> const*, random_generator);
 
+#if UNORDERED_TEST_STD
+    typedef std::true_type true_type;
+    typedef std::false_type false_type;
+#else
     struct true_type
     {
       enum
@@ -42,6 +46,7 @@ namespace test {
         value = false
       };
     };
+#endif
 
     class object : private counted_object
     {
@@ -157,7 +162,9 @@ namespace test {
       {
         UNORDERED_SCOPE(hash::hash(hash))
         {
+#if !UNORDERED_TEST_LOOSE
           UNORDERED_EPOINT("Mock hash copy constructor.");
+#endif
         }
       }
 
@@ -165,9 +172,13 @@ namespace test {
       {
         UNORDERED_SCOPE(hash::operator=(hash))
         {
+#if UNORDERED_TEST_LOOSE
+          tag_ = x.tag_;
+#else
           UNORDERED_EPOINT("Mock hash assign operator 1.");
           tag_ = x.tag_;
           UNORDERED_EPOINT("Mock hash assign operator 2.");
+#endif
         }
         return *this;
       }
@@ -293,7 +304,9 @@ namespace test {
       {
         UNORDERED_SCOPE(equal_to::equal_to(equal_to))
         {
+#if !UNORDERED_TEST_LOOSE
           UNORDERED_EPOINT("Mock equal_to copy constructor.");
+#endif
         }
       }
 
@@ -301,9 +314,13 @@ namespace test {
       {
         UNORDERED_SCOPE(equal_to::operator=(equal_to))
         {
+#if UNORDERED_TEST_LOOSE
+          tag_ = x.tag_;
+#else
           UNORDERED_EPOINT("Mock equal_to assign operator 1.");
           tag_ = x.tag_;
           UNORDERED_EPOINT("Mock equal_to assign operator 2.");
+#endif
         }
         return *this;
       }
@@ -385,7 +402,12 @@ namespace test {
       {
         UNORDERED_SCOPE(allocator::allocator())
         {
+#if !UNORDERED_TEST_LOOSE
+          // TODO: I don't think the standard actually requires this
+          //       to not throw. In fact, I don't think it's required
+          //       at all. But is seems to cause libc++ to fail.
           UNORDERED_EPOINT("Mock allocator default constructor.");
+#endif
         }
         test::detail::tracker.allocator_ref();
       }
@@ -563,7 +585,9 @@ namespace test {
       {
         UNORDERED_SCOPE(allocator2::allocator2())
         {
+#if !UNORDERED_TEST_LOOSE
           UNORDERED_EPOINT("Mock allocator2 default constructor.");
+#endif
         }
         test::detail::tracker.allocator_ref();
       }

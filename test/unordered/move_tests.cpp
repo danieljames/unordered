@@ -3,20 +3,24 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or move at http://www.boost.org/LICENSE_1_0.txt)
 
-// clang-format off
 #include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
-// clang-format on
 
-#include "../helpers/test.hpp"
-#include "../objects/test.hpp"
-#include "../objects/cxx11_allocator.hpp"
-#include "../helpers/random_values.hpp"
-#include "../helpers/tracker.hpp"
 #include "../helpers/equivalent.hpp"
 #include "../helpers/invariants.hpp"
+#include "../helpers/random_values.hpp"
+#include "../helpers/test.hpp"
+#include "../helpers/tracker.hpp"
+#include "../objects/cxx11_allocator.hpp"
+#include "../objects/test.hpp"
+#include <boost/move/move.hpp>
 
 #if defined(BOOST_MSVC)
 #pragma warning(disable : 4127) // conditional expression is constant
@@ -298,44 +302,63 @@ namespace move_tests {
     }
   }
 
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    std::allocator<test::object> >* test_map_std_alloc;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to,
+    std::allocator<std::pair<test::object const, test::object> > >*
+    test_map_std_alloc;
 
-  boost::unordered_set<test::object, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_multiset<test::object, test::hash,
+    test::equal_to, test::allocator1<test::object> >* test_multiset;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to,
+    test::allocator1<std::pair<test::object const, test::object> > >* test_map;
+#if UNORDERED_TEST_LOOSE
+  // g++ 5.4 couldn't deal with allocator2's pointer object.
+  UNORDERED_NAMESPACE::unordered_set<test::object, test::hash, test::equal_to,
+    test::allocator1<test::object> >* test_set;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to,
+    test::allocator1<std::pair<test::object const, test::object> > >*
+    test_multimap;
+#else
+  UNORDERED_NAMESPACE::unordered_set<test::object, test::hash, test::equal_to,
     test::allocator2<test::object> >* test_set;
-  boost::unordered_multiset<test::object, test::hash, test::equal_to,
-    test::allocator1<test::object> >* test_multiset;
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    test::allocator1<test::object> >* test_map;
-  boost::unordered_multimap<test::object, test::object, test::hash,
-    test::equal_to, test::allocator2<test::object> >* test_multimap;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to,
+    test::allocator2<std::pair<test::object const, test::object> > >*
+    test_multimap;
+#endif
 
-  boost::unordered_set<test::object, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_set<test::object, test::hash, test::equal_to,
     test::cxx11_allocator<test::object, test::propagate_move> >*
     test_set_prop_move;
-  boost::unordered_multiset<test::object, test::hash, test::equal_to,
-    test::cxx11_allocator<test::object, test::propagate_move> >*
-    test_multiset_prop_move;
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    test::cxx11_allocator<test::object, test::propagate_move> >*
-    test_map_prop_move;
-  boost::unordered_multimap<test::object, test::object, test::hash,
+  UNORDERED_NAMESPACE::unordered_multiset<test::object, test::hash,
     test::equal_to, test::cxx11_allocator<test::object, test::propagate_move> >*
-    test_multimap_prop_move;
+    test_multiset_prop_move;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to,
+    test::cxx11_allocator<std::pair<test::object const, test::object>,
+      test::propagate_move> >* test_map_prop_move;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to,
+    test::cxx11_allocator<std::pair<test::object const, test::object>,
+      test::propagate_move> >* test_multimap_prop_move;
 
-  boost::unordered_set<test::object, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_set<test::object, test::hash, test::equal_to,
     test::cxx11_allocator<test::object, test::no_propagate_move> >*
     test_set_no_prop_move;
-  boost::unordered_multiset<test::object, test::hash, test::equal_to,
-    test::cxx11_allocator<test::object, test::no_propagate_move> >*
-    test_multiset_no_prop_move;
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    test::cxx11_allocator<test::object, test::no_propagate_move> >*
-    test_map_no_prop_move;
-  boost::unordered_multimap<test::object, test::object, test::hash,
+  UNORDERED_NAMESPACE::unordered_multiset<test::object, test::hash,
     test::equal_to,
     test::cxx11_allocator<test::object, test::no_propagate_move> >*
-    test_multimap_no_prop_move;
+    test_multiset_no_prop_move;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to,
+    test::cxx11_allocator<std::pair<test::object const, test::object>,
+      test::no_propagate_move> >* test_map_no_prop_move;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to,
+    test::cxx11_allocator<std::pair<test::object const, test::object>,
+      test::no_propagate_move> >* test_multimap_no_prop_move;
 
   using test::default_generator;
   using test::generate_collisions;

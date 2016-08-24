@@ -3,22 +3,25 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-// clang-format off
 #include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
-// clang-format on
 
-#include "../helpers/test.hpp"
 #include "../helpers/invariants.hpp"
+#include "../helpers/test.hpp"
 
 #include <map>
 #include <set>
 
 namespace insert_hint {
   UNORDERED_AUTO_TEST (insert_hint_empty) {
-    typedef boost::unordered_multiset<int> container;
+    typedef UNORDERED_NAMESPACE::unordered_multiset<int> container;
     container x;
     x.insert(x.cbegin(), 10);
     BOOST_TEST_EQ(x.size(), 1u);
@@ -27,7 +30,7 @@ namespace insert_hint {
   }
 
   UNORDERED_AUTO_TEST (insert_hint_empty2) {
-    typedef boost::unordered_multimap<std::string, int> container;
+    typedef UNORDERED_NAMESPACE::unordered_multimap<std::string, int> container;
     container x;
     x.emplace_hint(x.cbegin(), "hello", 50);
     BOOST_TEST_EQ(x.size(), 1u);
@@ -37,7 +40,7 @@ namespace insert_hint {
   }
 
   UNORDERED_AUTO_TEST (insert_hint_single) {
-    typedef boost::unordered_multiset<std::string> container;
+    typedef UNORDERED_NAMESPACE::unordered_multiset<std::string> container;
     container x;
     x.insert("equal");
     x.insert(x.cbegin(), "equal");
@@ -47,7 +50,7 @@ namespace insert_hint {
   }
 
   UNORDERED_AUTO_TEST (insert_hint_single2) {
-    typedef boost::unordered_multimap<int, std::string> container;
+    typedef UNORDERED_NAMESPACE::unordered_multimap<int, std::string> container;
     container x;
     x.emplace(10, "one");
     x.emplace_hint(x.cbegin(), 10, "two");
@@ -68,7 +71,7 @@ namespace insert_hint {
   UNORDERED_AUTO_TEST (insert_hint_multiple) {
     for (unsigned int size = 0; size < 10; ++size) {
       for (unsigned int offset = 0; offset <= size; ++offset) {
-        typedef boost::unordered_multiset<std::string> container;
+        typedef UNORDERED_NAMESPACE::unordered_multiset<std::string> container;
         container x;
 
         for (unsigned int i = 0; i < size; ++i) {
@@ -92,7 +95,7 @@ namespace insert_hint {
   }
 
   UNORDERED_AUTO_TEST (insert_hint_unique) {
-    typedef boost::unordered_set<int> container;
+    typedef UNORDERED_NAMESPACE::unordered_set<int> container;
     container x;
     x.insert(x.cbegin(), 10);
     BOOST_TEST_EQ(x.size(), 1u);
@@ -101,7 +104,7 @@ namespace insert_hint {
   }
 
   UNORDERED_AUTO_TEST (insert_hint_unique_single) {
-    typedef boost::unordered_set<int> container;
+    typedef UNORDERED_NAMESPACE::unordered_set<int> container;
     container x;
     x.insert(10);
 

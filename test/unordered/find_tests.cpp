@@ -3,18 +3,21 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-// clang-format off
 #include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
-// clang-format on
 
-#include "../helpers/test.hpp"
-#include "../objects/test.hpp"
-#include "../helpers/random_values.hpp"
-#include "../helpers/tracker.hpp"
 #include "../helpers/helpers.hpp"
+#include "../helpers/random_values.hpp"
+#include "../helpers/test.hpp"
+#include "../helpers/tracker.hpp"
+#include "../objects/test.hpp"
 
 namespace find_tests {
 
@@ -137,14 +140,14 @@ namespace find_tests {
     }
   }
 
-  boost::unordered_set<test::object, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_set<test::object, test::hash, test::equal_to,
     test::allocator2<test::object> >* test_set;
-  boost::unordered_multiset<test::object, test::hash, test::equal_to,
-    test::allocator1<test::object> >* test_multiset;
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    test::allocator2<test::object> >* test_map;
-  boost::unordered_multimap<test::object, test::object, test::hash,
-    test::equal_to, test::allocator1<test::object> >* test_multimap;
+  UNORDERED_NAMESPACE::unordered_multiset<test::object, test::hash,
+    test::equal_to, test::allocator1<test::object> >* test_multiset;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to, test::allocator2<test::object> >* test_map;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to, test::allocator1<test::object> >* test_multimap;
 
   using test::default_generator;
   using test::generate_collisions;
@@ -153,9 +156,11 @@ namespace find_tests {
   UNORDERED_TEST(
     find_tests1, ((test_set)(test_multiset)(test_map)(test_multimap))(
                    (default_generator)(generate_collisions)(limited_range)))
+#if !UNORDERED_TEST_STD
   UNORDERED_TEST(find_compatible_keys_test,
     ((test_set)(test_multiset)(test_map)(test_multimap))(
       (default_generator)(generate_collisions)(limited_range)))
+#endif
 }
 
 RUN_TESTS()

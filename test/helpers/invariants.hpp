@@ -11,6 +11,7 @@
 
 #include "./helpers.hpp"
 #include "./metafunctions.hpp"
+#include <boost/core/lightweight_test.hpp>
 #include <cmath>
 #include <set>
 

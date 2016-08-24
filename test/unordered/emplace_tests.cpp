@@ -3,16 +3,20 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-// clang-format off
 #include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <boost/functional/hash.hpp>
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
-// clang-format on
 
-#include <boost/functional/hash/hash.hpp>
-#include "../helpers/test.hpp"
 #include "../helpers/count.hpp"
+#include "../helpers/test.hpp"
+#include <boost/functional/hash/hash.hpp>
 #include <string>
 
 // Test that various emplace methods work with different numbers of
@@ -170,7 +174,8 @@ namespace emplace_tests {
   UNORDERED_AUTO_TEST (emplace_set) {
     test::check_instances check_;
 
-    typedef boost::unordered_set<emplace_value, boost::hash<emplace_value> >
+    typedef UNORDERED_NAMESPACE::unordered_set<emplace_value,
+      boost::hash<emplace_value> >
       container;
     typedef container::iterator iterator;
     typedef std::pair<iterator, bool> return_type;
@@ -251,7 +256,7 @@ namespace emplace_tests {
   UNORDERED_AUTO_TEST (emplace_multiset) {
     test::check_instances check_;
 
-    typedef boost::unordered_multiset<emplace_value,
+    typedef UNORDERED_NAMESPACE::unordered_multiset<emplace_value,
       boost::hash<emplace_value> >
       container;
     typedef container::iterator iterator;
@@ -329,7 +334,7 @@ namespace emplace_tests {
   UNORDERED_AUTO_TEST (emplace_map) {
     test::check_instances check_;
 
-    typedef boost::unordered_map<emplace_value, emplace_value,
+    typedef UNORDERED_NAMESPACE::unordered_map<emplace_value, emplace_value,
       boost::hash<emplace_value> >
       container;
     typedef container::iterator iterator;
@@ -341,9 +346,9 @@ namespace emplace_tests {
 
     emplace_value k1(5, "", 'b', 4, 5);
     emplace_value m1(8, "xxx", 'z', 4, 5, 6, 7, 8);
-    r1 = x.emplace(boost::unordered::piecewise_construct,
-      boost::make_tuple(5, "", 'b', 4, 5),
-      boost::make_tuple(8, "xxx", 'z', 4, 5, 6, 7, 8));
+    r1 = x.emplace(UNORDERED_PIECEWISE,
+      UNORDERED_NAMESPACE::make_tuple(5, "", 'b', 4, 5),
+      UNORDERED_NAMESPACE::make_tuple(8, "xxx", 'z', 4, 5, 6, 7, 8));
     BOOST_TEST_EQ(x.size(), 1u);
     BOOST_TEST(r1.second);
     BOOST_TEST(x.find(k1) == r1.first);
@@ -351,9 +356,9 @@ namespace emplace_tests {
     BOOST_TEST_EQ(check_.instances(), 4);
     BOOST_TEST_EQ(check_.constructions(), 4);
 
-    r2 = x.emplace(boost::unordered::piecewise_construct,
-      boost::make_tuple(5, "", 'b', 4, 5),
-      boost::make_tuple(8, "xxx", 'z', 4, 5, 6, 7, 8));
+    r2 = x.emplace(UNORDERED_PIECEWISE,
+      UNORDERED_NAMESPACE::make_tuple(5, "", 'b', 4, 5),
+      UNORDERED_NAMESPACE::make_tuple(8, "xxx", 'z', 4, 5, 6, 7, 8));
     BOOST_TEST_EQ(x.size(), 1u);
     BOOST_TEST(!r2.second);
     BOOST_TEST(r1.first == r2.first);
@@ -367,9 +372,9 @@ namespace emplace_tests {
 
     emplace_value k2(9, "", 'b', 4, 5, 6, 7, 8, 9);
     emplace_value m2(3, "aaa", 'm');
-    r1 = x.emplace(boost::unordered::piecewise_construct,
-      boost::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
-      boost::make_tuple(3, "aaa", 'm'));
+    r1 = x.emplace(UNORDERED_PIECEWISE,
+      UNORDERED_NAMESPACE::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
+      UNORDERED_NAMESPACE::make_tuple(3, "aaa", 'm'));
     BOOST_TEST_EQ(x.size(), 2u);
     BOOST_TEST(r1.second);
     BOOST_TEST(r1.first->first.arg_count == 9);
@@ -380,17 +385,17 @@ namespace emplace_tests {
     BOOST_TEST_EQ(check_.constructions(), 10);
 
     BOOST_TEST(r1.first ==
-               x.emplace_hint(r1.first, boost::unordered::piecewise_construct,
-                 boost::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
-                 boost::make_tuple(15, "jkjk")));
+               x.emplace_hint(r1.first, UNORDERED_PIECEWISE,
+                 UNORDERED_NAMESPACE::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
+                 UNORDERED_NAMESPACE::make_tuple(15, "jkjk")));
     BOOST_TEST(r1.first ==
-               x.emplace_hint(r2.first, boost::unordered::piecewise_construct,
-                 boost::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
-                 boost::make_tuple(275, "xxx", 'm', 6)));
+               x.emplace_hint(r2.first, UNORDERED_PIECEWISE,
+                 UNORDERED_NAMESPACE::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
+                 UNORDERED_NAMESPACE::make_tuple(275, "xxx", 'm', 6)));
     BOOST_TEST(r1.first ==
-               x.emplace_hint(x.end(), boost::unordered::piecewise_construct,
-                 boost::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
-                 boost::make_tuple(-10, "blah blah", '\0')));
+               x.emplace_hint(x.end(), UNORDERED_PIECEWISE,
+                 UNORDERED_NAMESPACE::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
+                 UNORDERED_NAMESPACE::make_tuple(-10, "blah blah", '\0')));
     BOOST_TEST_EQ(x.size(), 2u);
     BOOST_TEST(x.find(k2)->second == m2);
     BOOST_TEST_EQ(check_.instances(), 8);
@@ -400,8 +405,8 @@ namespace emplace_tests {
   UNORDERED_AUTO_TEST (emplace_multimap) {
     test::check_instances check_;
 
-    typedef boost::unordered_multimap<emplace_value, emplace_value,
-      boost::hash<emplace_value> >
+    typedef UNORDERED_NAMESPACE::unordered_multimap<emplace_value,
+      emplace_value, boost::hash<emplace_value> >
       container;
     typedef container::iterator iterator;
     container x(10);
@@ -411,9 +416,9 @@ namespace emplace_tests {
 
     emplace_value k1(5, "", 'b', 4, 5);
     emplace_value m1(8, "xxx", 'z', 4, 5, 6, 7, 8);
-    i1 = x.emplace(boost::unordered::piecewise_construct,
-      boost::make_tuple(5, "", 'b', 4, 5),
-      boost::make_tuple(8, "xxx", 'z', 4, 5, 6, 7, 8));
+    i1 = x.emplace(UNORDERED_PIECEWISE,
+      UNORDERED_NAMESPACE::make_tuple(5, "", 'b', 4, 5),
+      UNORDERED_NAMESPACE::make_tuple(8, "xxx", 'z', 4, 5, 6, 7, 8));
     BOOST_TEST_EQ(x.size(), 1u);
     BOOST_TEST(x.find(k1) == i1);
     BOOST_TEST(x.find(k1)->second == m1);
@@ -421,9 +426,9 @@ namespace emplace_tests {
     BOOST_TEST_EQ(check_.constructions(), 4);
 
     emplace_value m1a(8, "xxx", 'z', 4, 5, 6, 7, 8);
-    i2 = x.emplace(boost::unordered::piecewise_construct,
-      boost::make_tuple(5, "", 'b', 4, 5),
-      boost::make_tuple(8, "xxx", 'z', 4, 5, 6, 7, 8));
+    i2 = x.emplace(UNORDERED_PIECEWISE,
+      UNORDERED_NAMESPACE::make_tuple(5, "", 'b', 4, 5),
+      UNORDERED_NAMESPACE::make_tuple(8, "xxx", 'z', 4, 5, 6, 7, 8));
     BOOST_TEST_EQ(x.size(), 2u);
     BOOST_TEST(i1 != i2);
     BOOST_TEST(i1->second == m1);
@@ -435,9 +440,9 @@ namespace emplace_tests {
 
     emplace_value k2(9, "", 'b', 4, 5, 6, 7, 8, 9);
     emplace_value m2(3, "aaa", 'm');
-    i1 = x.emplace(boost::unordered::piecewise_construct,
-      boost::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
-      boost::make_tuple(3, "aaa", 'm'));
+    i1 = x.emplace(UNORDERED_PIECEWISE,
+      UNORDERED_NAMESPACE::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
+      UNORDERED_NAMESPACE::make_tuple(3, "aaa", 'm'));
     BOOST_TEST_EQ(x.size(), 3u);
     BOOST_TEST(i1->first.arg_count == 9);
     BOOST_TEST(i1->second.arg_count == 3);
@@ -445,27 +450,28 @@ namespace emplace_tests {
     BOOST_TEST_EQ(check_.constructions(), 11);
 
     emplace_value m2a(15, "jkjk");
-    i2 = x.emplace_hint(i2, boost::unordered::piecewise_construct,
-      boost::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
-      boost::make_tuple(15, "jkjk"));
+    i2 = x.emplace_hint(i2, UNORDERED_PIECEWISE,
+      UNORDERED_NAMESPACE::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
+      UNORDERED_NAMESPACE::make_tuple(15, "jkjk"));
     emplace_value m2b(275, "xxx", 'm', 6);
-    i3 = x.emplace_hint(i1, boost::unordered::piecewise_construct,
-      boost::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
-      boost::make_tuple(275, "xxx", 'm', 6));
+    i3 = x.emplace_hint(i1, UNORDERED_PIECEWISE,
+      UNORDERED_NAMESPACE::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
+      UNORDERED_NAMESPACE::make_tuple(275, "xxx", 'm', 6));
     emplace_value m2c(-10, "blah blah", '\0');
-    i4 = x.emplace_hint(x.end(), boost::unordered::piecewise_construct,
-      boost::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
-      boost::make_tuple(-10, "blah blah", '\0'));
+    i4 = x.emplace_hint(x.end(), UNORDERED_PIECEWISE,
+      UNORDERED_NAMESPACE::make_tuple(9, "", 'b', 4, 5, 6, 7, 8, 9),
+      UNORDERED_NAMESPACE::make_tuple(-10, "blah blah", '\0'));
     BOOST_TEST_EQ(x.size(), 6u);
     BOOST_TEST(x.find(k2)->second == m2);
     BOOST_TEST_EQ(check_.instances(), 20);
     BOOST_TEST_EQ(check_.constructions(), 20);
   }
 
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
   UNORDERED_AUTO_TEST (try_emplace) {
     test::check_instances check_;
 
-    typedef boost::unordered_map<int, emplace_value> container;
+    typedef UNORDERED_NAMESPACE::unordered_map<int, emplace_value> container;
     typedef container::iterator iterator;
     typedef std::pair<iterator, bool> return_type;
     container x(10);
@@ -509,6 +515,7 @@ namespace emplace_tests {
     BOOST_TEST(r2.first->second == m2);
     BOOST_TEST_EQ(x.size(), 2u);
   }
+#endif
 }
 
 RUN_TESTS()

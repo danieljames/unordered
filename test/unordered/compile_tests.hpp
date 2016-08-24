@@ -19,12 +19,14 @@
 #include "../helpers/check_return_type.hpp"
 #include <boost/iterator/iterator_traits.hpp>
 #include <boost/limits.hpp>
+#include <boost/move/move.hpp>
 #include <boost/predef.h>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/cv_traits.hpp>
 #include <boost/type_traits/is_convertible.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/utility/swap.hpp>
+#include <iostream>
 
 typedef long double comparison_type;
 
@@ -69,7 +71,9 @@ template <class X, class T> void container_test(X& r, T const&)
   typedef BOOST_DEDUCED_TYPENAME X::reference reference;
   typedef BOOST_DEDUCED_TYPENAME X::const_reference const_reference;
 
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
   typedef BOOST_DEDUCED_TYPENAME X::node_type node_type;
+#endif
 
   typedef BOOST_DEDUCED_TYPENAME X::allocator_type allocator_type;
 
@@ -94,10 +98,12 @@ template <class X, class T> void container_test(X& r, T const&)
   boost::function_requires<boost::InputIteratorConcept<const_iterator> >();
   BOOST_STATIC_ASSERT((boost::is_same<T, const_iterator_value_type>::value));
 
-  // node_type
+// node_type
 
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
   BOOST_STATIC_ASSERT((boost::is_same<allocator_type,
     BOOST_DEDUCED_TYPENAME node_type::allocator_type>::value));
+#endif
 
   // difference_type
 
@@ -166,8 +172,9 @@ template <class X, class T> void container_test(X& r, T const&)
   sink(X(rvalue(a_const), m));
   X c3(rvalue(a_const), m);
 
-  // node_type
+// node_type
 
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
   implicit_construct<node_type const>();
 #if !BOOST_COMP_GNUC || BOOST_COMP_GNUC >= BOOST_VERSION_NUMBER(4, 8, 0)
   TEST_NOEXCEPT_EXPR(node_type());
@@ -192,6 +199,7 @@ template <class X, class T> void container_test(X& r, T const&)
   test::check_return_type<bool>::equals(n_const.empty());
   TEST_NOEXCEPT_EXPR(!n_const);
   TEST_NOEXCEPT_EXPR(n_const.empty());
+#endif
 
   // Avoid unused variable warnings:
 
@@ -271,7 +279,8 @@ template <class X, class Key> void unordered_set_test(X& r, Key const&)
     local_iterator_pointer;
   typedef BOOST_DEDUCED_TYPENAME boost::iterator_pointer<
     const_local_iterator>::type const_local_iterator_pointer;
-
+#if !UNORDERED_TEST_LOOSE
+  // TODO: Is this wrong? Why was I requiring raw pointers?
   BOOST_STATIC_ASSERT(
     (boost::is_same<value_type const*, iterator_pointer>::value));
   BOOST_STATIC_ASSERT(
@@ -280,7 +289,9 @@ template <class X, class Key> void unordered_set_test(X& r, Key const&)
     (boost::is_same<value_type const*, local_iterator_pointer>::value));
   BOOST_STATIC_ASSERT(
     (boost::is_same<value_type const*, const_local_iterator_pointer>::value));
+#endif
 
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
   typedef BOOST_DEDUCED_TYPENAME X::node_type node_type;
   typedef BOOST_DEDUCED_TYPENAME node_type::value_type node_value_type;
   BOOST_STATIC_ASSERT((boost::is_same<value_type, node_value_type>::value));
@@ -292,6 +303,7 @@ template <class X, class Key> void unordered_set_test(X& r, Key const&)
   r.emplace(boost::move(k_lvalue));
   node_type n1 = r.extract(r.begin());
   test::check_return_type<value_type>::equals_ref(n1.value());
+#endif
 }
 
 template <class X, class Key, class T>
@@ -318,6 +330,8 @@ void unordered_map_test(X& r, Key const& k, T const& v)
   typedef BOOST_DEDUCED_TYPENAME boost::iterator_pointer<
     const_local_iterator>::type const_local_iterator_pointer;
 
+#if !UNORDERED_TEST_LOOSE
+  // TODO: Is this wrong? Why was I requiring raw pointers?
   BOOST_STATIC_ASSERT((boost::is_same<value_type*, iterator_pointer>::value));
   BOOST_STATIC_ASSERT(
     (boost::is_same<value_type const*, const_iterator_pointer>::value));
@@ -325,7 +339,14 @@ void unordered_map_test(X& r, Key const& k, T const& v)
     (boost::is_same<value_type*, local_iterator_pointer>::value));
   BOOST_STATIC_ASSERT(
     (boost::is_same<value_type const*, const_local_iterator_pointer>::value));
+#endif
 
+  BOOST_STATIC_ASSERT(
+    (boost::is_same<local_iterator_pointer, iterator_pointer>::value));
+  BOOST_STATIC_ASSERT((boost::is_same<const_local_iterator_pointer,
+    const_iterator_pointer>::value));
+
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
   typedef BOOST_DEDUCED_TYPENAME X::node_type node_type;
   typedef BOOST_DEDUCED_TYPENAME node_type::key_type node_key_type;
   typedef BOOST_DEDUCED_TYPENAME node_type::mapped_type node_mapped_type;
@@ -334,6 +355,7 @@ void unordered_map_test(X& r, Key const& k, T const& v)
   BOOST_STATIC_ASSERT((boost::is_same<T, node_mapped_type>::value));
   // Superfluous,but just to make sure.
   BOOST_STATIC_ASSERT((!boost::is_const<node_key_type>::value));
+#endif
 
   // Calling functions
 
@@ -352,8 +374,8 @@ void unordered_map_test(X& r, Key const& k, T const& v)
   r.emplace(k_lvalue, v_lvalue);
   r.emplace(rvalue(k), rvalue(v));
 
-  r.emplace(boost::unordered::piecewise_construct, boost::make_tuple(k),
-    boost::make_tuple(v));
+  r.emplace(UNORDERED_PIECEWISE, UNORDERED_NAMESPACE::make_tuple(k),
+    UNORDERED_NAMESPACE::make_tuple(v));
 
   // Emplace with hint
 
@@ -361,11 +383,11 @@ void unordered_map_test(X& r, Key const& k, T const& v)
   r.emplace_hint(r.begin(), k_lvalue, v_lvalue);
   r.emplace_hint(r.begin(), rvalue(k), rvalue(v));
 
-  r.emplace_hint(r.begin(), boost::unordered::piecewise_construct,
-    boost::make_tuple(k), boost::make_tuple(v));
+  r.emplace_hint(r.begin(), UNORDERED_PIECEWISE,
+    UNORDERED_NAMESPACE::make_tuple(k), UNORDERED_NAMESPACE::make_tuple(v));
 
-  // Extract
-
+// Extract
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
   test::check_return_type<node_type>::equals(r.extract(r.begin()));
 
   r.emplace(k, v);
@@ -386,6 +408,7 @@ void unordered_map_test(X& r, Key const& k, T const& v)
   node_type n = r.extract(r.begin());
   test::check_return_type<node_key_type>::equals_ref(n.key());
   test::check_return_type<node_mapped_type>::equals_ref(n.mapped());
+#endif
 }
 
 template <class X> void equality_test(X& r)
@@ -394,8 +417,8 @@ template <class X> void equality_test(X& r)
 
   test::check_return_type<bool>::equals(a == b);
   test::check_return_type<bool>::equals(a != b);
-  test::check_return_type<bool>::equals(boost::operator==(a, b));
-  test::check_return_type<bool>::equals(boost::operator!=(a, b));
+  test::check_return_type<bool>::equals(UNORDERED_NAMESPACE::operator==(a, b));
+  test::check_return_type<bool>::equals(UNORDERED_NAMESPACE::operator!=(a, b));
 }
 
 template <class X, class T> void unordered_unique_test(X& r, T const& t)
@@ -404,6 +427,7 @@ template <class X, class T> void unordered_unique_test(X& r, T const& t)
   test::check_return_type<std::pair<iterator, bool> >::equals(r.insert(t));
   test::check_return_type<std::pair<iterator, bool> >::equals(r.emplace(t));
 
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
   typedef BOOST_DEDUCED_TYPENAME X::node_type node_type;
   typedef BOOST_DEDUCED_TYPENAME X::insert_return_type insert_return_type;
 
@@ -428,6 +452,7 @@ template <class X, class T> void unordered_unique_test(X& r, T const& t)
   test::check_return_type<iterator>::equals(insert_return.position);
   test::check_return_type<node_type>::equals_ref(insert_return.node);
   boost::swap(insert_return, insert_return2);
+#endif
 }
 
 template <class X, class T> void unordered_equivalent_test(X& r, T const& t)
@@ -447,6 +472,8 @@ void unordered_map_functions(X&, Key const& k, T const& v)
   test::check_return_type<mapped_type>::equals_ref(a[k]);
   test::check_return_type<mapped_type>::equals_ref(a[rvalue(k)]);
   test::check_return_type<mapped_type>::equals_ref(a.at(k));
+
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
   test::check_return_type<std::pair<iterator, bool> >::equals(
     a.try_emplace(k, v));
   test::check_return_type<std::pair<iterator, bool> >::equals(
@@ -462,6 +489,7 @@ void unordered_map_functions(X&, Key const& k, T const& v)
     a.insert_or_assign(a.begin(), k, v));
   test::check_return_type<iterator>::equals(
     a.insert_or_assign(a.begin(), rvalue(k), v));
+#endif
 
   X const b = a;
   test::check_return_type<mapped_type const>::equals_ref(b.at(k));
@@ -581,7 +609,9 @@ void unordered_test(X& x, Key& k, Hash& hf, Pred& eq)
   TEST_NOEXCEPT_EXPR(a.clear());
   a.clear();
 
-  X const b;
+  // Default constructed container has 0 buckets in libc++, which makes
+  // several functions undefined. So need to specify minimum buckets.
+  X const b(1);
 
   test::check_return_type<hasher>::equals(b.hash_function());
   test::check_return_type<key_equal>::equals(b.key_eq());
@@ -613,9 +643,11 @@ void unordered_test(X& x, Key& k, Hash& hf, Pred& eq)
   a.max_load_factor((float)2.0);
   a.rehash(100);
 
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
   a.merge(a2);
 #if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
   a.merge(rvalue_default<X>());
+#endif
 #endif
 
   // Avoid unused variable warnings:
@@ -648,6 +680,7 @@ void unordered_copyable_test(X& x, Key& k, T& t, Hash& hf, Pred& eq)
 
   // Constructors
 
+  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "CONSTRUCTORS" << std::endl;
   X(i, j, 10, hf, eq);
   X a5(i, j, 10, hf, eq);
   X(i, j, 10, hf);
@@ -681,6 +714,7 @@ void unordered_copyable_test(X& x, Key& k, T& t, Hash& hf, Pred& eq)
   X({t}, min_buckets, hf, eq, m);
 #endif
 
+  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "COPY" << std::endl;
   X const b;
   sink(X(b));
   X a9(b);
@@ -696,6 +730,7 @@ void unordered_copyable_test(X& x, Key& k, T& t, Hash& hf, Pred& eq)
   X a9c(b1, m);
   sink(a9c);
 
+  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "INSERT" << std::endl;
   const_iterator q = a.cbegin();
 
   test::check_return_type<iterator>::equals(a.insert(q, t));
@@ -718,8 +753,10 @@ void unordered_copyable_test(X& x, Key& k, T& t, Hash& hf, Pred& eq)
 
   X a10;
   a10.insert(t);
+  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "ERASE" << a10.size() << std::endl;
   q = a10.cbegin();
   test::check_return_type<iterator>::equals(a10.erase(q));
+  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "END" << std::endl;
 
   // Avoid unused variable warnings:
 
@@ -734,10 +771,12 @@ void unordered_copyable_test(X& x, Key& k, T& t, Hash& hf, Pred& eq)
   sink(a7a);
   sink(a9a);
 
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
   typedef BOOST_DEDUCED_TYPENAME X::node_type node_type;
   typedef BOOST_DEDUCED_TYPENAME X::allocator_type allocator_type;
   node_type const n_const = a.extract(a.begin());
   test::check_return_type<allocator_type>::equals(n_const.get_allocator());
+#endif
 }
 
 template <class X, class Key, class T, class Hash, class Pred>

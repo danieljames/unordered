@@ -29,8 +29,6 @@ namespace test {
   implicitly_convertible generate(
     implicitly_convertible const*, random_generator);
 
-  inline void ignore_variable(void const*) {}
-
   class object : private counted_object
   {
     friend class hash;
@@ -460,6 +458,17 @@ namespace test {
 
     bool operator==(void_ptr const& x) const { return ptr_ == x.ptr_; }
     bool operator!=(void_ptr const& x) const { return ptr_ != x.ptr_; }
+
+#if UNORDERED_TEST_LOOSE
+    // TODO: I think these might actually be required since void_ptr
+    //       isn't a template. I'm using allocator rebinding to get
+    //       pointer types, but some implementations just use
+    //       pointer_traits.
+    typedef void element_type;
+    template <typename T> using rebind = ptr<T>;
+
+    void_ptr(std::nullptr_t) : ptr_(0) {}
+#endif
   };
 
   class void_const_ptr
@@ -486,6 +495,13 @@ namespace test {
 
     bool operator==(void_const_ptr const& x) const { return ptr_ == x.ptr_; }
     bool operator!=(void_const_ptr const& x) const { return ptr_ != x.ptr_; }
+
+#if UNORDERED_TEST_LOOSE
+    typedef void const element_type;
+    template <typename T> using rebind = ptr<T>;
+
+    void_const_ptr(std::nullptr_t) : ptr_(0) {}
+#endif
   };
 
   template <class T> class ptr
@@ -501,8 +517,6 @@ namespace test {
   public:
     ptr() : ptr_(0) {}
     explicit ptr(void_ptr const& x) : ptr_((T*)x.ptr_) {}
-
-    static ptr<T> pointer_to(T& x) { return ptr(boost::addressof(x)); }
 
     T& operator*() const { return *ptr_; }
     T* operator->() const { return ptr_; }
@@ -532,6 +546,20 @@ namespace test {
     bool operator>(ptr const& x) const { return ptr_ > x.ptr_; }
     bool operator<=(ptr const& x) const { return ptr_ <= x.ptr_; }
     bool operator>=(ptr const& x) const { return ptr_ >= x.ptr_; }
+
+#if UNORDERED_TEST_LOOSE
+    template <typename T2> friend class ptr;
+
+    typedef T element_Type;
+    // TODO: Should use const_ptr.....
+    template <typename T2> using rebind = ptr<T2>;
+
+    ptr(std::nullptr_t) : ptr_(0) {}
+
+    template <typename T2> ptr(ptr<T2> x) : ptr_((T*)x.ptr_) {}
+
+    static ptr<T> pointer_to(T& x) { return ptr(boost::addressof(x)); }
+#endif
   };
 
   template <class T> class const_ptr

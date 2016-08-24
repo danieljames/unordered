@@ -47,17 +47,17 @@ void merge_exception_test(T1 const*, T2 const*, std::size_t count12, int tag12,
   EXCEPTION_LOOP(merge_exception_test(x, y))
 }
 
-boost::unordered_set<test::exception::object, test::exception::hash,
-  test::exception::equal_to,
+UNORDERED_NAMESPACE::unordered_set<test::exception::object,
+  test::exception::hash, test::exception::equal_to,
   test::exception::allocator<test::exception::object> >* test_set_;
-boost::unordered_multiset<test::exception::object, test::exception::hash,
-  test::exception::equal_to,
+UNORDERED_NAMESPACE::unordered_multiset<test::exception::object,
+  test::exception::hash, test::exception::equal_to,
   test::exception::allocator<test::exception::object> >* test_multiset_;
-boost::unordered_map<test::exception::object, test::exception::object,
-  test::exception::hash, test::exception::equal_to,
+UNORDERED_NAMESPACE::unordered_map<test::exception::object,
+  test::exception::object, test::exception::hash, test::exception::equal_to,
   test::exception::allocator2<test::exception::object> >* test_map_;
-boost::unordered_multimap<test::exception::object, test::exception::object,
-  test::exception::hash, test::exception::equal_to,
+UNORDERED_NAMESPACE::unordered_multimap<test::exception::object,
+  test::exception::object, test::exception::hash, test::exception::equal_to,
   test::exception::allocator2<test::exception::object> >* test_multimap_;
 
 using test::default_generator;

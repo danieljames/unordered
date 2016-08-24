@@ -3,16 +3,19 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-// clang-format off
 #include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
-// clang-format on
 
+#include "../helpers/random_values.hpp"
 #include "../helpers/test.hpp"
 #include <boost/limits.hpp>
-#include "../helpers/random_values.hpp"
 
 #if defined(BOOST_MSVC)
 #pragma warning(push)
@@ -67,16 +70,19 @@ namespace load_factor_tests {
     insert_test(ptr, 0.1f, generator);
     insert_test(ptr, 100.0f, generator);
 
+#if !UNORDERED_TEST_LOOSE
     insert_test(ptr, (std::numeric_limits<float>::min)(), generator);
+#endif
 
-    if (std::numeric_limits<float>::has_infinity)
+    if (std::numeric_limits<float>::has_infinity) {
       insert_test(ptr, std::numeric_limits<float>::infinity(), generator);
+    }
   }
 
-  boost::unordered_set<int>* int_set_ptr;
-  boost::unordered_multiset<int>* int_multiset_ptr;
-  boost::unordered_map<int, int>* int_map_ptr;
-  boost::unordered_multimap<int, int>* int_multimap_ptr;
+  UNORDERED_NAMESPACE::unordered_set<int>* int_set_ptr;
+  UNORDERED_NAMESPACE::unordered_multiset<int>* int_multiset_ptr;
+  UNORDERED_NAMESPACE::unordered_map<int, int>* int_map_ptr;
+  UNORDERED_NAMESPACE::unordered_multimap<int, int>* int_multimap_ptr;
 
   using test::default_generator;
   using test::generate_collisions;

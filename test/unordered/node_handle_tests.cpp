@@ -3,28 +3,34 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../helpers/postfix.hpp"
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
+#endif
+#include "../helpers/postfix.hpp"
 
 #include "../helpers/helpers.hpp"
 #include "../helpers/metafunctions.hpp"
 #include "../helpers/test.hpp"
+#include <boost/move/move.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <set>
 #include <string>
 
 UNORDERED_AUTO_TEST (example1) {
-  typedef boost::unordered_map<int, std::string>::insert_return_type
-    insert_return_type;
+  typedef UNORDERED_NAMESPACE::unordered_map<int,
+    std::string>::insert_return_type insert_return_type;
 
-  boost::unordered_map<int, std::string> src;
+  UNORDERED_NAMESPACE::unordered_map<int, std::string> src;
   src.emplace(1, "one");
   src.emplace(2, "two");
   src.emplace(3, "buckle my shoe");
-  boost::unordered_map<int, std::string> dst;
+  UNORDERED_NAMESPACE::unordered_map<int, std::string> dst;
   dst.emplace(3, "three");
 
   dst.insert(src.extract(src.find(1)));
@@ -42,11 +48,11 @@ UNORDERED_AUTO_TEST (example1) {
 }
 
 UNORDERED_AUTO_TEST (example2) {
-  boost::unordered_set<int> src;
+  UNORDERED_NAMESPACE::unordered_set<int> src;
   src.insert(1);
   src.insert(3);
   src.insert(5);
-  boost::unordered_set<int> dst;
+  UNORDERED_NAMESPACE::unordered_set<int> dst;
   dst.insert(2);
   dst.insert(4);
   dst.insert(5);
@@ -57,13 +63,13 @@ UNORDERED_AUTO_TEST (example2) {
 }
 
 UNORDERED_AUTO_TEST (example3) {
-  typedef boost::unordered_set<int>::iterator iterator;
+  typedef UNORDERED_NAMESPACE::unordered_set<int>::iterator iterator;
 
-  boost::unordered_set<int> src;
+  UNORDERED_NAMESPACE::unordered_set<int> src;
   src.insert(1);
   src.insert(3);
   src.insert(5);
-  boost::unordered_set<int> dst;
+  UNORDERED_NAMESPACE::unordered_set<int> dst;
   dst.insert(2);
   dst.insert(4);
   dst.insert(5);
@@ -89,14 +95,14 @@ UNORDERED_AUTO_TEST (example3) {
 
 UNORDERED_AUTO_TEST (failed_insertion_with_hint) {
   {
-    boost::unordered_set<int> src;
-    boost::unordered_set<int> dst;
+    UNORDERED_NAMESPACE::unordered_set<int> src;
+    UNORDERED_NAMESPACE::unordered_set<int> dst;
     src.emplace(10);
     src.emplace(20);
     dst.emplace(10);
     dst.emplace(20);
 
-    boost::unordered_set<int>::node_type nh = src.extract(10);
+    UNORDERED_NAMESPACE::unordered_set<int>::node_type nh = src.extract(10);
 
     BOOST_TEST(dst.insert(dst.find(10), boost::move(nh)) == dst.find(10));
     BOOST_TEST(nh);
@@ -115,14 +121,15 @@ UNORDERED_AUTO_TEST (failed_insertion_with_hint) {
   }
 
   {
-    boost::unordered_map<int, int> src;
-    boost::unordered_map<int, int> dst;
+    UNORDERED_NAMESPACE::unordered_map<int, int> src;
+    UNORDERED_NAMESPACE::unordered_map<int, int> dst;
     src.emplace(10, 30);
     src.emplace(20, 5);
     dst.emplace(10, 20);
     dst.emplace(20, 2);
 
-    boost::unordered_map<int, int>::node_type nh = src.extract(10);
+    UNORDERED_NAMESPACE::unordered_map<int, int>::node_type nh =
+      src.extract(10);
     BOOST_TEST(dst.insert(dst.find(10), boost::move(nh)) == dst.find(10));
     BOOST_TEST(nh);
     BOOST_TEST(!nh.empty());
@@ -231,13 +238,13 @@ template <typename Container> void node_handle_tests_impl(Container& c)
 }
 
 UNORDERED_AUTO_TEST (node_handle_tests) {
-  boost::unordered_set<int> x1;
+  UNORDERED_NAMESPACE::unordered_set<int> x1;
   x1.emplace(100);
   x1.emplace(140);
   x1.emplace(-55);
   node_handle_tests_impl(x1);
 
-  boost::unordered_map<int, std::string> x2;
+  UNORDERED_NAMESPACE::unordered_map<int, std::string> x2;
   x2.emplace(10, "ten");
   x2.emplace(-23, "twenty");
   x2.emplace(-76, "thirty");
@@ -360,8 +367,8 @@ struct hash_thing
 
 UNORDERED_AUTO_TEST (insert_node_handle_unique_tests) {
   {
-    boost::unordered_set<int> x1;
-    boost::unordered_set<int> x2;
+    UNORDERED_NAMESPACE::unordered_set<int> x1;
+    UNORDERED_NAMESPACE::unordered_set<int> x2;
     x1.emplace(100);
     x1.emplace(140);
     x1.emplace(-55);
@@ -371,8 +378,8 @@ UNORDERED_AUTO_TEST (insert_node_handle_unique_tests) {
   }
 
   {
-    boost::unordered_map<int, int, hash_thing> x1;
-    boost::unordered_map<int, int> x2;
+    UNORDERED_NAMESPACE::unordered_map<int, int, hash_thing> x1;
+    UNORDERED_NAMESPACE::unordered_map<int, int> x2;
     x1.emplace(67, 50);
     x1.emplace(23, 45);
     x1.emplace(18, 19);
@@ -385,8 +392,8 @@ UNORDERED_AUTO_TEST (insert_node_handle_unique_tests) {
 
 UNORDERED_AUTO_TEST (insert_node_handle_equiv_tests) {
   {
-    boost::unordered_multimap<int, int, hash_thing> x1;
-    boost::unordered_multimap<int, int> x2;
+    UNORDERED_NAMESPACE::unordered_multimap<int, int, hash_thing> x1;
+    UNORDERED_NAMESPACE::unordered_multimap<int, int> x2;
     x1.emplace(67, 50);
     x1.emplace(67, 100);
     x1.emplace(23, 45);
@@ -400,8 +407,8 @@ UNORDERED_AUTO_TEST (insert_node_handle_equiv_tests) {
 
 UNORDERED_AUTO_TEST (insert_node_handle_unique_tests2) {
   {
-    boost::unordered_set<int> x1;
-    boost::unordered_set<int> x2;
+    UNORDERED_NAMESPACE::unordered_set<int> x1;
+    UNORDERED_NAMESPACE::unordered_set<int> x2;
     x1.emplace(100);
     x1.emplace(140);
     x1.emplace(-55);
@@ -411,8 +418,8 @@ UNORDERED_AUTO_TEST (insert_node_handle_unique_tests2) {
   }
 
   {
-    boost::unordered_map<int, int, hash_thing> x1;
-    boost::unordered_map<int, int> x2;
+    UNORDERED_NAMESPACE::unordered_map<int, int, hash_thing> x1;
+    UNORDERED_NAMESPACE::unordered_map<int, int> x2;
     x1.emplace(67, 50);
     x1.emplace(23, 45);
     x1.emplace(18, 19);

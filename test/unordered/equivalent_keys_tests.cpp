@@ -3,19 +3,22 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-// clang-format off
 #include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
-// clang-format on
 
+#include "../helpers/invariants.hpp"
+#include "../helpers/list.hpp"
 #include "../helpers/test.hpp"
+#include "../helpers/tracker.hpp"
 #include <algorithm>
 #include <map>
-#include "../helpers/list.hpp"
-#include "../helpers/tracker.hpp"
-#include "../helpers/invariants.hpp"
 
 template <class Container, class Iterator>
 void test_equal_insertion(Iterator begin, Iterator end)
@@ -38,8 +41,8 @@ void test_equal_insertion(Iterator begin, Iterator end)
 UNORDERED_AUTO_TEST (set_tests) {
   int values[][5] = {{1}, {54, 23}, {-13, 65}, {77, 77}, {986, 25, 986}};
 
-  typedef boost::unordered_set<int> set;
-  typedef boost::unordered_multiset<int> multiset;
+  typedef UNORDERED_NAMESPACE::unordered_set<int> set;
+  typedef UNORDERED_NAMESPACE::unordered_multiset<int> multiset;
 
   test_equal_insertion<set>(values[0], values[0] + 1);
   test_equal_insertion<set>(values[1], values[1] + 2);
@@ -66,11 +69,11 @@ UNORDERED_AUTO_TEST (map_tests) {
   v[2].push_back(std::pair<int const, int>(432, 24));
 
   for (int i = 0; i < 5; ++i)
-    test_equal_insertion<boost::unordered_map<int, int> >(
+    test_equal_insertion<UNORDERED_NAMESPACE::unordered_map<int, int> >(
       v[i].begin(), v[i].end());
 
   for (int i2 = 0; i2 < 5; ++i2)
-    test_equal_insertion<boost::unordered_multimap<int, int> >(
+    test_equal_insertion<UNORDERED_NAMESPACE::unordered_multimap<int, int> >(
       v[i2].begin(), v[i2].end());
 }
 

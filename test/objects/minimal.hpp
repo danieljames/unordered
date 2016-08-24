@@ -14,12 +14,17 @@
 #include <cstddef>
 #include <utility>
 
+#if UNORDERED_TEST_LOOSE
+// For pointer_to
+#include <boost/core/addressof.hpp>
+#endif
+
 #if defined(BOOST_MSVC)
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 #endif
 
-#if !BOOST_WORKAROUND(BOOST_MSVC, == 1500)
+#if !BOOST_WORKAROUND(BOOST_MSVC, == 1500) && !UNORDERED_TEST_LOOSE
 #define BOOST_UNORDERED_CHECK_ADDR_OPERATOR_NOT_USED 1
 #else
 #define BOOST_UNORDERED_CHECK_ADDR_OPERATOR_NOT_USED 0
@@ -231,6 +236,25 @@ namespace test {
 
     template <class T> class ptr;
     template <class T> class const_ptr;
+    struct void_ptr;
+    struct void_const_ptr;
+
+    template <class T> struct rebind_pointer
+    {
+      typedef ptr<T> type;
+    };
+    template <class T> struct rebind_pointer<T const>
+    {
+      typedef const_ptr<T> type;
+    };
+    template <> struct rebind_pointer<void>
+    {
+      typedef void_ptr type;
+    };
+    template <> struct rebind_pointer<void const>
+    {
+      typedef void_const_ptr type;
+    };
 
     struct void_ptr
     {
@@ -253,9 +277,15 @@ namespace test {
 
       bool operator==(void_ptr const& x) const { return ptr_ == x.ptr_; }
       bool operator!=(void_ptr const& x) const { return ptr_ != x.ptr_; }
+
+#if UNORDERED_TEST_LOOSE
+      typedef void element_type;
+      template <typename T2> using rebind = typename rebind_pointer<T2>::type;
+      void_ptr(std::nullptr_t) : ptr_(0) {}
+#endif
     };
 
-    class void_const_ptr
+    struct void_const_ptr
     {
 #if !defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS)
       template <typename T> friend class const_ptr;
@@ -279,6 +309,12 @@ namespace test {
 
       bool operator==(void_const_ptr const& x) const { return ptr_ == x.ptr_; }
       bool operator!=(void_const_ptr const& x) const { return ptr_ != x.ptr_; }
+
+#if UNORDERED_TEST_LOOSE
+      typedef void const element_type;
+      template <typename T2> using rebind = typename rebind_pointer<T2>::type;
+      void_const_ptr(std::nullptr_t) : ptr_(0) {}
+#endif
     };
 
     template <class T> class ptr
@@ -289,6 +325,9 @@ namespace test {
 
       T* ptr_;
 
+#if UNORDERED_TEST_LOOSE
+    public:
+#endif
       ptr(T* x) : ptr_(x) {}
 
     public:
@@ -331,6 +370,15 @@ namespace test {
       {
         return ampersand_operator_used();
       }
+#endif
+
+#if UNORDERED_TEST_LOOSE
+      template <typename T2> friend class ptr;
+      typedef T element_type;
+      template <typename T2> using rebind = typename rebind_pointer<T2>::type;
+      ptr(std::nullptr_t) : ptr_(0) {}
+      static ptr<T> pointer_to(T& x) { return ptr(boost::addressof(x)); }
+      template <typename T2> ptr(ptr<T2> p) : ptr_(static_cast<T*>(p.ptr_)) {}
 #endif
     };
 
@@ -383,6 +431,21 @@ namespace test {
       ampersand_operator_used operator&() const
       {
         return ampersand_operator_used();
+      }
+#endif
+
+#if UNORDERED_TEST_LOOSE
+      template <typename T2> friend class const_ptr;
+      typedef T const element_type;
+      template <typename T2> using rebind = typename rebind_pointer<T2>::type;
+      const_ptr(std::nullptr_t) : ptr_(0) {}
+      static const_ptr<T> pointer_to(T const& x)
+      {
+        return const_ptr(boost::addressof(x));
+      }
+      template <typename T2>
+      const_ptr(const_ptr<T2> p) : ptr_(static_cast<T*>(p.ptr_))
+      {
       }
 #endif
     };

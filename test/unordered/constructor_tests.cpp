@@ -3,20 +3,23 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-// clang-format off
 #include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
-// clang-format on
 
-#include "../helpers/test.hpp"
-#include "../objects/test.hpp"
-#include "../helpers/random_values.hpp"
-#include "../helpers/tracker.hpp"
 #include "../helpers/equivalent.hpp"
 #include "../helpers/input_iterator.hpp"
 #include "../helpers/invariants.hpp"
+#include "../helpers/random_values.hpp"
+#include "../helpers/test.hpp"
+#include "../helpers/tracker.hpp"
+#include "../objects/test.hpp"
 
 namespace constructor_tests {
 
@@ -397,17 +400,22 @@ namespace constructor_tests {
     test::check_equivalent_keys(x);
   }
 
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    std::allocator<test::object> >* test_map_std_alloc;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to,
+    std::allocator<std::pair<test::object const, test::object> > >*
+    test_map_std_alloc;
 
-  boost::unordered_set<test::object, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_set<test::object, test::hash, test::equal_to,
     test::allocator1<test::object> >* test_set;
-  boost::unordered_multiset<test::object, test::hash, test::equal_to,
-    test::allocator2<test::object> >* test_multiset;
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    test::allocator2<test::object> >* test_map;
-  boost::unordered_multimap<test::object, test::object, test::hash,
-    test::equal_to, test::allocator1<test::object> >* test_multimap;
+  UNORDERED_NAMESPACE::unordered_multiset<test::object, test::hash,
+    test::equal_to, test::allocator2<test::object> >* test_multiset;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to,
+    test::allocator2<std::pair<test::object const, test::object> > >* test_map;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to,
+    test::allocator1<std::pair<test::object const, test::object> > >*
+    test_multimap;
 
   using test::default_generator;
   using test::generate_collisions;
@@ -429,7 +437,7 @@ namespace constructor_tests {
 
   UNORDERED_AUTO_TEST (test_default_initializer_list) {
     std::initializer_list<int> init;
-    boost::unordered_set<int> x1 = init;
+    UNORDERED_NAMESPACE::unordered_set<int> x1 = init;
     BOOST_TEST(x1.empty());
   }
 
@@ -438,7 +446,7 @@ namespace constructor_tests {
 #if !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
 
   UNORDERED_AUTO_TEST (test_initializer_list) {
-    boost::unordered_set<int> x1 = {2, 10, 45, -5};
+    UNORDERED_NAMESPACE::unordered_set<int> x1 = {2, 10, 45, -5};
     BOOST_TEST(x1.find(10) != x1.end());
     BOOST_TEST(x1.find(46) == x1.end());
   }

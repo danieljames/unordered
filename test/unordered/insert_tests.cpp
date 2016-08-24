@@ -5,21 +5,26 @@
 
 #if !defined(PIECEWISE_TEST_NAME)
 
-// clang-format off
 #include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <boost/functional/hash.hpp>
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
-// clang-format on
 
-#include "../helpers/test.hpp"
-#include "../objects/test.hpp"
-#include "../helpers/random_values.hpp"
-#include "../helpers/tracker.hpp"
 #include "../helpers/equivalent.hpp"
-#include "../helpers/invariants.hpp"
-#include "../helpers/input_iterator.hpp"
 #include "../helpers/helpers.hpp"
+#include "../helpers/input_iterator.hpp"
+#include "../helpers/invariants.hpp"
+#include "../helpers/random_values.hpp"
+#include "../helpers/test.hpp"
+#include "../helpers/tracker.hpp"
+#include "../objects/test.hpp"
+#include <boost/move/move.hpp>
 
 namespace insert_tests {
 
@@ -344,6 +349,7 @@ namespace insert_tests {
 
     UNORDERED_SUB_TEST("insert input iterator range tests")
     {
+#if !UNORDERED_TEST_LOOSE
       test::check_instances check_;
 
       X x;
@@ -357,6 +363,7 @@ namespace insert_tests {
       test::check_container(x, v);
 
       test::check_equivalent_keys(x);
+#endif
     }
 
     UNORDERED_SUB_TEST("insert copy iterator range tests")
@@ -579,6 +586,7 @@ namespace insert_tests {
 
   template <class X> void map_tests2(X*, test::random_generator generator)
   {
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
     typedef BOOST_DEDUCED_TYPENAME X::iterator iterator;
 
     UNORDERED_SUB_TEST("insert_or_assign")
@@ -699,11 +707,13 @@ namespace insert_tests {
       tracker.compare(x);
       test::check_equivalent_keys(x);
     }
+#endif
   }
 
   template <class X>
   void try_emplace_tests(X*, test::random_generator generator)
   {
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
     typedef BOOST_DEDUCED_TYPENAME X::iterator iterator;
 
     UNORDERED_SUB_TEST("try_emplace(key, value)")
@@ -856,6 +866,7 @@ namespace insert_tests {
 
       test::check_equivalent_keys(x);
     }
+#endif
   }
 
   // Some tests for when the range's value type doesn't match the container's
@@ -886,8 +897,9 @@ namespace insert_tests {
     typedef test::list<std::pair<BOOST_DEDUCED_TYPENAME X::key_type const,
       test::implicitly_convertible> >
       list;
-    test::random_values<boost::unordered_map<BOOST_DEDUCED_TYPENAME X::key_type,
-      test::implicitly_convertible> >
+    test::random_values<UNORDERED_NAMESPACE::unordered_map<
+      BOOST_DEDUCED_TYPENAME X::key_type, test::implicitly_convertible,
+      BOOST_DEDUCED_TYPENAME X::hasher, BOOST_DEDUCED_TYPENAME X::key_equal> >
       v(1000, generator);
     list l(v.begin(), v.end());
 
@@ -897,19 +909,25 @@ namespace insert_tests {
     test::check_equivalent_keys(x);
   }
 
-  boost::unordered_set<test::movable, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_set<test::movable, test::hash, test::equal_to,
     std::allocator<test::movable> >* test_set_std_alloc;
-  boost::unordered_multimap<test::object, test::object, test::hash,
-    test::equal_to, std::allocator<test::object> >* test_multimap_std_alloc;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to,
+    std::allocator<std::pair<test::object const, test::object> > >*
+    test_multimap_std_alloc;
 
-  boost::unordered_set<test::object, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_set<test::object, test::hash, test::equal_to,
     test::allocator1<test::object> >* test_set;
-  boost::unordered_multiset<test::movable, test::hash, test::equal_to,
-    test::allocator2<test::movable> >* test_multiset;
-  boost::unordered_map<test::movable, test::movable, test::hash, test::equal_to,
-    test::allocator2<test::movable> >* test_map;
-  boost::unordered_multimap<test::object, test::object, test::hash,
-    test::equal_to, test::allocator1<test::object> >* test_multimap;
+  UNORDERED_NAMESPACE::unordered_multiset<test::movable, test::hash,
+    test::equal_to, test::allocator2<test::movable> >* test_multiset;
+  UNORDERED_NAMESPACE::unordered_map<test::movable, test::movable, test::hash,
+    test::equal_to,
+    test::allocator2<std::pair<test::movable const, test::movable> > >*
+    test_map;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to,
+    test::allocator1<std::pair<test::object const, test::object> > >*
+    test_multimap;
 
   using test::default_generator;
   using test::generate_collisions;
@@ -977,13 +995,15 @@ namespace insert_tests {
   };
 
   UNORDERED_AUTO_TEST (insert_initializer_list_set) {
-    boost::unordered_set<int> set;
+    UNORDERED_NAMESPACE::unordered_set<int> set;
     set.insert({1, 2, 3, 1});
     BOOST_TEST_EQ(set.size(), 3u);
     BOOST_TEST(set.find(1) != set.end());
     BOOST_TEST(set.find(4) == set.end());
 
-    boost::unordered_set<initialize_from_two_ints> set2;
+    UNORDERED_NAMESPACE::unordered_set<initialize_from_two_ints,
+      boost::hash<initialize_from_two_ints> >
+      set2;
 
 #if defined(__GNUC__) && (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 5))
     set2.insert({{1, 2}});
@@ -1015,7 +1035,7 @@ namespace insert_tests {
 #if !BOOST_WORKAROUND(BOOST_MSVC, == 1800)
 
   UNORDERED_AUTO_TEST (insert_initializer_list_multiset) {
-    boost::unordered_multiset<std::string> multiset;
+    UNORDERED_NAMESPACE::unordered_multiset<std::string> multiset;
     // multiset.insert({});
     BOOST_TEST(multiset.empty());
     multiset.insert({"a"});
@@ -1032,7 +1052,7 @@ namespace insert_tests {
 #endif
 
   UNORDERED_AUTO_TEST (insert_initializer_list_map) {
-    boost::unordered_map<std::string, std::string> map;
+    UNORDERED_NAMESPACE::unordered_map<std::string, std::string> map;
     // map.insert({});
     BOOST_TEST(map.empty());
     map.insert({{"a", "b"}, {"a", "b"}, {"d", ""}});
@@ -1040,7 +1060,7 @@ namespace insert_tests {
   }
 
   UNORDERED_AUTO_TEST (insert_initializer_list_multimap) {
-    boost::unordered_multimap<std::string, std::string> multimap;
+    UNORDERED_NAMESPACE::unordered_multimap<std::string, std::string> multimap;
     // multimap.insert({});
     BOOST_TEST(multimap.empty());
     multimap.insert({{"a", "b"}, {"a", "b"}, {"d", ""}});
@@ -1077,8 +1097,8 @@ namespace insert_tests {
 
   UNORDERED_AUTO_TEST (map_emplace_test) {
     {
-      boost::unordered_map<int, overloaded_constructor, test::hash,
-        test::equal_to,
+      UNORDERED_NAMESPACE::unordered_map<int, overloaded_constructor,
+        test::hash, test::equal_to,
         test::allocator1<std::pair<int const, overloaded_constructor> > >
         x;
 
@@ -1092,14 +1112,16 @@ namespace insert_tests {
       BOOST_TEST(
         x.find(2) != x.end() && x.find(2)->second == overloaded_constructor(3));
 
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
       x.try_emplace(5);
       BOOST_TEST(
         x.find(5) != x.end() && x.find(5)->second == overloaded_constructor());
+#endif
     }
 
     {
-      boost::unordered_multimap<int, overloaded_constructor, test::hash,
-        test::equal_to,
+      UNORDERED_NAMESPACE::unordered_multimap<int, overloaded_constructor,
+        test::hash, test::equal_to,
         test::allocator1<std::pair<int const, overloaded_constructor> > >
         x;
 
@@ -1116,7 +1138,9 @@ namespace insert_tests {
   }
 
   UNORDERED_AUTO_TEST (set_emplace_test) {
-    boost::unordered_set<overloaded_constructor> x;
+    UNORDERED_NAMESPACE::unordered_set<overloaded_constructor,
+      boost::hash<overloaded_constructor> >
+      x;
     overloaded_constructor check;
 
 #if !BOOST_UNORDERED_SUN_WORKAROUNDS1
@@ -1145,8 +1169,7 @@ namespace insert_tests {
     BOOST_TEST(x.find(check) != x.end() && *x.find(check) == check);
   }
 
-  struct derived_from_piecewise_construct_t
-    : boost::unordered::piecewise_construct_t
+  struct derived_from_piecewise_construct_t : UNORDERED_PIECEWISE_T
   {
   };
 
@@ -1157,10 +1180,7 @@ namespace insert_tests {
 
   struct convertible_to_piecewise
   {
-    operator boost::unordered::piecewise_construct_t() const
-    {
-      return boost::unordered::piecewise_construct;
-    }
+    operator UNORDERED_PIECEWISE_T() const { return UNORDERED_PIECEWISE; }
   };
 
   UNORDERED_AUTO_TEST (map_emplace_test2) {
@@ -1169,39 +1189,41 @@ namespace insert_tests {
     test::detail::disable_construction_tracking _scoped;
 
     {
-      boost::unordered_map<overloaded_constructor, overloaded_constructor,
-        boost::hash<overloaded_constructor>,
+      UNORDERED_NAMESPACE::unordered_map<overloaded_constructor,
+        overloaded_constructor, boost::hash<overloaded_constructor>,
         std::equal_to<overloaded_constructor>,
         test::allocator1<
           std::pair<overloaded_constructor const, overloaded_constructor> > >
         x;
 
-      x.emplace(boost::unordered::piecewise_construct, boost::make_tuple(),
-        boost::make_tuple());
+      x.emplace(UNORDERED_PIECEWISE, UNORDERED_NAMESPACE::make_tuple(),
+        UNORDERED_NAMESPACE::make_tuple());
       BOOST_TEST(
         x.find(overloaded_constructor()) != x.end() &&
         x.find(overloaded_constructor())->second == overloaded_constructor());
 
-      x.emplace(
-        convertible_to_piecewise(), boost::make_tuple(1), boost::make_tuple());
+      x.emplace(convertible_to_piecewise(), UNORDERED_NAMESPACE::make_tuple(1),
+        UNORDERED_NAMESPACE::make_tuple());
       BOOST_TEST(
         x.find(overloaded_constructor(1)) != x.end() &&
         x.find(overloaded_constructor(1))->second == overloaded_constructor());
 
-      x.emplace(piecewise_rvalue(), boost::make_tuple(2, 3),
-        boost::make_tuple(4, 5, 6));
+      x.emplace(piecewise_rvalue(), UNORDERED_NAMESPACE::make_tuple(2, 3),
+        UNORDERED_NAMESPACE::make_tuple(4, 5, 6));
       BOOST_TEST(x.find(overloaded_constructor(2, 3)) != x.end() &&
                  x.find(overloaded_constructor(2, 3))->second ==
                    overloaded_constructor(4, 5, 6));
 
       derived_from_piecewise_construct_t d;
-      x.emplace(d, boost::make_tuple(9, 3, 1), boost::make_tuple(10));
+      x.emplace(d, UNORDERED_NAMESPACE::make_tuple(9, 3, 1),
+        UNORDERED_NAMESPACE::make_tuple(10));
       BOOST_TEST(x.find(overloaded_constructor(9, 3, 1)) != x.end() &&
                  x.find(overloaded_constructor(9, 3, 1))->second ==
                    overloaded_constructor(10));
 
       x.clear();
 
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
       x.try_emplace(overloaded_constructor());
       BOOST_TEST(
         x.find(overloaded_constructor()) != x.end() &&
@@ -1217,8 +1239,11 @@ namespace insert_tests {
                  x.find(overloaded_constructor(2, 3))->second ==
                    overloaded_constructor(4, 5, 6));
 
+#endif
+
       x.clear();
 
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
       x.try_emplace(x.begin(), overloaded_constructor());
       BOOST_TEST(
         x.find(overloaded_constructor()) != x.end() &&
@@ -1233,36 +1258,38 @@ namespace insert_tests {
       BOOST_TEST(x.find(overloaded_constructor(2, 3)) != x.end() &&
                  x.find(overloaded_constructor(2, 3))->second ==
                    overloaded_constructor(4, 5, 6));
+#endif
     }
 
     {
-      boost::unordered_multimap<overloaded_constructor, overloaded_constructor,
-        boost::hash<overloaded_constructor>,
+      UNORDERED_NAMESPACE::unordered_multimap<overloaded_constructor,
+        overloaded_constructor, boost::hash<overloaded_constructor>,
         std::equal_to<overloaded_constructor>,
         test::allocator1<
           std::pair<overloaded_constructor const, overloaded_constructor> > >
         x;
 
-      x.emplace(boost::unordered::piecewise_construct, boost::make_tuple(),
-        boost::make_tuple());
+      x.emplace(UNORDERED_PIECEWISE, UNORDERED_NAMESPACE::make_tuple(),
+        UNORDERED_NAMESPACE::make_tuple());
       BOOST_TEST(
         x.find(overloaded_constructor()) != x.end() &&
         x.find(overloaded_constructor())->second == overloaded_constructor());
 
-      x.emplace(
-        convertible_to_piecewise(), boost::make_tuple(1), boost::make_tuple());
+      x.emplace(convertible_to_piecewise(), UNORDERED_NAMESPACE::make_tuple(1),
+        UNORDERED_NAMESPACE::make_tuple());
       BOOST_TEST(
         x.find(overloaded_constructor(1)) != x.end() &&
         x.find(overloaded_constructor(1))->second == overloaded_constructor());
 
-      x.emplace(piecewise_rvalue(), boost::make_tuple(2, 3),
-        boost::make_tuple(4, 5, 6));
+      x.emplace(piecewise_rvalue(), UNORDERED_NAMESPACE::make_tuple(2, 3),
+        UNORDERED_NAMESPACE::make_tuple(4, 5, 6));
       BOOST_TEST(x.find(overloaded_constructor(2, 3)) != x.end() &&
                  x.find(overloaded_constructor(2, 3))->second ==
                    overloaded_constructor(4, 5, 6));
 
       derived_from_piecewise_construct_t d;
-      x.emplace(d, boost::make_tuple(9, 3, 1), boost::make_tuple(10));
+      x.emplace(d, UNORDERED_NAMESPACE::make_tuple(9, 3, 1),
+        UNORDERED_NAMESPACE::make_tuple(10));
       BOOST_TEST(x.find(overloaded_constructor(9, 3, 1)) != x.end() &&
                  x.find(overloaded_constructor(9, 3, 1))->second ==
                    overloaded_constructor(10));
@@ -1270,18 +1297,19 @@ namespace insert_tests {
   }
 
   UNORDERED_AUTO_TEST (set_emplace_test2) {
-    boost::unordered_set<
-      std::pair<overloaded_constructor, overloaded_constructor> >
+    UNORDERED_NAMESPACE::unordered_set<
+      std::pair<overloaded_constructor, overloaded_constructor>,
+      boost::hash<std::pair<overloaded_constructor, overloaded_constructor> > >
       x;
     std::pair<overloaded_constructor, overloaded_constructor> check;
 
-    x.emplace(boost::unordered::piecewise_construct, boost::make_tuple(),
-      boost::make_tuple());
+    x.emplace(UNORDERED_PIECEWISE, UNORDERED_NAMESPACE::make_tuple(),
+      UNORDERED_NAMESPACE::make_tuple());
     BOOST_TEST(x.find(check) != x.end() && *x.find(check) == check);
 
     x.clear();
-    x.emplace(boost::unordered::piecewise_construct, boost::make_tuple(1),
-      boost::make_tuple(2, 3));
+    x.emplace(UNORDERED_PIECEWISE, UNORDERED_NAMESPACE::make_tuple(1),
+      UNORDERED_NAMESPACE::make_tuple(2, 3));
     check =
       std::make_pair(overloaded_constructor(1), overloaded_constructor(2, 3));
     BOOST_TEST(x.find(check) != x.end() && *x.find(check) == check);
@@ -1289,6 +1317,8 @@ namespace insert_tests {
 
 // Use the preprocessor to generate tests using different combinations of
 // boost/std piecewise_construct_t/tuple.
+
+#if !UNORDERED_TEST_STD
 
 #define PIECEWISE_TEST_NAME boost_tuple_piecewise_tests
 #define PIECEWISE_NAMESPACE boost::unordered
@@ -1316,8 +1346,10 @@ namespace insert_tests {
 
 #endif
 
-#if !defined(BOOST_NO_CXX11_HDR_TUPLE) &&                                      \
-  BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT
+#endif // UNORDERED_TEST_STD
+
+#if UNORDERED_TEST_STD || (!defined(BOOST_NO_CXX11_HDR_TUPLE) &&               \
+                            BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT)
 
 #define PIECEWISE_TEST_NAME std_piecewise_tests
 #define PIECEWISE_NAMESPACE std
@@ -1338,8 +1370,8 @@ UNORDERED_AUTO_TEST (PIECEWISE_TEST_NAME) {
 #endif
 
   {
-    boost::unordered_map<overloaded_constructor, overloaded_constructor,
-      boost::hash<overloaded_constructor>,
+    UNORDERED_NAMESPACE::unordered_map<overloaded_constructor,
+      overloaded_constructor, boost::hash<overloaded_constructor>,
       std::equal_to<overloaded_constructor>,
       test::allocator1<
         std::pair<overloaded_constructor const, overloaded_constructor> > >
@@ -1372,6 +1404,7 @@ UNORDERED_AUTO_TEST (PIECEWISE_TEST_NAME) {
 
     x.clear();
 
+#if !UNORDERED_TEST_STD || UNORDERED_TEST_STD >= 17
     x.try_emplace(overloaded_constructor());
     BOOST_TEST(
       x.find(overloaded_constructor()) != x.end() &&
@@ -1386,10 +1419,11 @@ UNORDERED_AUTO_TEST (PIECEWISE_TEST_NAME) {
     BOOST_TEST(x.find(overloaded_constructor(2, 3)) != x.end() &&
                x.find(overloaded_constructor(2, 3))->second ==
                  overloaded_constructor(4, 5, 6));
+#endif
   }
   {
-    boost::unordered_multimap<overloaded_constructor, overloaded_constructor,
-      boost::hash<overloaded_constructor>,
+    UNORDERED_NAMESPACE::unordered_multimap<overloaded_constructor,
+      overloaded_constructor, boost::hash<overloaded_constructor>,
       std::equal_to<overloaded_constructor>,
       test::allocator1<
         std::pair<overloaded_constructor const, overloaded_constructor> > >
@@ -1427,8 +1461,9 @@ UNORDERED_AUTO_TEST (BOOST_PP_CAT(PIECEWISE_TEST_NAME, 2)) {
   test::detail::disable_construction_tracking _scoped;
 #endif
 
-  boost::unordered_set<
-    std::pair<overloaded_constructor, overloaded_constructor> >
+  UNORDERED_NAMESPACE::unordered_set<
+    std::pair<overloaded_constructor, overloaded_constructor>,
+    boost::hash<std::pair<overloaded_constructor, overloaded_constructor> > >
     x;
   std::pair<overloaded_constructor, overloaded_constructor> check;
 

@@ -3,10 +3,15 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../helpers/postfix.hpp"
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
+#endif
+#include "../helpers/postfix.hpp"
 
 #include "../helpers/count.hpp"
 #include "../helpers/helpers.hpp"
@@ -20,8 +25,8 @@
 namespace merge_tests {
 
   UNORDERED_AUTO_TEST (merge_set) {
-    boost::unordered_set<int> x;
-    boost::unordered_set<int> y;
+    UNORDERED_NAMESPACE::unordered_set<int> x;
+    UNORDERED_NAMESPACE::unordered_set<int> y;
 
     x.merge(y);
     BOOST_TEST(x.empty());
@@ -59,8 +64,8 @@ namespace merge_tests {
   }
 
   UNORDERED_AUTO_TEST (merge_multiset) {
-    boost::unordered_multiset<int> x;
-    boost::unordered_multiset<int> y;
+    UNORDERED_NAMESPACE::unordered_multiset<int> x;
+    UNORDERED_NAMESPACE::unordered_multiset<int> y;
 
     x.merge(y);
     BOOST_TEST(x.empty());
@@ -98,8 +103,8 @@ namespace merge_tests {
   }
 
   UNORDERED_AUTO_TEST (merge_set_and_multiset) {
-    boost::unordered_set<int> x;
-    boost::unordered_multiset<int> y;
+    UNORDERED_NAMESPACE::unordered_set<int> x;
+    UNORDERED_NAMESPACE::unordered_multiset<int> y;
 
     x.merge(y);
     BOOST_TEST(x.empty());
@@ -229,25 +234,27 @@ namespace merge_tests {
     test::check_equivalent_keys(x2);
   }
 
-  boost::unordered_set<test::movable, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_set<test::movable, test::hash, test::equal_to,
     std::allocator<test::movable> >* test_set_std_alloc;
-  boost::unordered_multiset<test::movable, test::hash, test::equal_to,
-    std::allocator<test::movable> >* test_multiset_std_alloc;
+  UNORDERED_NAMESPACE::unordered_multiset<test::movable, test::hash,
+    test::equal_to, std::allocator<test::movable> >* test_multiset_std_alloc;
 
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    std::allocator<test::object> >* test_map_std_alloc;
-  boost::unordered_multimap<test::object, test::object, test::hash,
-    test::equal_to, std::allocator<test::object> >* test_multimap_std_alloc;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to, std::allocator<test::object> >* test_map_std_alloc;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to, std::allocator<test::object> >*
+    test_multimap_std_alloc;
 
-  boost::unordered_set<test::object, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_set<test::object, test::hash, test::equal_to,
     test::allocator1<test::object> >* test_set;
-  boost::unordered_multiset<test::object, test::hash, test::equal_to,
-    test::allocator1<test::object> >* test_multiset;
+  UNORDERED_NAMESPACE::unordered_multiset<test::object, test::hash,
+    test::equal_to, test::allocator1<test::object> >* test_multiset;
 
-  boost::unordered_map<test::movable, test::movable, test::hash, test::equal_to,
-    test::allocator2<test::movable> >* test_map;
-  boost::unordered_multimap<test::movable, test::movable, test::hash,
-    test::equal_to, test::allocator2<test::movable> >* test_multimap;
+  UNORDERED_NAMESPACE::unordered_map<test::movable, test::movable, test::hash,
+    test::equal_to, test::allocator2<test::movable> >* test_map;
+  UNORDERED_NAMESPACE::unordered_multimap<test::movable, test::movable,
+    test::hash, test::equal_to, test::allocator2<test::movable> >*
+    test_multimap;
 
   using test::default_generator;
   using test::generate_collisions;

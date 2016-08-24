@@ -3,12 +3,15 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-// clang-format off
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
-// clang-format on
 
 #include "../helpers/equivalent.hpp"
 #include "../helpers/helpers.hpp"
@@ -118,14 +121,14 @@ namespace extract_tests {
     BOOST_LIGHTWEIGHT_TEST_OSTREAM << "\n";
   }
 
-  boost::unordered_set<test::object, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_set<test::object, test::hash, test::equal_to,
     test::allocator1<test::object> >* test_set;
-  boost::unordered_multiset<test::object, test::hash, test::equal_to,
-    test::allocator2<test::object> >* test_multiset;
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    test::allocator1<test::object> >* test_map;
-  boost::unordered_multimap<test::object, test::object, test::hash,
-    test::equal_to, test::allocator2<test::object> >* test_multimap;
+  UNORDERED_NAMESPACE::unordered_multiset<test::object, test::hash,
+    test::equal_to, test::allocator2<test::object> >* test_multiset;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to, test::allocator1<test::object> >* test_map;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to, test::allocator2<test::object> >* test_multimap;
 
   using test::default_generator;
   using test::generate_collisions;

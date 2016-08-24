@@ -3,22 +3,25 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-// clang-format off
 #include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
-// clang-format on
 
-#include <boost/config.hpp>
-#include <algorithm>
-#include <iterator>
-#include "../helpers/test.hpp"
-#include "../objects/test.hpp"
-#include "../objects/cxx11_allocator.hpp"
-#include "../helpers/random_values.hpp"
-#include "../helpers/tracker.hpp"
 #include "../helpers/invariants.hpp"
+#include "../helpers/random_values.hpp"
+#include "../helpers/test.hpp"
+#include "../helpers/tracker.hpp"
+#include "../objects/cxx11_allocator.hpp"
+#include "../objects/test.hpp"
+#include <algorithm>
+#include <boost/config.hpp>
+#include <iterator>
 
 #if defined(BOOST_MSVC)
 #pragma warning(disable : 4127) // conditional expression is constant
@@ -139,44 +142,53 @@ namespace swap_tests {
     }
   }
 
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    std::allocator<test::object> >* test_map_std_alloc;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to,
+    std::allocator<std::pair<test::object const, test::object> > >*
+    test_map_std_alloc;
 
-  boost::unordered_set<test::object, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_set<test::object, test::hash, test::equal_to,
     test::allocator1<test::object> >* test_set;
-  boost::unordered_multiset<test::object, test::hash, test::equal_to,
-    test::allocator2<test::object> >* test_multiset;
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    test::allocator1<test::object> >* test_map;
-  boost::unordered_multimap<test::object, test::object, test::hash,
-    test::equal_to, test::allocator2<test::object> >* test_multimap;
+  UNORDERED_NAMESPACE::unordered_multiset<test::object, test::hash,
+    test::equal_to, test::allocator2<test::object> >* test_multiset;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to,
+    test::allocator1<std::pair<test::object const, test::object> > >* test_map;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to,
+    test::allocator2<std::pair<test::object const, test::object> > >*
+    test_multimap;
 
-  boost::unordered_set<test::object, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_set<test::object, test::hash, test::equal_to,
     test::cxx11_allocator<test::object, test::propagate_swap> >*
     test_set_prop_swap;
-  boost::unordered_multiset<test::object, test::hash, test::equal_to,
-    test::cxx11_allocator<test::object, test::propagate_swap> >*
-    test_multiset_prop_swap;
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    test::cxx11_allocator<test::object, test::propagate_swap> >*
-    test_map_prop_swap;
-  boost::unordered_multimap<test::object, test::object, test::hash,
+  UNORDERED_NAMESPACE::unordered_multiset<test::object, test::hash,
     test::equal_to, test::cxx11_allocator<test::object, test::propagate_swap> >*
-    test_multimap_prop_swap;
+    test_multiset_prop_swap;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to,
+    test::cxx11_allocator<std::pair<test::object const, test::object>,
+      test::propagate_swap> >* test_map_prop_swap;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to,
+    test::cxx11_allocator<std::pair<test::object const, test::object>,
+      test::propagate_swap> >* test_multimap_prop_swap;
 
-  boost::unordered_set<test::object, test::hash, test::equal_to,
+  UNORDERED_NAMESPACE::unordered_set<test::object, test::hash, test::equal_to,
     test::cxx11_allocator<test::object, test::no_propagate_swap> >*
     test_set_no_prop_swap;
-  boost::unordered_multiset<test::object, test::hash, test::equal_to,
-    test::cxx11_allocator<test::object, test::no_propagate_swap> >*
-    test_multiset_no_prop_swap;
-  boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
-    test::cxx11_allocator<test::object, test::no_propagate_swap> >*
-    test_map_no_prop_swap;
-  boost::unordered_multimap<test::object, test::object, test::hash,
+  UNORDERED_NAMESPACE::unordered_multiset<test::object, test::hash,
     test::equal_to,
     test::cxx11_allocator<test::object, test::no_propagate_swap> >*
-    test_multimap_no_prop_swap;
+    test_multiset_no_prop_swap;
+  UNORDERED_NAMESPACE::unordered_map<test::object, test::object, test::hash,
+    test::equal_to,
+    test::cxx11_allocator<std::pair<test::object const, test::object>,
+      test::no_propagate_swap> >* test_map_no_prop_swap;
+  UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
+    test::hash, test::equal_to,
+    test::cxx11_allocator<std::pair<test::object const, test::object>,
+      test::no_propagate_swap> >* test_multimap_no_prop_swap;
 
   template <typename T> bool is_propagate(T*)
   {

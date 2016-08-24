@@ -6,19 +6,21 @@
 // The code for erasing elements from containers with equivalent keys is very
 // hairy with several tricky edge cases - so explicitly test each one.
 
-// clang-format off
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#else
 #include <boost/unordered_map.hpp>
+#endif
 #include "../helpers/postfix.hpp"
-// clang-format on
 
-#include "../helpers/test.hpp"
-#include "../helpers/list.hpp"
-#include "../helpers/invariants.hpp"
 #include "../helpers/helpers.hpp"
-#include <set>
-#include <iterator>
+#include "../helpers/invariants.hpp"
+#include "../helpers/list.hpp"
+#include "../helpers/test.hpp"
 #include "../objects/test.hpp"
+#include <iterator>
+#include <set>
 
 #if BOOST_WORKAROUND(BOOST_MSVC, < 1400)
 #pragma warning(disable : 4267) // conversion from 'size_t' to 'unsigned int',
@@ -61,14 +63,14 @@ struct collision3_hash
   std::size_t operator()(int x) const { return static_cast<std::size_t>(x); }
 };
 
-typedef boost::unordered_multimap<int, int, collision_hash, std::equal_to<int>,
-  test::allocator1<std::pair<int const, int> > >
+typedef UNORDERED_NAMESPACE::unordered_multimap<int, int, collision_hash,
+  std::equal_to<int>, test::allocator1<std::pair<int const, int> > >
   collide_map;
-typedef boost::unordered_multimap<int, int, collision2_hash, std::equal_to<int>,
-  test::allocator2<std::pair<int const, int> > >
+typedef UNORDERED_NAMESPACE::unordered_multimap<int, int, collision2_hash,
+  std::equal_to<int>, test::allocator2<std::pair<int const, int> > >
   collide_map2;
-typedef boost::unordered_multimap<int, int, collision3_hash, std::equal_to<int>,
-  test::allocator2<std::pair<int const, int> > >
+typedef UNORDERED_NAMESPACE::unordered_multimap<int, int, collision3_hash,
+  std::equal_to<int>, test::allocator2<std::pair<int const, int> > >
   collide_map3;
 typedef collide_map::value_type collide_value;
 typedef test::list<collide_value> collide_list;
