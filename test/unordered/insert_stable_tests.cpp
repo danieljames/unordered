@@ -4,8 +4,14 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#include <boost/functional/hash.hpp>
+#else
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include "../helpers/test.hpp"
@@ -42,8 +48,14 @@ namespace insert_stable
     }
 }
 
+// The standard doesn't actually require this, it's just something I thought was desirable.
+// Apparently, libc++ also preserves insertion order of element with equivalent keys
+// but suffers a performance hit, so there's some pressure on it to change.
+#if !UNORDERED_TEST_STD
+
 UNORDERED_AUTO_TEST(stable_insert_test1) {
-    boost::unordered_multiset<insert_stable::member> x;
+    typedef UNORDERED_NAMESPACE::unordered_multiset<insert_stable::member, boost::hash<insert_stable::member> > container;
+    container x;
 
     x.insert(insert_stable::member(1,1));
     x.insert(insert_stable::member(1,2));
@@ -51,8 +63,7 @@ UNORDERED_AUTO_TEST(stable_insert_test1) {
 
     BOOST_TEST(x.count(insert_stable::member(1,4)) == 3);
 
-    boost::unordered_multiset<insert_stable::member>::const_iterator
-        it = x.begin(), end = x.end();
+    container::const_iterator it = x.begin(), end = x.end();
     BOOST_TEST(it != end);
     if(it != end) { BOOST_TEST(it->tag2_ == 1); ++it; }
     BOOST_TEST(it != end);
@@ -63,10 +74,9 @@ UNORDERED_AUTO_TEST(stable_insert_test1) {
 }
 
 UNORDERED_AUTO_TEST(stable_insert_test2) {
-    boost::unordered_multimap<insert_stable::member, int> x;
-    typedef
-        boost::unordered_multimap<insert_stable::member, int>::const_iterator
-        iterator;
+    typedef UNORDERED_NAMESPACE::unordered_multimap<insert_stable::member, int, boost::hash<insert_stable::member> > container;
+    container x;
+    typedef container::const_iterator iterator;
 
     iterator it = x.emplace(insert_stable::member(1,1), 1);
     it = x.emplace(insert_stable::member(1,2), 2);
@@ -84,5 +94,7 @@ UNORDERED_AUTO_TEST(stable_insert_test2) {
     if(it != end) { BOOST_TEST(it->first.tag2_ == 3 && it->second == 3); ++it; }
     BOOST_TEST(it == end);
 }
+
+#endif
 
 RUN_TESTS()

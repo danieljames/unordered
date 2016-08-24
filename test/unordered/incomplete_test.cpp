@@ -4,15 +4,20 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include <utility>
 
 namespace x
 {
-    struct D { boost::unordered_map<D, D> x; };
+    struct D { UNORDERED_NAMESPACE::unordered_map<D, D> x; };
 }
 
 namespace incomplete_test
@@ -26,13 +31,13 @@ namespace incomplete_test
 
     // Declare some instances
     
-    typedef boost::unordered_map<value, value, hash, equals,
+    typedef UNORDERED_NAMESPACE::unordered_map<value, value, hash, equals,
         allocator<std::pair<value const, value> > > map;
-    typedef boost::unordered_multimap<value, value, hash, equals,
+    typedef UNORDERED_NAMESPACE::unordered_multimap<value, value, hash, equals,
         allocator<std::pair<value const, value> > > multimap;
-    typedef boost::unordered_set<value, hash, equals,
+    typedef UNORDERED_NAMESPACE::unordered_set<value, hash, equals,
         allocator<value> > set;
-    typedef boost::unordered_multiset<value, hash, equals,
+    typedef UNORDERED_NAMESPACE::unordered_multiset<value, hash, equals,
         allocator<value> > multiset;
     
     // Now define the types which are stored as members, as they are needed for
@@ -65,19 +70,19 @@ namespace incomplete_test
     // moment.
     
     struct struct1 {
-        boost::unordered_map<struct1, struct1, hash, equals,
+        UNORDERED_NAMESPACE::unordered_map<struct1, struct1, hash, equals,
             allocator<std::pair<struct1 const, struct1> > > x;
     };
     struct struct2 {
-        boost::unordered_multimap<struct2, struct2, hash, equals,
+        UNORDERED_NAMESPACE::unordered_multimap<struct2, struct2, hash, equals,
             allocator<std::pair<struct2 const, struct2> > > x;
     };
     struct struct3 {
-        boost::unordered_set<struct3, hash, equals,
+        UNORDERED_NAMESPACE::unordered_set<struct3, hash, equals,
             allocator<struct3> > x;
     };
     struct struct4 {
-        boost::unordered_multiset<struct4, hash, equals,
+        UNORDERED_NAMESPACE::unordered_multiset<struct4, hash, equals,
             allocator<struct4> > x;
     };
     

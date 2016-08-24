@@ -4,11 +4,19 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include "../helpers/test.hpp"
+#include <boost/functional/hash.hpp>
+#include <boost/type_traits/is_nothrow_move_constructible.hpp>
+#include <boost/move/move.hpp>
 
 namespace noexcept_tests
 {
@@ -28,20 +36,20 @@ namespace noexcept_tests
     {
 #if !defined(BOOST_NO_CXX11_NOEXCEPT)
         BOOST_TEST((boost::is_nothrow_move_constructible<
-                    boost::unordered_set<int> >::value));
+                    UNORDERED_NAMESPACE::unordered_set<int> >::value));
         BOOST_TEST((boost::is_nothrow_move_constructible<
-                    boost::unordered_multiset<int> >::value));
+                    UNORDERED_NAMESPACE::unordered_multiset<int> >::value));
         BOOST_TEST((boost::is_nothrow_move_constructible<
-                    boost::unordered_map<int, int> >::value));
+                    UNORDERED_NAMESPACE::unordered_map<int, int> >::value));
         BOOST_TEST((boost::is_nothrow_move_constructible<
-                    boost::unordered_multimap<int, int> >::value));
+                    UNORDERED_NAMESPACE::unordered_multimap<int, int> >::value));
 #endif
 
         BOOST_TEST((!boost::is_nothrow_move_constructible<
-                    boost::unordered_set<int, hash_possible_exception>
+                    UNORDERED_NAMESPACE::unordered_set<int, hash_possible_exception>
                 >::value));
         BOOST_TEST((!boost::is_nothrow_move_constructible<
-                    boost::unordered_multiset<int, boost::hash<int>,
+                    UNORDERED_NAMESPACE::unordered_multiset<int, boost::hash<int>,
                     equal_to_possible_exception>
                 >::value));
     }
@@ -95,7 +103,7 @@ namespace noexcept_tests
 
     UNORDERED_AUTO_TEST(test_no_throw_when_noexcept)
     {
-        typedef boost::unordered_set<int,
+        typedef UNORDERED_NAMESPACE::unordered_set<int,
                 hash_nothrow_move, equal_to_nothrow_move> throwing_set;
 
         if (boost::is_nothrow_move_constructible<throwing_set>::value)

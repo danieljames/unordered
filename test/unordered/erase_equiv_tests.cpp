@@ -7,7 +7,11 @@
 // hairy with several tricky edge cases - so explicitly test each one.
 
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#else
 #include <boost/unordered_map.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include "../helpers/test.hpp"
@@ -58,13 +62,13 @@ struct collision3_hash
     int operator()(int x) const { return x; }
 };
 
-typedef boost::unordered_multimap<int, int,
+typedef UNORDERED_NAMESPACE::unordered_multimap<int, int,
     collision_hash, std::equal_to<int>,
     test::allocator1<std::pair<int const, int> > > collide_map;
-typedef boost::unordered_multimap<int, int,
+typedef UNORDERED_NAMESPACE::unordered_multimap<int, int,
     collision2_hash, std::equal_to<int>,
     test::allocator2<std::pair<int const, int> > > collide_map2;
-typedef boost::unordered_multimap<int, int,
+typedef UNORDERED_NAMESPACE::unordered_multimap<int, int,
     collision3_hash, std::equal_to<int>,
     test::allocator2<std::pair<int const, int> > > collide_map3;
 typedef collide_map::value_type collide_value;

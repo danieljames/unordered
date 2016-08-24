@@ -59,7 +59,8 @@ template <class T>
 struct construct_test5 : public objects, test::exception_base
 {
     void run() const {
-        T x(50, hash, equal_to, allocator);
+        BOOST_DEDUCED_TYPENAME T::allocator_type this_allocator(allocator);
+        T x(50, hash, equal_to, this_allocator);
         avoid_unused_warning(x);
     }
 };
@@ -68,7 +69,8 @@ template <class T>
 struct construct_test6 : public objects, test::exception_base
 {
     void run() const {
-        T x(allocator);
+        BOOST_DEDUCED_TYPENAME T::allocator_type this_allocator(allocator);
+        T x(this_allocator);
         avoid_unused_warning(x);
     }
 };
@@ -126,8 +128,9 @@ struct range_construct_test5 : public range<T>, objects
     range_construct_test5() : range<T>(60) {}
 
     void run() const {
+        BOOST_DEDUCED_TYPENAME T::allocator_type this_allocator(allocator);
         T x(this->values.begin(), this->values.end(), 0,
-            hash, equal_to, allocator);
+            hash, equal_to, this_allocator);
         avoid_unused_warning(x);
     }
 };
@@ -138,10 +141,11 @@ struct input_range_construct_test : public range<T>, objects
     input_range_construct_test() : range<T>(60) {}
 
     void run() const {
+        BOOST_DEDUCED_TYPENAME T::allocator_type this_allocator(allocator);
         BOOST_DEDUCED_TYPENAME test::random_values<T>::const_iterator
             begin = this->values.begin(), end = this->values.end();
         T x(test::input_iterator(begin), test::input_iterator(end),
-                0, hash, equal_to, allocator);
+                0, hash, equal_to, this_allocator);
         avoid_unused_warning(x);
     }
 };
@@ -152,9 +156,10 @@ struct copy_range_construct_test : public range<T>, objects
     copy_range_construct_test() : range<T>(60) {}
 
     void run() const {
+        BOOST_DEDUCED_TYPENAME T::allocator_type this_allocator(allocator);
         T x(test::copy_iterator(this->values.begin()),
                 test::copy_iterator(this->values.end()),
-                0, hash, equal_to, allocator);
+                0, hash, equal_to, this_allocator);
         avoid_unused_warning(x);
     }
 };

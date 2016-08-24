@@ -82,6 +82,9 @@ namespace test {
             << "Compiler: " << BOOST_COMPILER << "\n"
             << "Library: " << BOOST_STDLIB << "\n"
             << "C++11: " << cpp11 << "\n"
+#if defined(UNORDERED_TEST_STD) && UNORDERED_TEST_STD
+            << "Testing standard library\n"
+#endif
             << "\n"
             << std::flush;
     }
