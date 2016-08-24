@@ -6,8 +6,10 @@
 #if !defined(BOOST_UNORDERED_TESTS_EQUIVALENT_HEADER)
 #define BOOST_UNORDERED_TESTS_EQUIVALENT_HEADER
 
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <functional>
+#endif
+#include <boost/functional/hash.hpp>
 #include <algorithm>
 #include "./metafunctions.hpp"
 #include "./fwd.hpp"
@@ -26,6 +28,15 @@ namespace test
     {
         return true;
     }
+
+#if UNORDERED_TEST_STD
+    template <class T>
+    bool equivalent_impl(std::hash<T> const&, std::hash<T> const&,
+        derived_type)
+    {
+        return true;
+    }
+#endif
 
     template <class T>
     bool equivalent_impl(std::equal_to<T> const&, std::equal_to<T> const&,

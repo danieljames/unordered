@@ -4,14 +4,21 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
+#if UNORDERED_TEST_STD
+#include <unordered_map>
+#include <unordered_set>
+#else
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include "../helpers/test.hpp"
 #include "../helpers/invariants.hpp"
 #include <boost/type_traits/is_nothrow_move_assignable.hpp>
 #include <boost/type_traits/is_nothrow_move_constructible.hpp>
+#include <boost/functional/hash.hpp>
+#include <boost/move/move.hpp>
 
 namespace noexcept_tests
 {
@@ -143,13 +150,13 @@ namespace noexcept_tests
     {
         if (have_is_nothrow_move) {
             BOOST_TEST((boost::is_nothrow_move_constructible<
-                        boost::unordered_set<int> >::value));
+                        UNORDERED_NAMESPACE::unordered_set<int> >::value));
             BOOST_TEST((boost::is_nothrow_move_constructible<
-                        boost::unordered_multiset<int> >::value));
+                        UNORDERED_NAMESPACE::unordered_multiset<int> >::value));
             BOOST_TEST((boost::is_nothrow_move_constructible<
-                        boost::unordered_map<int, int> >::value));
+                        UNORDERED_NAMESPACE::unordered_map<int, int> >::value));
             BOOST_TEST((boost::is_nothrow_move_constructible<
-                        boost::unordered_multimap<int, int> >::value));
+                        UNORDERED_NAMESPACE::unordered_multimap<int, int> >::value));
 
             /* TODO: Required is_always_equal support.
              * unordered_map& operator=(unordered_map&&)
@@ -157,36 +164,36 @@ namespace noexcept_tests
              *  is_nothrow_move_assignable_v<Hash> &&
              * is_nothrow_move_assignable_v<Pred>);
             BOOST_TEST((boost::is_nothrow_move_assignable<
-                        boost::unordered_set<int> >::value));
+                        UNORDERED_NAMESPACE::unordered_set<int> >::value));
             BOOST_TEST((boost::is_nothrow_move_assignable<
-                        boost::unordered_multiset<int> >::value));
+                        UNORDERED_NAMESPACE::unordered_multiset<int> >::value));
             BOOST_TEST((boost::is_nothrow_move_assignable<
-                        boost::unordered_map<int, int> >::value));
+                        UNORDERED_NAMESPACE::unordered_map<int, int> >::value));
             BOOST_TEST((boost::is_nothrow_move_assignable<
-                        boost::unordered_multimap<int, int> >::value));
+                        UNORDERED_NAMESPACE::unordered_multimap<int, int> >::value));
             */
         }
 
         BOOST_TEST((!boost::is_nothrow_move_constructible<
-                    boost::unordered_set<int, hash_possible_exception>
+                    UNORDERED_NAMESPACE::unordered_set<int, hash_possible_exception>
                 >::value));
         BOOST_TEST((!boost::is_nothrow_move_constructible<
-                    boost::unordered_multiset<int, boost::hash<int>,
+                    UNORDERED_NAMESPACE::unordered_multiset<int, boost::hash<int>,
                     equal_to_possible_exception>
                 >::value));
 
         BOOST_TEST((!boost::is_nothrow_move_assignable<
-                    boost::unordered_set<int, hash_possible_exception>
+                    UNORDERED_NAMESPACE::unordered_set<int, hash_possible_exception>
                 >::value));
         BOOST_TEST((!boost::is_nothrow_move_assignable<
-                    boost::unordered_multiset<int, boost::hash<int>,
+                    UNORDERED_NAMESPACE::unordered_multiset<int, boost::hash<int>,
                     equal_to_possible_exception>
                 >::value));
     }
 
     UNORDERED_AUTO_TEST(test_no_throw_when_noexcept)
     {
-        typedef boost::unordered_set<int,
+        typedef UNORDERED_NAMESPACE::unordered_set<int,
                 hash_nothrow_move, equal_to_nothrow_move> throwing_set;
 
         if (have_is_nothrow_move) {
@@ -212,7 +219,7 @@ namespace noexcept_tests
 
     UNORDERED_AUTO_TEST(test_no_throw_assign_when_noexcept)
     {
-        typedef boost::unordered_multiset<int,
+        typedef UNORDERED_NAMESPACE::unordered_multiset<int,
                 hash_nothrow_move_assign, equal_to_nothrow_move_assign>
                     throwing_set;
 
@@ -248,7 +255,7 @@ namespace noexcept_tests
 
     UNORDERED_AUTO_TEST(test_throw_in_hash)
     {
-        typedef boost::unordered_multimap<int, int,
+        typedef UNORDERED_NAMESPACE::unordered_multimap<int, int,
             hash_possible_exception, equal_to_nothrow_move> map;
 
         BOOST_TEST(!boost::is_nothrow_move_constructible<map>::value);
@@ -268,7 +275,7 @@ namespace noexcept_tests
 
     UNORDERED_AUTO_TEST(test_throw_in_equal)
     {
-        typedef boost::unordered_multimap<int, int,
+        typedef UNORDERED_NAMESPACE::unordered_multimap<int, int,
             hash_nothrow_move, equal_to_possible_exception> map;
 
         BOOST_TEST(!boost::is_nothrow_move_constructible<map>::value);
@@ -288,7 +295,7 @@ namespace noexcept_tests
 
     UNORDERED_AUTO_TEST(test_assign_throw_in_hash)
     {
-        typedef boost::unordered_multimap<int, int,
+        typedef UNORDERED_NAMESPACE::unordered_multimap<int, int,
             hash_possible_exception, equal_to_nothrow_move_assign> map;
 
         BOOST_TEST(!boost::is_nothrow_move_assignable<map>::value);
@@ -315,7 +322,7 @@ namespace noexcept_tests
 
     UNORDERED_AUTO_TEST(test_assign_throw_in_equal)
     {
-        typedef boost::unordered_map<int, int,
+        typedef UNORDERED_NAMESPACE::unordered_map<int, int,
             hash_nothrow_move_assign, equal_to_possible_exception> map;
 
         BOOST_TEST(!boost::is_nothrow_move_assignable<map>::value);

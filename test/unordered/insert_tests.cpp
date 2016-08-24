@@ -4,8 +4,13 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../helpers/prefix.hpp"
+#if UNORDERED_TEST_STD
+#include <unordered_set>
+#include <unordered_map>
+#else
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+#endif
 #include "../helpers/postfix.hpp"
 
 #include "../helpers/test.hpp"
@@ -530,7 +535,12 @@ void map_insert_range_test2(X*, test::random_generator generator)
         std::pair<BOOST_DEDUCED_TYPENAME X::key_type const, test::implicitly_convertible>
     > list;
     test::random_values<
-        boost::unordered_map<BOOST_DEDUCED_TYPENAME X::key_type, test::implicitly_convertible>
+        UNORDERED_NAMESPACE::unordered_map<
+            BOOST_DEDUCED_TYPENAME X::key_type,
+            test::implicitly_convertible,
+            BOOST_DEDUCED_TYPENAME X::hasher,
+            BOOST_DEDUCED_TYPENAME X::key_equal
+        >
     > v(1000, generator);
     list l(v.begin(), v.end());
 
@@ -539,25 +549,25 @@ void map_insert_range_test2(X*, test::random_generator generator)
     test::check_equivalent_keys(x);
 }
 
-boost::unordered_set<test::movable,
+UNORDERED_NAMESPACE::unordered_set<test::movable,
     test::hash, test::equal_to,
     std::allocator<test::movable> >* test_set_std_alloc;
-boost::unordered_multimap<test::object, test::object,
+UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
     test::hash, test::equal_to,
-    std::allocator<test::object> >* test_multimap_std_alloc;
+    std::allocator<std::pair<test::object const, test::object> > >* test_multimap_std_alloc;
 
-boost::unordered_set<test::object,
+UNORDERED_NAMESPACE::unordered_set<test::object,
     test::hash, test::equal_to,
     test::allocator1<test::object> >* test_set;
-boost::unordered_multiset<test::movable,
+UNORDERED_NAMESPACE::unordered_multiset<test::movable,
     test::hash, test::equal_to,
     test::allocator2<test::movable> >* test_multiset;
-boost::unordered_map<test::movable, test::movable,
+UNORDERED_NAMESPACE::unordered_map<test::movable, test::movable,
     test::hash, test::equal_to,
-    test::allocator2<test::movable> >* test_map;
-boost::unordered_multimap<test::object, test::object,
+    test::allocator2<std::pair<test::movable const, test::movable> > >* test_map;
+UNORDERED_NAMESPACE::unordered_multimap<test::object, test::object,
     test::hash, test::equal_to,
-    test::allocator1<test::object> >* test_multimap;
+    test::allocator1<std::pair<test::object const, test::object> > >* test_multimap;
 
 using test::default_generator;
 using test::generate_collisions;
@@ -633,13 +643,13 @@ struct initialize_from_two_ints
 
 UNORDERED_AUTO_TEST(insert_initializer_list_set)
 {
-    boost::unordered_set<int> set;
+    UNORDERED_NAMESPACE::unordered_set<int> set;
     set.insert({1,2,3,1});
     BOOST_TEST_EQ(set.size(), 3u);
     BOOST_TEST(set.find(1) != set.end());
     BOOST_TEST(set.find(4) == set.end());
 
-    boost::unordered_set<initialize_from_two_ints> set2;
+    UNORDERED_NAMESPACE::unordered_set<initialize_from_two_ints, boost::hash<initialize_from_two_ints> > set2;
 
 #if defined(__GNUC__) && (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 5))
     set2.insert({{1, 2}});
@@ -672,7 +682,7 @@ UNORDERED_AUTO_TEST(insert_initializer_list_set)
 
 UNORDERED_AUTO_TEST(insert_initializer_list_multiset)
 {
-    boost::unordered_multiset<std::string> multiset;
+    UNORDERED_NAMESPACE::unordered_multiset<std::string> multiset;
     //multiset.insert({});
     BOOST_TEST(multiset.empty());
     multiset.insert({"a"});
@@ -690,7 +700,7 @@ UNORDERED_AUTO_TEST(insert_initializer_list_multiset)
 
 UNORDERED_AUTO_TEST(insert_initializer_list_map)
 {
-    boost::unordered_map<std::string, std::string> map;
+    UNORDERED_NAMESPACE::unordered_map<std::string, std::string> map;
     //map.insert({});
     BOOST_TEST(map.empty());
     map.insert({{"a", "b"},{"a", "b"},{"d", ""}});
@@ -699,7 +709,7 @@ UNORDERED_AUTO_TEST(insert_initializer_list_map)
 
 UNORDERED_AUTO_TEST(insert_initializer_list_multimap)
 {
-    boost::unordered_multimap<std::string, std::string> multimap;
+    UNORDERED_NAMESPACE::unordered_multimap<std::string, std::string> multimap;
     //multimap.insert({});
     BOOST_TEST(multimap.empty());
     multimap.insert({{"a", "b"},{"a", "b"},{"d", ""}});
@@ -734,7 +744,7 @@ struct overloaded_constructor
 
 UNORDERED_AUTO_TEST(map_emplace_test)
 {
-    boost::unordered_map<int, overloaded_constructor> x;
+    UNORDERED_NAMESPACE::unordered_map<int, overloaded_constructor, boost::hash<overloaded_constructor> > x;
 
 #if !BOOST_WORKAROUND(__SUNPRO_CC, BOOST_TESTED_AT(0x5100))
     x.emplace();
@@ -749,7 +759,7 @@ UNORDERED_AUTO_TEST(map_emplace_test)
 
 UNORDERED_AUTO_TEST(set_emplace_test)
 {
-    boost::unordered_set<overloaded_constructor> x;
+    UNORDERED_NAMESPACE::unordered_set<overloaded_constructor, boost::hash<overloaded_constructor> > x;
     overloaded_constructor check;
 
 #if !BOOST_WORKAROUND(__SUNPRO_CC, BOOST_TESTED_AT(0x5100))
@@ -778,51 +788,62 @@ UNORDERED_AUTO_TEST(set_emplace_test)
     BOOST_TEST(x.find(check) != x.end() && *x.find(check) == check);
 }
 
+#if UNORDERED_TEST_STD
+#define UNORDERED_PIECEWISE_T std::piecewise_construct_t
+#define UNORDERED_PIECEWISE std::piecewise_construct
+#else
+#define UNORDERED_PIECEWISE_T boost::unordered::piecewise_construct_t
+#define UNORDERED_PIECEWISE boost::unordered::piecewise_construct
+#endif
+
 struct derived_from_piecewise_construct_t :
-    boost::unordered::piecewise_construct_t {};
+    UNORDERED_PIECEWISE_T {};
 
 derived_from_piecewise_construct_t piecewise_rvalue() {
     return derived_from_piecewise_construct_t();
 }
 
 struct convertible_to_piecewise {
-    operator boost::unordered::piecewise_construct_t() const {
-        return boost::unordered::piecewise_construct;
+    operator UNORDERED_PIECEWISE_T() const {
+        return UNORDERED_PIECEWISE;
     }
 };
 
 UNORDERED_AUTO_TEST(map_emplace_test2)
 {
-    boost::unordered_map<overloaded_constructor, overloaded_constructor> x;
+    UNORDERED_NAMESPACE::unordered_map<overloaded_constructor, overloaded_constructor, boost::hash<overloaded_constructor> > x;
 
-    x.emplace(boost::unordered::piecewise_construct, boost::make_tuple(), boost::make_tuple());
+    x.emplace(UNORDERED_PIECEWISE, UNORDERED_NAMESPACE::make_tuple(), UNORDERED_NAMESPACE::make_tuple());
     BOOST_TEST(x.find(overloaded_constructor()) != x.end() &&
         x.find(overloaded_constructor())->second == overloaded_constructor());
 
-    x.emplace(convertible_to_piecewise(), boost::make_tuple(1), boost::make_tuple());
+    x.emplace(convertible_to_piecewise(), UNORDERED_NAMESPACE::make_tuple(1), UNORDERED_NAMESPACE::make_tuple());
     BOOST_TEST(x.find(overloaded_constructor(1)) != x.end() &&
         x.find(overloaded_constructor(1))->second == overloaded_constructor());
 
-    x.emplace(piecewise_rvalue(), boost::make_tuple(2,3), boost::make_tuple(4,5,6));
+    x.emplace(piecewise_rvalue(), UNORDERED_NAMESPACE::make_tuple(2,3), UNORDERED_NAMESPACE::make_tuple(4,5,6));
     BOOST_TEST(x.find(overloaded_constructor(2,3)) != x.end() &&
         x.find(overloaded_constructor(2,3))->second == overloaded_constructor(4,5,6));
 
     derived_from_piecewise_construct_t d;
-    x.emplace(d, boost::make_tuple(9,3,1), boost::make_tuple(10));
+    x.emplace(d, UNORDERED_NAMESPACE::make_tuple(9,3,1), UNORDERED_NAMESPACE::make_tuple(10));
     BOOST_TEST(x.find(overloaded_constructor(9,3,1)) != x.end() &&
         x.find(overloaded_constructor(9,3,1))->second == overloaded_constructor(10));
 }
 
 UNORDERED_AUTO_TEST(set_emplace_test2)
 {
-    boost::unordered_set<std::pair<overloaded_constructor, overloaded_constructor> > x;
+    UNORDERED_NAMESPACE::unordered_set<
+        std::pair<overloaded_constructor, overloaded_constructor>,
+        boost::hash<std::pair<overloaded_constructor, overloaded_constructor> >
+        > x;
     std::pair<overloaded_constructor, overloaded_constructor> check;
 
-    x.emplace(boost::unordered::piecewise_construct, boost::make_tuple(), boost::make_tuple());
+    x.emplace(UNORDERED_PIECEWISE, UNORDERED_NAMESPACE::make_tuple(), UNORDERED_NAMESPACE::make_tuple());
     BOOST_TEST(x.find(check) != x.end() && *x.find(check) == check);
 
     x.clear();
-    x.emplace(boost::unordered::piecewise_construct, boost::make_tuple(1), boost::make_tuple(2,3));
+    x.emplace(UNORDERED_PIECEWISE, UNORDERED_NAMESPACE::make_tuple(1), UNORDERED_NAMESPACE::make_tuple(2,3));
     check = std::make_pair(overloaded_constructor(1), overloaded_constructor(2, 3));;
     BOOST_TEST(x.find(check) != x.end() && *x.find(check) == check);
 }

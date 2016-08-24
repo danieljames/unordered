@@ -12,6 +12,8 @@
 #include <boost/preprocessor/seq/elem.hpp>
 #include <boost/preprocessor/cat.hpp>
 
+#include <iostream>
+
 #   define UNORDERED_EXCEPTION_TEST_CASE(name, test_func, type)             \
         UNORDERED_AUTO_TEST(name)                                           \
         {                                                                   \
@@ -226,6 +228,7 @@ namespace test {
         void epoint(char const* name) {
             ++count;
             if(count == iteration) {
+                std::cout << "Exception: " << name << std::endl;
                 throw test_exception(name);
             }
         }

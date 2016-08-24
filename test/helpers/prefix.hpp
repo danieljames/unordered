@@ -9,3 +9,15 @@
 #pragma warning(disable:4201)   // nonstandard extension used :
                                 // nameless struct/union
 #endif
+
+#if !defined(UNORDERED_TEST_STD)
+#define UNORDERED_TEST_STD 0
+#endif
+
+#if UNORDERED_TEST_STD
+#define UNORDERED_NAMESPACE std
+#define UNORDERED_TEST_LOOSE 1
+#else
+#define UNORDERED_NAMESPACE boost
+#define UNORDERED_TEST_LOOSE 0
+#endif
