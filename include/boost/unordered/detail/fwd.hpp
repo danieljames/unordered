@@ -11,12 +11,28 @@
 #pragma once
 #endif
 
+// Just a guess......
+#if defined(BOOST_LIBSTDCXX11) && BOOST_LIBSTDCXX_VERSION > 40700
+#define BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT 1
+#elif defined(_LIBCPP_VERSION) && _LIBCPP_VERSION >= 3500 && __cplusplus >= 201103
+#define BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT 0
+#endif
+
+#if BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT
+#include <utility>
+#endif
+
 namespace boost
 {
 namespace unordered
 {
+#if BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT
+    using std::piecewise_construct_t;
+    using std::piecewise_construct;
+#else
     struct piecewise_construct_t {};
     const piecewise_construct_t piecewise_construct = piecewise_construct_t();
+#endif
 }
 }
 
