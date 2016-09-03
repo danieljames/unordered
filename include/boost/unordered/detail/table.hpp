@@ -4077,6 +4077,31 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             return iterator(pos);
         }
 
+        template <typename Policies2, typename H2, typename P2, typename A2>
+        void merge_(table_impl<Policies2, H2, P2, A2>& other) {
+            if (other.size_) {
+                link_pointer prev = other.get_previous_start();
+
+                while(prev->next_) {
+                    node_pointer n = other.next_node(prev);
+                    const_key_type& k = this->get_key(n->value());
+                    std::size_t key_hash = this->hash(k);
+                    node_pointer pos = this->find_node(key_hash, k);
+
+                    if (pos) {
+                        prev = n;
+                    }
+                    else {
+                        this->reserve_for_insert(this->size_ + 1);
+                        prev->next_ = n->next_;
+                        --other.size_;
+                        other.fix_bucket(other.hash_to_bucket(n->hash_), prev);
+                        this->add_node(n, key_hash);
+                    }
+                }
+            }
+        }
+
         ////////////////////////////////////////////////////////////////////////
         // Insert range methods
         //
