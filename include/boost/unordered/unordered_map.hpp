@@ -665,6 +665,17 @@ namespace unordered
 
         void swap(unordered_map&);
 
+        template <typename H2, typename P2>
+        void merge(boost::unordered_map<K,T,H2,P2,A>& source);
+#if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
+        template <typename H2, typename P2>
+        void merge(boost::unordered_map<K,T,H2,P2,A>&& source);
+#endif
+        //template <typename H2, typename P2>
+        //void merge(boost::unordered_multimap<K,T,H2,P2,A>& source);
+        //template <typename H2, typename P2>
+        //void merge(boost::unordered_multimap<K,T,H2,P2,A>&& source);
+
         // observers
 
         mapped_type& operator[](const key_type&);
@@ -1088,6 +1099,17 @@ namespace unordered
 
         void swap(unordered_multimap&);
 
+        template <typename H2, typename P2>
+        void merge(boost::unordered_multimap<K,T,H2,P2,A>& source);
+#if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
+        template <typename H2, typename P2>
+        void merge(boost::unordered_multimap<K,T,H2,P2,A>&& source);
+#endif
+        //template <typename H2, typename P2>
+        //void merge(boost::unordered_map<K,T,H2,P2,A>& source);
+        //template <typename H2, typename P2>
+        //void merge(boost::unordered_map<K,T,H2,P2,A>&& source);
+
         // lookup
 
         iterator find(const key_type&);
@@ -1326,6 +1348,22 @@ namespace unordered
     {
         this->table::swap(other);
     }
+
+    template <class K, class T, class H, class P, class A>
+    template <typename H2, typename P2>
+    void unordered_map<K,T,H,P,A>::merge(boost::unordered_map<K,T,H2,P2,A>& source)
+    {
+        this->merge_(source);
+    }
+
+#if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
+    template <class K, class T, class H, class P, class A>
+    template <typename H2, typename P2>
+    void unordered_map<K,T,H,P,A>::merge(boost::unordered_map<K,T,H2,P2,A>&& source)
+    {
+        this->merge_(source);
+    }
+#endif
 
     // observers
 
@@ -1640,6 +1678,26 @@ namespace unordered
     {
         this->table::swap(other);
     }
+
+    template <class K, class T, class H, class P, class A>
+    template <typename H2, typename P2>
+    void unordered_multimap<K,T,H,P,A>::merge(boost::unordered_multimap<K,T,H2,P2,A>& source)
+    {
+        while (!source.empty()) {
+            insert(source.extract(source.begin()));
+        }
+    }
+
+#if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
+    template <class K, class T, class H, class P, class A>
+    template <typename H2, typename P2>
+    void unordered_multimap<K,T,H,P,A>::merge(boost::unordered_multimap<K,T,H2,P2,A>&& source)
+    {
+        while (!source.empty()) {
+            insert(source.extract(source.begin()));
+        }
+    }
+#endif
 
     // lookup
 
