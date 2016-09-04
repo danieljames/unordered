@@ -390,7 +390,7 @@ namespace unordered
                 ));                                                         \
             }
 
-        BOOST_PP_REPEAT_FROM_TO(4, BOOST_UNORDERED_EMPLACE_LIMIT,
+        BOOST_PP_REPEAT_FROM_TO(4, BOOST_UNORDERED_EMPLACE_BOUND,
             BOOST_UNORDERED_EMPLACE, _)
 
 #undef BOOST_UNORDERED_EMPLACE
@@ -882,7 +882,7 @@ namespace unordered
                 ));                                                         \
             }
 
-        BOOST_PP_REPEAT_FROM_TO(4, BOOST_UNORDERED_EMPLACE_LIMIT,
+        BOOST_PP_REPEAT_FROM_TO(4, BOOST_UNORDERED_EMPLACE_BOUND,
             BOOST_UNORDERED_EMPLACE, _)
 
 #undef BOOST_UNORDERED_EMPLACE
