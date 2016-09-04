@@ -18,6 +18,7 @@
 #include <boost/unordered/detail/fwd.hpp>
 #include <boost/move/move.hpp>
 #include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/inc.hpp>
 #include <boost/preprocessor/repetition/enum.hpp>
 #include <boost/preprocessor/repetition/enum_params.hpp>
 #include <boost/preprocessor/repetition/enum_binary_params.hpp>
@@ -52,7 +53,12 @@
                               // will be default-initialized.
 #endif
 
+#if !defined(BOOST_UNORDERED_EMPLACE_LIMIT)
 #define BOOST_UNORDERED_EMPLACE_LIMIT 10
+#endif
+
+#define BOOST_UNORDERED_EMPLACE_BOUND \
+    BOOST_PP_INC(BOOST_UNORDERED_EMPLACE_LIMIT)
 
 namespace boost { namespace unordered { namespace detail {
 
@@ -230,7 +236,7 @@ inline emplace_args3<A0, A1, A2> create_emplace_args(
         return e;                                                           \
     }
 
-BOOST_PP_REPEAT_FROM_TO(4, BOOST_UNORDERED_EMPLACE_LIMIT, BOOST_UNORDERED_EARGS,
+BOOST_PP_REPEAT_FROM_TO(4, BOOST_UNORDERED_EMPLACE_BOUND, BOOST_UNORDERED_EARGS,
     _)
 
 #undef BOOST_UNORDERED_DEFINE_EMPLACE_ARGS
@@ -1111,7 +1117,7 @@ BOOST_UNORDERED_CONSTRUCT_FROM_TUPLE(10, boost::)
                 args.a));                                                   \
     }
 
-    BOOST_PP_REPEAT_FROM_TO(4, BOOST_UNORDERED_EMPLACE_LIMIT,
+    BOOST_PP_REPEAT_FROM_TO(4, BOOST_UNORDERED_EMPLACE_BOUND,
         BOOST_UNORDERED_CONSTRUCT_IMPL, _)
 
 #undef BOOST_UNORDERED_CONSTRUCT_IMPL
