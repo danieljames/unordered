@@ -23,7 +23,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef boost::unordered::detail::allocator_traits<value_allocator>
             value_allocator_traits;
 
-        typedef boost::unordered::detail::pick_node<A, value_type> pick;
+        typedef boost::unordered::detail::pick_node<value_allocator> pick;
         typedef typename pick::node node;
         typedef typename pick::bucket bucket;
         typedef typename pick::link_pointer link_pointer;
@@ -59,7 +59,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef boost::unordered::detail::allocator_traits<value_allocator>
             value_allocator_traits;
 
-        typedef boost::unordered::detail::pick_grouped_node<A, value_type> pick;
+        typedef boost::unordered::detail::pick_grouped_node<value_allocator> pick;
         typedef typename pick::node node;
         typedef typename pick::bucket bucket;
         typedef typename pick::link_pointer link_pointer;
