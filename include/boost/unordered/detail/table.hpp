@@ -113,10 +113,10 @@ namespace boost { namespace unordered { namespace detail {
     template <typename Types> struct table_impl;
     template <typename Types> struct grouped_table_impl;
 
-    template <typename A, typename T> struct unique_node;
+    template <typename A> struct unique_node;
     template <typename T> struct ptr_node;
     template <typename Types> struct table_impl;
-    template <typename A, typename T> struct grouped_node;
+    template <typename A> struct grouped_node;
     template <typename T> struct grouped_ptr_node;
     template <typename Types> struct grouped_table_impl;
 
@@ -3336,15 +3336,15 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 #endif
     };
 
-    ////////////////////////////////////////////////////////////////////////
-    // Unique nodes
-
-    template <typename A, typename T>
+    template <typename A>
     struct unique_node :
-        boost::unordered::detail::value_base<T>
+        boost::unordered::detail::value_base<
+            BOOST_DEDUCED_TYPENAME
+            ::boost::unordered::detail::allocator_traits<A>::value_type
+        >
     {
         typedef typename ::boost::unordered::detail::rebind_wrap<
-            A, unique_node<A, T> >::type allocator;
+            A, unique_node<A> >::type allocator;
         typedef typename ::boost::unordered::detail::
             allocator_traits<allocator>::pointer node_pointer;
         typedef node_pointer link_pointer;
@@ -3397,10 +3397,10 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
     // If the allocator uses raw pointers use ptr_node
     // Otherwise use node.
 
-    template <typename A, typename T, typename NodePtr, typename BucketPtr>
+    template <typename A, typename NodePtr, typename BucketPtr>
     struct pick_node2
     {
-        typedef boost::unordered::detail::unique_node<A, T> node;
+        typedef boost::unordered::detail::unique_node<A> node;
 
         typedef typename boost::unordered::detail::allocator_traits<
             typename boost::unordered::detail::rebind_wrap<A, node>::type
@@ -3410,22 +3410,31 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef node_pointer link_pointer;
     };
 
-    template <typename A, typename T>
-    struct pick_node2<A, T,
-        boost::unordered::detail::ptr_node<T>*,
+    template <typename A>
+    struct pick_node2<A,
+        boost::unordered::detail::ptr_node<
+            BOOST_DEDUCED_TYPENAME
+            ::boost::unordered::detail::allocator_traits<A>::value_type
+        >*,
         boost::unordered::detail::ptr_bucket*>
     {
-        typedef boost::unordered::detail::ptr_node<T> node;
+        typedef boost::unordered::detail::ptr_node<
+            BOOST_DEDUCED_TYPENAME
+            ::boost::unordered::detail::allocator_traits<A>::value_type
+        > node;
         typedef boost::unordered::detail::ptr_bucket bucket;
         typedef bucket* link_pointer;
     };
 
-    template <typename A, typename T>
+    template <typename A>
     struct pick_node
     {
         typedef boost::unordered::detail::allocator_traits<
             typename boost::unordered::detail::rebind_wrap<A,
-                boost::unordered::detail::ptr_node<T> >::type
+                boost::unordered::detail::ptr_node<
+                    BOOST_DEDUCED_TYPENAME
+                    ::boost::unordered::detail::allocator_traits<A>::value_type
+                > >::type
         > tentative_node_traits;
 
         typedef boost::unordered::detail::allocator_traits<
@@ -3433,7 +3442,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
                 boost::unordered::detail::ptr_bucket >::type
         > tentative_bucket_traits;
 
-        typedef pick_node2<A, T,
+        typedef pick_node2<A,
             typename tentative_node_traits::pointer,
             typename tentative_bucket_traits::pointer> pick;
 
@@ -3994,15 +4003,15 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         }
     };
 
-    ////////////////////////////////////////////////////////////////////////
-    // Grouped nodes
-
-    template <typename A, typename T>
+    template <typename A>
     struct grouped_node :
-        boost::unordered::detail::value_base<T>
+        boost::unordered::detail::value_base<
+            BOOST_DEDUCED_TYPENAME
+            ::boost::unordered::detail::allocator_traits<A>::value_type
+        >
     {
         typedef typename ::boost::unordered::detail::rebind_wrap<
-            A, grouped_node<A, T> >::type allocator;
+            A, grouped_node<A> >::type allocator;
         typedef typename ::boost::unordered::detail::
             allocator_traits<allocator>::pointer node_pointer;
         typedef node_pointer link_pointer;
@@ -4061,10 +4070,10 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
     // If the allocator uses raw pointers use grouped_ptr_node
     // Otherwise use grouped_node.
 
-    template <typename A, typename T, typename NodePtr, typename BucketPtr>
+    template <typename A, typename NodePtr, typename BucketPtr>
     struct pick_grouped_node2
     {
-        typedef boost::unordered::detail::grouped_node<A, T> node;
+        typedef boost::unordered::detail::grouped_node<A> node;
 
         typedef typename boost::unordered::detail::allocator_traits<
             typename boost::unordered::detail::rebind_wrap<A, node>::type
@@ -4074,22 +4083,31 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef node_pointer link_pointer;
     };
 
-    template <typename A, typename T>
-    struct pick_grouped_node2<A, T,
-        boost::unordered::detail::grouped_ptr_node<T>*,
+    template <typename A>
+    struct pick_grouped_node2<A,
+        boost::unordered::detail::grouped_ptr_node<
+            BOOST_DEDUCED_TYPENAME
+            ::boost::unordered::detail::allocator_traits<A>::value_type
+        >*,
         boost::unordered::detail::ptr_bucket*>
     {
-        typedef boost::unordered::detail::grouped_ptr_node<T> node;
+        typedef boost::unordered::detail::grouped_ptr_node<
+            BOOST_DEDUCED_TYPENAME
+            ::boost::unordered::detail::allocator_traits<A>::value_type
+        > node;
         typedef boost::unordered::detail::ptr_bucket bucket;
         typedef bucket* link_pointer;
     };
 
-    template <typename A, typename T>
+    template <typename A>
     struct pick_grouped_node
     {
         typedef boost::unordered::detail::allocator_traits<
             typename boost::unordered::detail::rebind_wrap<A,
-                boost::unordered::detail::grouped_ptr_node<T> >::type
+                boost::unordered::detail::grouped_ptr_node<
+                    BOOST_DEDUCED_TYPENAME
+                    ::boost::unordered::detail::allocator_traits<A>::value_type
+                > >::type
         > tentative_node_traits;
 
         typedef boost::unordered::detail::allocator_traits<
@@ -4097,7 +4115,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
                 boost::unordered::detail::ptr_bucket >::type
         > tentative_bucket_traits;
 
-        typedef pick_grouped_node2<A, T,
+        typedef pick_grouped_node2<A,
             typename tentative_node_traits::pointer,
             typename tentative_bucket_traits::pointer> pick;
 
@@ -4721,7 +4739,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef boost::unordered::detail::allocator_traits<value_allocator>
             value_allocator_traits;
 
-        typedef boost::unordered::detail::pick_node<A, value_type> pick;
+        typedef boost::unordered::detail::pick_node<value_allocator> pick;
         typedef typename pick::node node;
         typedef typename pick::bucket bucket;
         typedef typename pick::link_pointer link_pointer;
@@ -4756,7 +4774,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef boost::unordered::detail::allocator_traits<value_allocator>
             value_allocator_traits;
 
-        typedef boost::unordered::detail::pick_grouped_node<A, value_type> pick;
+        typedef boost::unordered::detail::pick_grouped_node<value_allocator> pick;
         typedef typename pick::node node;
         typedef typename pick::bucket bucket;
         typedef typename pick::link_pointer link_pointer;
@@ -4791,7 +4809,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef boost::unordered::detail::allocator_traits<value_allocator>
             value_allocator_traits;
 
-        typedef boost::unordered::detail::pick_node<A, value_type> pick;
+        typedef boost::unordered::detail::pick_node<value_allocator> pick;
         typedef typename pick::node node;
         typedef typename pick::bucket bucket;
         typedef typename pick::link_pointer link_pointer;
@@ -4827,7 +4845,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef boost::unordered::detail::allocator_traits<value_allocator>
             value_allocator_traits;
 
-        typedef boost::unordered::detail::pick_grouped_node<A, value_type> pick;
+        typedef boost::unordered::detail::pick_grouped_node<value_allocator> pick;
         typedef typename pick::node node;
         typedef typename pick::bucket bucket;
         typedef typename pick::link_pointer link_pointer;
