@@ -29,6 +29,7 @@
 #include <boost/type_traits/alignment_of.hpp>
 #include <boost/type_traits/is_nothrow_move_constructible.hpp>
 #include <boost/type_traits/is_nothrow_move_assignable.hpp>
+#include <boost/type_traits/remove_cv.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/utility/addressof.hpp>

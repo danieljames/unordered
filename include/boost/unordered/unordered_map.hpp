@@ -437,44 +437,6 @@ namespace unordered
             return this->hash_to_bucket(this->hash(k));
         }
 
-        using table::begin;
-        using table::end;
-        using table::cbegin;
-        using table::cend;
-
-        local_iterator begin(size_type n)
-        {
-            return local_iterator(
-                this->begin_node(n), n, this->bucket_count_);
-        }
-
-        const_local_iterator begin(size_type n) const
-        {
-            return const_local_iterator(
-                this->begin_node(n), n, this->bucket_count_);
-        }
-
-        local_iterator end(size_type)
-        {
-            return local_iterator();
-        }
-
-        const_local_iterator end(size_type) const
-        {
-            return const_local_iterator();
-        }
-
-        const_local_iterator cbegin(size_type n) const
-        {
-            return const_local_iterator(
-                this->begin_node(n), n, this->bucket_count_);
-        }
-
-        const_local_iterator cend(size_type) const
-        {
-            return const_local_iterator();
-        }
-
         // hash policy
 
         float max_load_factor() const BOOST_NOEXCEPT
@@ -889,44 +851,6 @@ namespace unordered
         size_type bucket(const key_type& k) const
         {
             return this->hash_to_bucket(this->hash(k));
-        }
-
-        using table::begin;
-        using table::end;
-        using table::cbegin;
-        using table::cend;
-
-        local_iterator begin(size_type n)
-        {
-            return local_iterator(
-                this->begin_node(n), n, this->bucket_count_);
-        }
-
-        const_local_iterator begin(size_type n) const
-        {
-            return const_local_iterator(
-                this->begin_node(n), n, this->bucket_count_);
-        }
-
-        local_iterator end(size_type)
-        {
-            return local_iterator();
-        }
-
-        const_local_iterator end(size_type) const
-        {
-            return const_local_iterator();
-        }
-
-        const_local_iterator cbegin(size_type n) const
-        {
-            return const_local_iterator(
-                this->begin_node(n), n, this->bucket_count_);
-        }
-
-        const_local_iterator cend(size_type) const
-        {
-            return const_local_iterator();
         }
 
         // hash policy

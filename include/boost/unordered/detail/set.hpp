@@ -34,11 +34,16 @@ namespace boost { namespace unordered { namespace detail {
                 typedef boost::unordered::iterator_detail::
                     c_iterator<Node> c_iterator;
             };
-        };
 
-        typedef boost::unordered::detail::iterator_base<
-            iterator_policy,
-            value_allocator> table_base;
+            template <typename Node, typename Policy>
+            struct local_iterators
+            {
+                typedef boost::unordered::iterator_detail::
+                    cl_iterator<Node, Policy> iterator;
+                typedef boost::unordered::iterator_detail::
+                    cl_iterator<Node, Policy> c_iterator;
+            };
+        };
 
         typedef boost::unordered::detail::pick_node<value_allocator> pick;
         typedef typename pick::node node;
@@ -58,6 +63,11 @@ namespace boost { namespace unordered { namespace detail {
             cl_iterator<node, policy> l_iterator;
         typedef boost::unordered::iterator_detail::
             cl_iterator<node, policy> cl_iterator;
+
+        typedef boost::unordered::detail::policy_base<
+            iterator_policy,
+            value_allocator,
+            policy> table_base;
     };
 
     template <typename A, typename T, typename H, typename P>
@@ -86,11 +96,16 @@ namespace boost { namespace unordered { namespace detail {
                 typedef boost::unordered::iterator_detail::
                     c_iterator<Node> c_iterator;
             };
-        };
 
-        typedef boost::unordered::detail::iterator_base<
-            iterator_policy,
-            value_allocator> table_base;
+            template <typename Node, typename Policy>
+            struct local_iterators
+            {
+                typedef boost::unordered::iterator_detail::
+                    cl_iterator<Node, Policy> iterator;
+                typedef boost::unordered::iterator_detail::
+                    cl_iterator<Node, Policy> c_iterator;
+            };
+        };
 
         typedef boost::unordered::detail::pick_grouped_node<value_allocator> pick;
         typedef typename pick::node node;
@@ -110,5 +125,10 @@ namespace boost { namespace unordered { namespace detail {
             cl_iterator<node, policy> l_iterator;
         typedef boost::unordered::iterator_detail::
             cl_iterator<node, policy> cl_iterator;
+
+        typedef boost::unordered::detail::policy_base<
+            iterator_policy,
+            value_allocator,
+            policy> table_base;
     };
 }}}
