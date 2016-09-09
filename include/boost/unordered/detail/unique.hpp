@@ -137,6 +137,19 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename pick::link_pointer link_pointer;
     };
 
+    struct u
+    {
+        template <typename A>
+        struct node_types
+        {
+            typedef typename pick_node<A>::pick pick;
+
+            typedef typename pick::node node;
+            typedef typename pick::bucket bucket;
+            typedef typename pick::link_pointer link_pointer;
+        };
+    };
+
     template <typename Types>
     struct table_impl : boost::unordered::detail::table<Types>
     {
@@ -589,9 +602,9 @@ namespace boost { namespace unordered { namespace detail {
                 prev = prev->next_;
             }
 
-            link_pointer end = next_node(prev)->next_;
+            link_pointer next = next_node(prev)->next_;
 
-            std::size_t deleted_count = this->delete_nodes(prev, end);
+            std::size_t deleted_count = this->delete_nodes(prev, next);
             this->fix_bucket(bucket_index, prev);
             return deleted_count;
         }

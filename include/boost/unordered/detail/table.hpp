@@ -64,7 +64,7 @@ namespace boost { namespace unordered { namespace detail {
         value_base& operator=(value_base const&);
     };
 
-    template <typename Types>
+    template <typename NodePolicy, typename A>
     struct table_base
     {
         template <typename Types2> friend struct table_impl;
@@ -72,26 +72,19 @@ namespace boost { namespace unordered { namespace detail {
         template <typename NodeAlloc> friend struct node_holder;
 
     protected:
-        typedef typename Types::node node;
-        typedef typename Types::bucket bucket;
-        typedef typename Types::value_type value_type;
-        typedef typename Types::link_pointer link_pointer;
-        typedef typename Types::value_allocator value_allocator;
+        typedef typename NodePolicy::template node_types<A> node_types;
+        typedef typename node_types::node node;
+        typedef typename node_types::bucket bucket;
+        typedef typename node_types::link_pointer link_pointer;
 
-        typedef typename boost::unordered::detail::
-            rebind_wrap<value_allocator, node>::type node_allocator;
-        typedef typename boost::unordered::detail::
-            rebind_wrap<value_allocator, bucket>::type bucket_allocator;
-        typedef boost::unordered::detail::allocator_traits<node_allocator>
-            node_allocator_traits;
-        typedef boost::unordered::detail::allocator_traits<bucket_allocator>
-            bucket_allocator_traits;
-        typedef typename node_allocator_traits::pointer
-            node_pointer;
-        typedef typename node_allocator_traits::const_pointer
-            const_node_pointer;
-        typedef typename bucket_allocator_traits::pointer
-            bucket_pointer;
+        typedef typename boost::unordered::detail::allocator_traits<A>::value_type value_type;
+        typedef typename boost::unordered::detail::rebind_wrap<A, node>::type node_allocator;
+        typedef typename boost::unordered::detail::rebind_wrap<A, bucket>::type bucket_allocator;
+        typedef boost::unordered::detail::allocator_traits<node_allocator> node_allocator_traits;
+        typedef boost::unordered::detail::allocator_traits<bucket_allocator> bucket_allocator_traits;
+        typedef typename node_allocator_traits::pointer node_pointer;
+        typedef typename node_allocator_traits::const_pointer const_node_pointer;
+        typedef typename bucket_allocator_traits::pointer bucket_pointer;
 
         typedef boost::unordered::detail::node_constructor<node_allocator>
             node_constructor;
@@ -427,12 +420,69 @@ namespace boost { namespace unordered { namespace detail {
         }
     };
 
+    template <typename IteratorPolicy, typename A>
+    struct iterator_base : boost::unordered::detail::table_base<typename IteratorPolicy::node_policy, A>
+    {
+    protected:
+        typedef boost::unordered::detail::table_base<typename IteratorPolicy::node_policy, A> table_base;
+        typedef typename table_base::node node;
+        typedef typename IteratorPolicy::template iterators<node> iterator_types;
+    public:
+        typedef typename iterator_types::iterator iterator;
+        typedef typename iterator_types::c_iterator const_iterator;
+        typedef typename table_base::node_allocator node_allocator;
+
+        ////////////////////////////////////////////////////////////////////////
+        // Constructors
+
+        iterator_base(std::size_t num_buckets, node_allocator const& a,
+                float mlf = 1.0f) : table_base(num_buckets, a, mlf) {}
+        iterator_base(iterator_base& x, boost::unordered::detail::move_tag m) :
+            table_base(x, m) {}
+        iterator_base(iterator_base& x, node_allocator const& a,
+                boost::unordered::detail::move_tag m) :
+            table_base(x, a, m) {}
+
+        ////////////////////////////////////////////////////////////////////////
+        // Iterators
+
+        iterator begin() BOOST_NOEXCEPT
+        {
+            return iterator(this->begin_node());
+        }
+
+        const_iterator begin() const BOOST_NOEXCEPT
+        {
+            return const_iterator(this->begin_node());
+        }
+
+        iterator end() BOOST_NOEXCEPT
+        {
+            return iterator();
+        }
+
+        const_iterator end() const BOOST_NOEXCEPT
+        {
+            return const_iterator();
+        }
+
+        const_iterator cbegin() const BOOST_NOEXCEPT
+        {
+            return const_iterator(this->begin_node());
+        }
+
+        const_iterator cend() const BOOST_NOEXCEPT
+        {
+            return const_iterator();
+        }
+    };
+
     template <typename Types>
     struct table :
         boost::unordered::detail::functions<
             typename Types::hasher,
             typename Types::key_equal>,
-        boost::unordered::detail::table_base<Types>
+        Types::table_base
     {
         template <typename Types2> friend struct table_impl;
         template <typename Types2> friend struct grouped_table_impl;
@@ -442,8 +492,7 @@ namespace boost { namespace unordered { namespace detail {
         table(table const&);
         table& operator=(table const&);
     protected:
-        typedef boost::unordered::detail::table_base<Types> table_base;
-
+        typedef typename Types::table_base table_base;
         typedef typename Types::hasher hasher;
         typedef typename Types::key_equal key_equal;
         typedef typename Types::key_type key_type;
@@ -610,19 +659,19 @@ namespace boost { namespace unordered { namespace detail {
 
         std::size_t fix_bucket(std::size_t bucket_index, link_pointer prev)
         {
-            link_pointer end = prev->next_;
+            link_pointer next = prev->next_;
             std::size_t bucket_index2 = bucket_index;
 
-            if (end)
+            if (next)
             {
                 bucket_index2 = hash_to_bucket(
-                    static_cast<node_pointer>(end)->hash_);
+                    static_cast<node_pointer>(next)->hash_);
 
-                // If begin_node and end are in the same bucket, then
+                // If begin_node and next are in the same bucket, then
                 // there's nothing to do.
                 if (bucket_index == bucket_index2) return bucket_index2;
 
-                // Update the bucket containing end.
+                // Update the bucket containing next.
                 this->get_bucket(bucket_index2)->next_ = prev;
             }
 

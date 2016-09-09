@@ -213,38 +213,6 @@ namespace unordered
             return this->size_;
         }
 
-        // iterators
-
-        iterator begin() BOOST_NOEXCEPT
-        {
-            return iterator(this->begin_node());
-        }
-
-        const_iterator begin() const BOOST_NOEXCEPT
-        {
-            return const_iterator(this->begin_node());
-        }
-
-        iterator end() BOOST_NOEXCEPT
-        {
-            return iterator();
-        }
-
-        const_iterator end() const BOOST_NOEXCEPT
-        {
-            return const_iterator();
-        }
-
-        const_iterator cbegin() const BOOST_NOEXCEPT
-        {
-            return const_iterator(this->begin_node());
-        }
-
-        const_iterator cend() const BOOST_NOEXCEPT
-        {
-            return const_iterator();
-        }
-
         // emplace
 
 #if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
@@ -468,6 +436,11 @@ namespace unordered
         {
             return this->hash_to_bucket(this->hash(k));
         }
+
+        using table::begin;
+        using table::end;
+        using table::cbegin;
+        using table::cend;
 
         local_iterator begin(size_type n)
         {
@@ -700,38 +673,6 @@ namespace unordered
             return this->size_;
         }
 
-        // iterators
-
-        iterator begin() BOOST_NOEXCEPT
-        {
-            return iterator(this->begin_node());
-        }
-
-        const_iterator begin() const BOOST_NOEXCEPT
-        {
-            return const_iterator(this->begin_node());
-        }
-
-        iterator end() BOOST_NOEXCEPT
-        {
-            return iterator();
-        }
-
-        const_iterator end() const BOOST_NOEXCEPT
-        {
-            return const_iterator();
-        }
-
-        const_iterator cbegin() const BOOST_NOEXCEPT
-        {
-            return const_iterator(this->begin_node());
-        }
-
-        const_iterator cend() const BOOST_NOEXCEPT
-        {
-            return const_iterator();
-        }
-
         // emplace
 
 #if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
@@ -949,6 +890,11 @@ namespace unordered
         {
             return this->hash_to_bucket(this->hash(k));
         }
+
+        using table::begin;
+        using table::end;
+        using table::cbegin;
+        using table::cend;
 
         local_iterator begin(size_type n)
         {
