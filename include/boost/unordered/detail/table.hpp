@@ -93,6 +93,9 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename bucket_allocator_traits::pointer
             bucket_pointer;
 
+        typedef boost::unordered::detail::node_constructor<node_allocator>
+            node_constructor;
+
         ////////////////////////////////////////////////////////////////////////
         // Members
 
@@ -139,6 +142,289 @@ namespace boost { namespace unordered { namespace detail {
             max_load_(x.max_load_),
             buckets_()
         {}
+
+        ////////////////////////////////////////////////////////////////////////
+        // Node functions
+
+        static inline node_pointer next_node(link_pointer n) {
+            return static_cast<node_pointer>(n->next_);
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+        // Data access
+
+        bucket_allocator const& bucket_alloc() const
+        {
+            return this->allocators_.first();
+        }
+
+        node_allocator const& node_alloc() const
+        {
+            return this->allocators_.second();
+        }
+
+        bucket_allocator& bucket_alloc()
+        {
+            return this->allocators_.first();
+        }
+
+        node_allocator& node_alloc()
+        {
+            return this->allocators_.second();
+        }
+
+        bucket_pointer get_bucket(std::size_t bucket_index) const
+        {
+            BOOST_ASSERT(this->buckets_);
+            return this->buckets_ + static_cast<std::ptrdiff_t>(bucket_index);
+        }
+
+        link_pointer get_previous_start() const
+        {
+            return get_bucket(this->bucket_count_)->first_from_start();
+        }
+
+        link_pointer get_previous_start(std::size_t bucket_index) const
+        {
+            return get_bucket(bucket_index)->next_;
+        }
+
+        node_pointer begin_node() const
+        {
+            return this->size_ ? next_node(get_previous_start()) : node_pointer();
+        }
+
+        node_pointer begin_node(std::size_t bucket_index) const
+        {
+            if (!this->size_) return node_pointer();
+            link_pointer prev = get_previous_start(bucket_index);
+            return prev ? next_node(prev) : node_pointer();
+        }
+
+    public:
+        float load_factor() const
+        {
+            BOOST_ASSERT(this->bucket_count_ != 0);
+            return static_cast<float>(this->size_)
+                / static_cast<float>(this->bucket_count_);
+        }
+
+    protected:
+        void recalculate_max_load()
+        {
+            using namespace std;
+    
+            // From 6.3.1/13:
+            // Only resize when size >= mlf_ * count
+            this->max_load_ = this->buckets_ ? boost::unordered::detail::double_to_size(ceil(
+                    static_cast<double>(this->mlf_) *
+                    static_cast<double>(this->bucket_count_)
+                )) : 0;
+
+        }
+
+    public:
+        void max_load_factor(float z)
+        {
+            BOOST_ASSERT(z > 0);
+            this->mlf_ = (std::max)(z, minimum_max_load_factor);
+            recalculate_max_load();
+        }
+
+    protected:
+
+        ////////////////////////////////////////////////////////////////////////
+        // Create buckets
+
+        void create_buckets(std::size_t new_count)
+        {
+            std::size_t length = new_count + 1;
+            bucket_pointer new_buckets = bucket_allocator_traits::allocate(
+                    this->bucket_alloc(), length);
+            bucket_pointer constructed = new_buckets;
+
+            BOOST_TRY {
+                bucket_pointer end = new_buckets
+                    + static_cast<std::ptrdiff_t>(length);
+                for(; constructed != end; ++constructed) {
+                    new ((void*) boost::addressof(*constructed)) bucket();
+                }
+
+                if (this->buckets_)
+                {
+                    // Copy the nodes to the new buckets, including the dummy
+                    // node if there is one.
+                    (new_buckets +
+                        static_cast<std::ptrdiff_t>(new_count))->next_ =
+                            (this->buckets_ + static_cast<std::ptrdiff_t>(
+                                this->bucket_count_))->next_;
+                    destroy_buckets();
+                }
+                else if (bucket::extra_node)
+                {
+                    node_constructor a(this->node_alloc());
+                    a.create_node();
+
+                    (new_buckets +
+                        static_cast<std::ptrdiff_t>(new_count))->next_ =
+                            a.release();
+                }
+            }
+            BOOST_CATCH(...) {
+                for(bucket_pointer p = new_buckets; p != constructed; ++p) {
+                    boost::unordered::detail::func::destroy(
+                            boost::addressof(*p));
+                }
+
+                bucket_allocator_traits::deallocate(this->bucket_alloc(),
+                        new_buckets, length);
+
+                BOOST_RETHROW;
+            }
+            BOOST_CATCH_END
+
+            this->bucket_count_ = new_count;
+            this->buckets_ = new_buckets;
+            recalculate_max_load();
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+        // Swap and Move
+
+        void swap_allocators(table_base& other, false_type)
+        {
+            boost::unordered::detail::func::ignore_unused_variable_warning(other);
+
+            // According to 23.2.1.8, if propagate_on_container_swap is
+            // false the behaviour is undefined unless the allocators
+            // are equal.
+            BOOST_ASSERT(this->node_alloc() == other.node_alloc());
+        }
+
+        void swap_allocators(table_base& other, true_type)
+        {
+            this->allocators_.swap(other.allocators_);
+        }
+
+        void swap_table_base(table_base& x)
+        {
+            // I think swap can throw if Propagate::value,
+            // since the allocators' swap can throw. Not sure though.
+            swap_allocators(x,
+                boost::unordered::detail::integral_constant<bool,
+                    allocator_traits<node_allocator>::
+                    propagate_on_container_swap::value>());
+
+            boost::swap(this->buckets_, x.buckets_);
+            boost::swap(this->bucket_count_, x.bucket_count_);
+            boost::swap(this->size_, x.size_);
+            std::swap(this->mlf_, x.mlf_);
+            std::swap(this->max_load_, x.max_load_);
+        }
+
+        // Only call with nodes allocated with the currect allocator, or
+        // one that is equal to it. (Can't assert because other's
+        // allocators might have already been moved).
+        void move_buckets_from(table_base& other)
+        {
+            BOOST_ASSERT(!this->buckets_);
+            this->buckets_ = other.buckets_;
+            this->bucket_count_ = other.bucket_count_;
+            this->size_ = other.size_;
+            other.buckets_ = bucket_pointer();
+            other.size_ = 0;
+            other.max_load_ = 0;
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+        // Delete/destruct
+
+        ~table_base()
+        {
+            delete_buckets();
+        }
+
+        void delete_node(link_pointer prev)
+        {
+            node_pointer n = static_cast<node_pointer>(prev->next_);
+            prev->next_ = n->next_;
+
+            boost::unordered::detail::func::destroy_value_impl(this->node_alloc(),
+                n->value_ptr());
+            boost::unordered::detail::func::destroy(boost::addressof(*n));
+            node_allocator_traits::deallocate(this->node_alloc(), n, 1);
+            --this->size_;
+        }
+
+        std::size_t delete_nodes(link_pointer prev, link_pointer end)
+        {
+            BOOST_ASSERT(prev->next_ != end);
+
+            std::size_t count = 0;
+
+            do {
+                delete_node(prev);
+                ++count;
+            } while (prev->next_ != end);
+
+            return count;
+        }
+
+        void delete_buckets()
+        {
+            if(this->buckets_) {
+                if (this->size_) delete_nodes(get_previous_start(), link_pointer());
+
+                if (bucket::extra_node) {
+                    node_pointer n = static_cast<node_pointer>(
+                            get_bucket(this->bucket_count_)->next_);
+                    boost::unordered::detail::func::destroy(
+                            boost::addressof(*n));
+                    node_allocator_traits::deallocate(this->node_alloc(), n, 1);
+                }
+
+                destroy_buckets();
+                this->buckets_ = bucket_pointer();
+                this->max_load_ = 0;
+            }
+
+            BOOST_ASSERT(!this->size_);
+        }
+
+    public:
+        void clear()
+        {
+            if (!this->size_) return;
+
+            delete_nodes(get_previous_start(), link_pointer());
+            clear_buckets();
+
+            BOOST_ASSERT(!this->size_);
+        }
+
+    protected:
+
+        void clear_buckets()
+        {
+            bucket_pointer end = get_bucket(this->bucket_count_);
+            for(bucket_pointer it = this->buckets_; it != end; ++it)
+            {
+                it->next_ = node_pointer();
+            }
+        }
+
+        void destroy_buckets()
+        {
+            bucket_pointer end = get_bucket(this->bucket_count_ + 1);
+            for(bucket_pointer it = this->buckets_; it != end; ++it)
+            {
+                boost::unordered::detail::func::destroy(
+                    boost::addressof(*it));
+            }
+
+            bucket_allocator_traits::deallocate(this->bucket_alloc(),
+                this->buckets_, this->bucket_count_ + 1);
+        }
     };
 
     template <typename Types>
@@ -190,95 +476,34 @@ namespace boost { namespace unordered { namespace detail {
             node_tmp;
 
         ////////////////////////////////////////////////////////////////////////
-        // Node functions
-
-        static inline node_pointer next_node(link_pointer n) {
-            return static_cast<node_pointer>(n->next_);
-        }
-
-        ////////////////////////////////////////////////////////////////////////
         // Data access
-
-        bucket_allocator const& bucket_alloc() const
-        {
-            return this->allocators_.first();
-        }
-
-        node_allocator const& node_alloc() const
-        {
-            return this->allocators_.second();
-        }
-
-        bucket_allocator& bucket_alloc()
-        {
-            return this->allocators_.first();
-        }
-
-        node_allocator& node_alloc()
-        {
-            return this->allocators_.second();
-        }
 
     public:
         std::size_t max_bucket_count() const
         {
             // -1 to account for the start bucket.
             return policy::prev_bucket_count(
-                bucket_allocator_traits::max_size(bucket_alloc()) - 1);
+                bucket_allocator_traits::max_size(this->bucket_alloc()) - 1);
         }
 
     protected:
-        bucket_pointer get_bucket(std::size_t bucket_index) const
-        {
-            BOOST_ASSERT(this->buckets_);
-            return this->buckets_ + static_cast<std::ptrdiff_t>(bucket_index);
-        }
 
-        link_pointer get_previous_start() const
-        {
-            return get_bucket(this->bucket_count_)->first_from_start();
-        }
-
-        link_pointer get_previous_start(std::size_t bucket_index) const
-        {
-            return get_bucket(bucket_index)->next_;
-        }
-
-        node_pointer begin_node() const
-        {
-            return this->size_ ? next_node(get_previous_start()) : node_pointer();
-        }
-
-        node_pointer begin_node(std::size_t bucket_index) const
-        {
-            if (!this->size_) return node_pointer();
-            link_pointer prev = get_previous_start(bucket_index);
-            return prev ? next_node(prev) : node_pointer();
-        }
-        
         std::size_t hash_to_bucket(std::size_t hash_value) const
         {
             return policy::to_bucket(this->bucket_count_, hash_value);
         }
 
     public:
-        float load_factor() const
-        {
-            BOOST_ASSERT(this->bucket_count_ != 0);
-            return static_cast<float>(this->size_)
-                / static_cast<float>(this->bucket_count_);
-        }
-
         std::size_t bucket_size(std::size_t index) const
         {
-            node_pointer n = begin_node(index);
+            node_pointer n = this->begin_node(index);
             if (!n) return 0;
 
             std::size_t count = 0;
             while(n && hash_to_bucket(n->hash_) == index)
             {
                 ++count;
-                n = next_node(n);
+                n = table_base::next_node(n);
             }
 
             return count;
@@ -290,7 +515,7 @@ namespace boost { namespace unordered { namespace detail {
         std::size_t max_size() const
         {
             using namespace std;
-    
+
             // size < mlf_ * count
             return boost::unordered::detail::double_to_size(ceil(
                     static_cast<double>(this->mlf_) *
@@ -299,34 +524,12 @@ namespace boost { namespace unordered { namespace detail {
         }
 
     protected:
-        void recalculate_max_load()
-        {
-            using namespace std;
-    
-            // From 6.3.1/13:
-            // Only resize when size >= mlf_ * count
-            this->max_load_ = this->buckets_ ? boost::unordered::detail::double_to_size(ceil(
-                    static_cast<double>(this->mlf_) *
-                    static_cast<double>(this->bucket_count_)
-                )) : 0;
-
-        }
-
-    public:
-        void max_load_factor(float z)
-        {
-            BOOST_ASSERT(z > 0);
-            this->mlf_ = (std::max)(z, minimum_max_load_factor);
-            recalculate_max_load();
-        }
-
-    protected:
         std::size_t min_buckets_for_size(std::size_t size) const
         {
             BOOST_ASSERT(this->mlf_ >= minimum_max_load_factor);
-    
+
             using namespace std;
-    
+
             // From 6.3.1/13:
             // size < mlf_ * count
             // => count > size / mlf_
@@ -379,8 +582,8 @@ namespace boost { namespace unordered { namespace detail {
 
         void move_init(table& x)
         {
-            if(node_alloc() == x.node_alloc()) {
-                move_buckets_from(x);
+            if(this->node_alloc() == x.node_alloc()) {
+                this->move_buckets_from(x);
             }
             else if(x.size_) {
                 // TODO: Could pick new bucket size?
@@ -389,201 +592,16 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         ////////////////////////////////////////////////////////////////////////
-        // Create buckets
-
-        void create_buckets(std::size_t new_count)
-        {
-            std::size_t length = new_count + 1;
-            bucket_pointer new_buckets = bucket_allocator_traits::allocate(
-                    bucket_alloc(), length);
-            bucket_pointer constructed = new_buckets;
-
-            BOOST_TRY {
-                bucket_pointer end = new_buckets
-                    + static_cast<std::ptrdiff_t>(length);
-                for(; constructed != end; ++constructed) {
-                    new ((void*) boost::addressof(*constructed)) bucket();
-                }
-
-                if (this->buckets_)
-                {
-                    // Copy the nodes to the new buckets, including the dummy
-                    // node if there is one.
-                    (new_buckets +
-                        static_cast<std::ptrdiff_t>(new_count))->next_ =
-                            (this->buckets_ + static_cast<std::ptrdiff_t>(
-                                this->bucket_count_))->next_;
-                    destroy_buckets();
-                }
-                else if (bucket::extra_node)
-                {
-                    node_constructor a(node_alloc());
-                    a.create_node();
-
-                    (new_buckets +
-                        static_cast<std::ptrdiff_t>(new_count))->next_ =
-                            a.release();
-                }
-            }
-            BOOST_CATCH(...) {
-                for(bucket_pointer p = new_buckets; p != constructed; ++p) {
-                    boost::unordered::detail::func::destroy(
-                            boost::addressof(*p));
-                }
-
-                bucket_allocator_traits::deallocate(bucket_alloc(),
-                        new_buckets, length);
-
-                BOOST_RETHROW;
-            }
-            BOOST_CATCH_END
-
-            this->bucket_count_ = new_count;
-            this->buckets_ = new_buckets;
-            recalculate_max_load();
-        }
-
-        ////////////////////////////////////////////////////////////////////////
-        // Swap and Move
-
-        void swap_allocators(table& other, false_type)
-        {
-            boost::unordered::detail::func::ignore_unused_variable_warning(other);
-
-            // According to 23.2.1.8, if propagate_on_container_swap is
-            // false the behaviour is undefined unless the allocators
-            // are equal.
-            BOOST_ASSERT(node_alloc() == other.node_alloc());
-        }
-
-        void swap_allocators(table& other, true_type)
-        {
-            this->allocators_.swap(other.allocators_);
-        }
+        // swap and move
 
         // Only swaps the allocators if propagate_on_container_swap
         void swap(table& x)
         {
             set_hash_functions op1(*this, x);
             set_hash_functions op2(x, *this);
-
-            // I think swap can throw if Propagate::value,
-            // since the allocators' swap can throw. Not sure though.
-            swap_allocators(x,
-                boost::unordered::detail::integral_constant<bool,
-                    allocator_traits<node_allocator>::
-                    propagate_on_container_swap::value>());
-
-            boost::swap(this->buckets_, x.buckets_);
-            boost::swap(this->bucket_count_, x.bucket_count_);
-            boost::swap(this->size_, x.size_);
-            std::swap(this->mlf_, x.mlf_);
-            std::swap(this->max_load_, x.max_load_);
+            this->swap_table_base(x);
             op1.commit();
             op2.commit();
-        }
-
-        // Only call with nodes allocated with the currect allocator, or
-        // one that is equal to it. (Can't assert because other's
-        // allocators might have already been moved).
-        void move_buckets_from(table& other)
-        {
-            BOOST_ASSERT(!this->buckets_);
-            this->buckets_ = other.buckets_;
-            this->bucket_count_ = other.bucket_count_;
-            this->size_ = other.size_;
-            other.buckets_ = bucket_pointer();
-            other.size_ = 0;
-            other.max_load_ = 0;
-        }
-
-        ////////////////////////////////////////////////////////////////////////
-        // Delete/destruct
-
-        ~table()
-        {
-            delete_buckets();
-        }
-
-        void delete_node(link_pointer prev)
-        {
-            node_pointer n = static_cast<node_pointer>(prev->next_);
-            prev->next_ = n->next_;
-
-            boost::unordered::detail::func::destroy_value_impl(node_alloc(),
-                n->value_ptr());
-            boost::unordered::detail::func::destroy(boost::addressof(*n));
-            node_allocator_traits::deallocate(node_alloc(), n, 1);
-            --this->size_;
-        }
-
-        std::size_t delete_nodes(link_pointer prev, link_pointer end)
-        {
-            BOOST_ASSERT(prev->next_ != end);
-
-            std::size_t count = 0;
-
-            do {
-                delete_node(prev);
-                ++count;
-            } while (prev->next_ != end);
-
-            return count;
-        }
-
-        void delete_buckets()
-        {
-            if(this->buckets_) {
-                if (this->size_) delete_nodes(get_previous_start(), link_pointer());
-
-                if (bucket::extra_node) {
-                    node_pointer n = static_cast<node_pointer>(
-                            get_bucket(this->bucket_count_)->next_);
-                    boost::unordered::detail::func::destroy(
-                            boost::addressof(*n));
-                    node_allocator_traits::deallocate(node_alloc(), n, 1);
-                }
-
-                destroy_buckets();
-                this->buckets_ = bucket_pointer();
-                this->max_load_ = 0;
-            }
-
-            BOOST_ASSERT(!this->size_);
-        }
-
-    public:
-        void clear()
-        {
-            if (!this->size_) return;
-
-            delete_nodes(get_previous_start(), link_pointer());
-            clear_buckets();
-
-            BOOST_ASSERT(!this->size_);
-        }
-
-    protected:
-        void clear_buckets()
-        {
-            bucket_pointer end = get_bucket(this->bucket_count_);
-            for(bucket_pointer it = this->buckets_; it != end; ++it)
-            {
-                it->next_ = node_pointer();
-            }
-        }
-
-        void destroy_buckets()
-        {
-            bucket_pointer end = get_bucket(this->bucket_count_ + 1);
-            for(bucket_pointer it = this->buckets_; it != end; ++it)
-            {
-                boost::unordered::detail::func::destroy(
-                    boost::addressof(*it));
-            }
-
-            bucket_allocator_traits::deallocate(bucket_alloc(),
-                this->buckets_, this->bucket_count_ + 1);
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -605,11 +623,11 @@ namespace boost { namespace unordered { namespace detail {
                 if (bucket_index == bucket_index2) return bucket_index2;
 
                 // Update the bucket containing end.
-                get_bucket(bucket_index2)->next_ = prev;
+                this->get_bucket(bucket_index2)->next_ = prev;
             }
 
             // Check if this bucket is now empty.
-            bucket_pointer this_bucket = get_bucket(bucket_index);
+            bucket_pointer this_bucket = this->get_bucket(bucket_index);
             if (this_bucket->next_ == prev)
                 this_bucket->next_ = link_pointer();
 
@@ -635,15 +653,15 @@ namespace boost { namespace unordered { namespace detail {
             // Strong exception safety.
             set_hash_functions new_func_this(*this, x);
             this->mlf_ = x.mlf_;
-            recalculate_max_load();
+            this->recalculate_max_load();
 
             if (!this->size_ && !x.size_) return;
 
             if (x.size_ >= this->max_load_) {
-                create_buckets(min_buckets_for_size(x.size_));
+                this->create_buckets(min_buckets_for_size(x.size_));
             }
             else {
-                clear_buckets();
+                this->clear_buckets();
             }
 
             new_func_this.commit();
@@ -652,7 +670,7 @@ namespace boost { namespace unordered { namespace detail {
 
         void assign(table const& x, true_type)
         {
-            if (node_alloc() == x.node_alloc()) {
+            if (this->node_alloc() == x.node_alloc()) {
                 this->allocators_.assign(x.allocators_);
                 assign(x, false_type());
             }
@@ -661,7 +679,7 @@ namespace boost { namespace unordered { namespace detail {
 
                 // Delete everything with current allocators before assigning
                 // the new ones.
-                delete_buckets();
+                this->delete_buckets();
                 this->allocators_.assign(x.allocators_);
 
                 // Copy over other data, all no throw.
@@ -690,31 +708,31 @@ namespace boost { namespace unordered { namespace detail {
 
         void move_assign(table& x, true_type)
         {
-            delete_buckets();
+            this->delete_buckets();
             this->move_assign_functions(x);
             this->allocators_.move_assign(x.allocators_);
 
             // No throw from here.
             this->mlf_ = x.mlf_;
             this->max_load_ = x.max_load_;
-            move_buckets_from(x);
+            this->move_buckets_from(x);
         }
 
         void move_assign(table& x, false_type)
         {
             if (node_alloc() == x.node_alloc()) {
-                delete_buckets();
+                this->delete_buckets();
                 this->move_assign_functions(x);
 
                 // No throw from here.
                 this->mlf_ = x.mlf_;
                 this->max_load_ = x.max_load_;
-                move_buckets_from(x);
+                this->move_buckets_from(x);
             }
             else {
                 set_hash_functions new_func_this(*this, x);
                 this->mlf_ = x.mlf_;
-                recalculate_max_load();
+                this->recalculate_max_load();
 
                 if (!this->size_ && !x.size_) {
                     new_func_this.commit();
@@ -722,10 +740,10 @@ namespace boost { namespace unordered { namespace detail {
                 }
 
                 if (x.size_ >= this->max_load_) {
-                    create_buckets(min_buckets_for_size(x.size_));
+                    this->create_buckets(min_buckets_for_size(x.size_));
                 }
                 else {
-                    clear_buckets();
+                    this->clear_buckets();
                 }
 
                 new_func_this.commit();
@@ -789,7 +807,7 @@ namespace boost { namespace unordered { namespace detail {
     inline void table<Types>::reserve_for_insert(std::size_t size)
     {
         if (!this->buckets_) {
-            create_buckets((std::max)(this->bucket_count_,
+            this->create_buckets((std::max)(this->bucket_count_,
                 min_buckets_for_size(size)));
         }
         // According to the standard this should be 'size >= max_load_',
@@ -813,7 +831,7 @@ namespace boost { namespace unordered { namespace detail {
         using namespace std;
 
         if(!this->size_) {
-            delete_buckets();
+            this->delete_buckets();
             this->bucket_count_ = policy::new_bucket_count(min_buckets);
         }
         else {
