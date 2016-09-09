@@ -140,6 +140,9 @@ namespace boost { namespace unordered { namespace detail {
     template <typename Types>
     struct table_impl : boost::unordered::detail::table<Types>
     {
+        friend class boost::unordered::detail::table<Types>;
+
+    protected:
         typedef boost::unordered::detail::table<Types> table;
         typedef typename table::value_type value_type;
         typedef typename table::bucket bucket;
@@ -233,11 +236,13 @@ namespace boost { namespace unordered { namespace detail {
             }
         }
 
+    public:
         std::size_t count(key_type const& k) const
         {
             return this->find_node(k) ? 1 : 0;
         }
 
+    protected:
         value_type& at_(key_type const& k) const
         {
             if (this->size_) {
@@ -249,6 +254,7 @@ namespace boost { namespace unordered { namespace detail {
                 std::out_of_range("Unable to find key in unordered_map."));
         }
 
+    public:
         std::pair<iterator, iterator>
             equal_range(key_type const& k) const
         {
@@ -258,6 +264,7 @@ namespace boost { namespace unordered { namespace detail {
 
         // equals
 
+    protected:
         bool equals(table_impl const& other) const
         {
             if(this->size_ != other.size_) return false;

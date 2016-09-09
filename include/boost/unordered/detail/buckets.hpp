@@ -333,7 +333,7 @@ namespace boost { namespace unordered { namespace detail {
             nodes_()
         {
             if (b.size_) {
-                typename Table::link_pointer prev = b.get_previous_start();
+                link_pointer prev = b.get_previous_start();
                 nodes_ = static_cast<node_pointer>(prev->next_);
                 prev->next_ = link_pointer();
                 b.size_ = 0;

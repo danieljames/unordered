@@ -144,6 +144,9 @@ namespace boost { namespace unordered { namespace detail {
     template <typename Types>
     struct grouped_table_impl : boost::unordered::detail::table<Types>
     {
+        friend class boost::unordered::detail::table<Types>;
+
+    protected:
         typedef boost::unordered::detail::table<Types> table;
         typedef typename table::value_type value_type;
         typedef typename table::bucket bucket;
@@ -239,6 +242,7 @@ namespace boost { namespace unordered { namespace detail {
             }
         }
 
+    public:
         std::size_t count(key_type const& k) const
         {
             node_pointer n = this->find_node(k);
@@ -263,6 +267,7 @@ namespace boost { namespace unordered { namespace detail {
 
         // Equality
 
+    protected:
         bool equals(grouped_table_impl const& other) const
         {
             if(this->size_ != other.size_) return false;

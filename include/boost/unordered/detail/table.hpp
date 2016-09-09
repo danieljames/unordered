@@ -70,10 +70,14 @@ namespace boost { namespace unordered { namespace detail {
             typename Types::hasher,
             typename Types::key_equal>
     {
+        template <typename Types2> friend struct table_impl;
+        template <typename Types2> friend struct grouped_table_impl;
+        template <typename NodeAlloc> friend struct node_holder;
+
     private:
         table(table const&);
         table& operator=(table const&);
-    public:
+    protected:
         typedef typename Types::node node;
         typedef typename Types::bucket bucket;
         typedef typename Types::hasher hasher;
@@ -155,6 +159,7 @@ namespace boost { namespace unordered { namespace detail {
             return allocators_.second();
         }
 
+    public:
         std::size_t max_bucket_count() const
         {
             // -1 to account for the start bucket.
@@ -162,6 +167,7 @@ namespace boost { namespace unordered { namespace detail {
                 bucket_allocator_traits::max_size(bucket_alloc()) - 1);
         }
 
+    protected:
         bucket_pointer get_bucket(std::size_t bucket_index) const
         {
             BOOST_ASSERT(buckets_);
@@ -195,6 +201,7 @@ namespace boost { namespace unordered { namespace detail {
             return policy::to_bucket(bucket_count_, hash_value);
         }
 
+    public:
         float load_factor() const
         {
             BOOST_ASSERT(bucket_count_ != 0);
@@ -231,6 +238,7 @@ namespace boost { namespace unordered { namespace detail {
                 )) - 1;
         }
 
+    protected:
         void recalculate_max_load()
         {
             using namespace std;
@@ -244,6 +252,7 @@ namespace boost { namespace unordered { namespace detail {
 
         }
 
+    public:
         void max_load_factor(float z)
         {
             BOOST_ASSERT(z > 0);
@@ -251,6 +260,7 @@ namespace boost { namespace unordered { namespace detail {
             recalculate_max_load();
         }
 
+    protected:
         std::size_t min_buckets_for_size(std::size_t size) const
         {
             BOOST_ASSERT(mlf_ >= minimum_max_load_factor);
@@ -506,6 +516,7 @@ namespace boost { namespace unordered { namespace detail {
             BOOST_ASSERT(!size_);
         }
 
+    public:
         void clear()
         {
             if (!size_) return;
@@ -516,6 +527,7 @@ namespace boost { namespace unordered { namespace detail {
             BOOST_ASSERT(!size_);
         }
 
+    protected:
         void clear_buckets()
         {
             bucket_pointer end = get_bucket(bucket_count_);
@@ -726,6 +738,9 @@ namespace boost { namespace unordered { namespace detail {
         // Reserve and rehash
 
         void reserve_for_insert(std::size_t);
+
+    public:
+
         void rehash(std::size_t);
         void reserve(std::size_t);
     };
