@@ -2538,22 +2538,22 @@ namespace boost { namespace unordered { namespace detail {
 
         bucket_allocator const& bucket_alloc() const
         {
-            return allocators_.first();
+            return this->allocators_.first();
         }
 
         node_allocator const& node_alloc() const
         {
-            return allocators_.second();
+            return this->allocators_.second();
         }
 
         bucket_allocator& bucket_alloc()
         {
-            return allocators_.first();
+            return this->allocators_.first();
         }
 
         node_allocator& node_alloc()
         {
-            return allocators_.second();
+            return this->allocators_.second();
         }
 
         std::size_t max_bucket_count() const
@@ -2565,13 +2565,13 @@ namespace boost { namespace unordered { namespace detail {
 
         bucket_pointer get_bucket(std::size_t bucket_index) const
         {
-            BOOST_ASSERT(buckets_);
-            return buckets_ + static_cast<std::ptrdiff_t>(bucket_index);
+            BOOST_ASSERT(this->buckets_);
+            return this->buckets_ + static_cast<std::ptrdiff_t>(bucket_index);
         }
 
         link_pointer get_previous_start() const
         {
-            return get_bucket(bucket_count_)->first_from_start();
+            return get_bucket(this->bucket_count_)->first_from_start();
         }
 
         link_pointer get_previous_start(std::size_t bucket_index) const
@@ -2581,26 +2581,26 @@ namespace boost { namespace unordered { namespace detail {
 
         node_pointer begin() const
         {
-            return size_ ? next_node(get_previous_start()) : node_pointer();
+            return this->size_ ? next_node(get_previous_start()) : node_pointer();
         }
 
         node_pointer begin(std::size_t bucket_index) const
         {
-            if (!size_) return node_pointer();
+            if (!this->size_) return node_pointer();
             link_pointer prev = get_previous_start(bucket_index);
             return prev ? next_node(prev) : node_pointer();
         }
 
         std::size_t hash_to_bucket(std::size_t hash_value) const
         {
-            return policy::to_bucket(bucket_count_, hash_value);
+            return policy::to_bucket(this->bucket_count_, hash_value);
         }
 
         float load_factor() const
         {
-            BOOST_ASSERT(bucket_count_ != 0);
-            return static_cast<float>(size_)
-                / static_cast<float>(bucket_count_);
+            BOOST_ASSERT(this->bucket_count_ != 0);
+            return static_cast<float>(this->size_)
+                / static_cast<float>(this->bucket_count_);
         }
 
         std::size_t bucket_size(std::size_t index) const
@@ -2627,7 +2627,7 @@ namespace boost { namespace unordered { namespace detail {
 
             // size < mlf_ * count
             return boost::unordered::detail::double_to_size(ceil(
-                    static_cast<double>(mlf_) *
+                    static_cast<double>(this->mlf_) *
                     static_cast<double>(max_bucket_count())
                 )) - 1;
         }
@@ -2638,9 +2638,9 @@ namespace boost { namespace unordered { namespace detail {
 
             // From 6.3.1/13:
             // Only resize when size >= mlf_ * count
-            max_load_ = buckets_ ? boost::unordered::detail::double_to_size(ceil(
-                    static_cast<double>(mlf_) *
-                    static_cast<double>(bucket_count_)
+            this->max_load_ = this->buckets_ ? boost::unordered::detail::double_to_size(ceil(
+                    static_cast<double>(this->mlf_) *
+                    static_cast<double>(this->bucket_count_)
                 )) : 0;
 
         }
@@ -2648,13 +2648,13 @@ namespace boost { namespace unordered { namespace detail {
         void max_load_factor(float z)
         {
             BOOST_ASSERT(z > 0);
-            mlf_ = (std::max)(z, minimum_max_load_factor);
+            this->mlf_ = (std::max)(z, minimum_max_load_factor);
             recalculate_max_load();
         }
 
         std::size_t min_buckets_for_size(std::size_t size) const
         {
-            BOOST_ASSERT(mlf_ >= minimum_max_load_factor);
+            BOOST_ASSERT(this->mlf_ >= minimum_max_load_factor);
 
             using namespace std;
 
@@ -2668,7 +2668,7 @@ namespace boost { namespace unordered { namespace detail {
             return policy::new_bucket_count(
                 boost::unordered::detail::double_to_size(floor(
                     static_cast<double>(size) /
-                    static_cast<double>(mlf_)) + 1));
+                    static_cast<double>(this->mlf_)) + 1));
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -2760,14 +2760,14 @@ namespace boost { namespace unordered { namespace detail {
                     new ((void*) boost::addressof(*constructed)) bucket();
                 }
 
-                if (buckets_)
+                if (this->buckets_)
                 {
                     // Copy the nodes to the new buckets, including the dummy
                     // node if there is one.
                     (new_buckets +
                         static_cast<std::ptrdiff_t>(new_count))->next_ =
-                            (buckets_ + static_cast<std::ptrdiff_t>(
-                                bucket_count_))->next_;
+                            (this->buckets_ + static_cast<std::ptrdiff_t>(
+                                this->bucket_count_))->next_;
                     destroy_buckets();
                 }
                 else if (bucket::extra_node)
@@ -2793,8 +2793,8 @@ namespace boost { namespace unordered { namespace detail {
             }
             BOOST_CATCH_END
 
-            bucket_count_ = new_count;
-            buckets_ = new_buckets;
+            this->bucket_count_ = new_count;
+            this->buckets_ = new_buckets;
             recalculate_max_load();
         }
 
@@ -2813,7 +2813,7 @@ namespace boost { namespace unordered { namespace detail {
 
         void swap_allocators(table& other, true_type)
         {
-            allocators_.swap(other.allocators_);
+            this->allocators_.swap(other.allocators_);
         }
 
         // Only swaps the allocators if propagate_on_container_swap
@@ -2829,11 +2829,11 @@ namespace boost { namespace unordered { namespace detail {
                     allocator_traits<node_allocator>::
                     propagate_on_container_swap::value>());
 
-            boost::swap(buckets_, x.buckets_);
-            boost::swap(bucket_count_, x.bucket_count_);
-            boost::swap(size_, x.size_);
-            std::swap(mlf_, x.mlf_);
-            std::swap(max_load_, x.max_load_);
+            boost::swap(this->buckets_, x.buckets_);
+            boost::swap(this->bucket_count_, x.bucket_count_);
+            boost::swap(this->size_, x.size_);
+            std::swap(this->mlf_, x.mlf_);
+            std::swap(this->max_load_, x.max_load_);
             op1.commit();
             op2.commit();
         }
@@ -2843,10 +2843,10 @@ namespace boost { namespace unordered { namespace detail {
         // allocators might have already been moved).
         void move_buckets_from(table& other)
         {
-            BOOST_ASSERT(!buckets_);
-            buckets_ = other.buckets_;
-            bucket_count_ = other.bucket_count_;
-            size_ = other.size_;
+            BOOST_ASSERT(!this->buckets_);
+            this->buckets_ = other.buckets_;
+            this->bucket_count_ = other.bucket_count_;
+            this->size_ = other.size_;
             other.buckets_ = bucket_pointer();
             other.size_ = 0;
             other.max_load_ = 0;
@@ -2869,7 +2869,7 @@ namespace boost { namespace unordered { namespace detail {
                 n->value_ptr());
             boost::unordered::detail::func::destroy(boost::addressof(*n));
             node_allocator_traits::deallocate(node_alloc(), n, 1);
-            --size_;
+            --this->size_;
         }
 
         std::size_t delete_nodes(link_pointer prev, link_pointer end)
@@ -2888,39 +2888,39 @@ namespace boost { namespace unordered { namespace detail {
 
         void delete_buckets()
         {
-            if(buckets_) {
-                if (size_) delete_nodes(get_previous_start(), link_pointer());
+            if(this->buckets_) {
+                if (this->size_) delete_nodes(get_previous_start(), link_pointer());
 
                 if (bucket::extra_node) {
                     node_pointer n = static_cast<node_pointer>(
-                            get_bucket(bucket_count_)->next_);
+                            get_bucket(this->bucket_count_)->next_);
                     boost::unordered::detail::func::destroy(
                             boost::addressof(*n));
                     node_allocator_traits::deallocate(node_alloc(), n, 1);
                 }
 
                 destroy_buckets();
-                buckets_ = bucket_pointer();
-                max_load_ = 0;
+                this->buckets_ = bucket_pointer();
+                this->max_load_ = 0;
             }
 
-            BOOST_ASSERT(!size_);
+            BOOST_ASSERT(!this->size_);
         }
 
         void clear()
         {
-            if (!size_) return;
+            if (!this->size_) return;
 
             delete_nodes(get_previous_start(), link_pointer());
             clear_buckets();
 
-            BOOST_ASSERT(!size_);
+            BOOST_ASSERT(!this->size_);
         }
 
         void clear_buckets()
         {
-            bucket_pointer end = get_bucket(bucket_count_);
-            for(bucket_pointer it = buckets_; it != end; ++it)
+            bucket_pointer end = get_bucket(this->bucket_count_);
+            for(bucket_pointer it = this->buckets_; it != end; ++it)
             {
                 it->next_ = node_pointer();
             }
@@ -2928,15 +2928,15 @@ namespace boost { namespace unordered { namespace detail {
 
         void destroy_buckets()
         {
-            bucket_pointer end = get_bucket(bucket_count_ + 1);
-            for(bucket_pointer it = buckets_; it != end; ++it)
+            bucket_pointer end = get_bucket(this->bucket_count_ + 1);
+            for(bucket_pointer it = this->buckets_; it != end; ++it)
             {
                 boost::unordered::detail::func::destroy(
                     boost::addressof(*it));
             }
 
             bucket_allocator_traits::deallocate(bucket_alloc(),
-                buckets_, bucket_count_ + 1);
+                this->buckets_, this->bucket_count_ + 1);
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -2987,12 +2987,12 @@ namespace boost { namespace unordered { namespace detail {
         {
             // Strong exception safety.
             set_hash_functions new_func_this(*this, x);
-            mlf_ = x.mlf_;
+            this->mlf_ = x.mlf_;
             recalculate_max_load();
 
-            if (!size_ && !x.size_) return;
+            if (!this->size_ && !x.size_) return;
 
-            if (x.size_ >= max_load_) {
+            if (x.size_ >= this->max_load_) {
                 create_buckets(min_buckets_for_size(x.size_));
             }
             else {
@@ -3006,7 +3006,7 @@ namespace boost { namespace unordered { namespace detail {
         void assign(table const& x, true_type)
         {
             if (node_alloc() == x.node_alloc()) {
-                allocators_.assign(x.allocators_);
+                this->allocators_.assign(x.allocators_);
                 assign(x, false_type());
             }
             else {
@@ -3015,13 +3015,13 @@ namespace boost { namespace unordered { namespace detail {
                 // Delete everything with current allocators before assigning
                 // the new ones.
                 delete_buckets();
-                allocators_.assign(x.allocators_);
+                this->allocators_.assign(x.allocators_);
 
                 // Copy over other data, all no throw.
                 new_func_this.commit();
-                mlf_ = x.mlf_;
-                bucket_count_ = min_buckets_for_size(x.size_);
-                max_load_ = 0;
+                this->mlf_ = x.mlf_;
+                this->bucket_count_ = min_buckets_for_size(x.size_);
+                this->max_load_ = 0;
 
                 // Finally copy the elements.
                 if (x.size_) {
@@ -3045,10 +3045,10 @@ namespace boost { namespace unordered { namespace detail {
         {
             delete_buckets();
             set_hash_functions new_func_this(*this, x);
-            allocators_.move_assign(x.allocators_);
+            this->allocators_.move_assign(x.allocators_);
             // No throw from here.
-            mlf_ = x.mlf_;
-            max_load_ = x.max_load_;
+            this->mlf_ = x.mlf_;
+            this->max_load_ = x.max_load_;
             move_buckets_from(x);
             new_func_this.commit();
         }
@@ -3059,22 +3059,22 @@ namespace boost { namespace unordered { namespace detail {
                 delete_buckets();
                 set_hash_functions new_func_this(*this, x);
                 // No throw from here.
-                mlf_ = x.mlf_;
-                max_load_ = x.max_load_;
+                this->mlf_ = x.mlf_;
+                this->max_load_ = x.max_load_;
                 move_buckets_from(x);
                 new_func_this.commit();
             }
             else {
                 set_hash_functions new_func_this(*this, x);
-                mlf_ = x.mlf_;
+                this->mlf_ = x.mlf_;
                 recalculate_max_load();
 
-                if (!size_ && !x.size_) {
+                if (!this->size_ && !x.size_) {
                     new_func_this.commit();
                     return;
                 }
 
-                if (x.size_ >= max_load_) {
+                if (x.size_ >= this->max_load_) {
                     create_buckets(min_buckets_for_size(x.size_));
                 }
                 else {
@@ -3138,18 +3138,18 @@ namespace boost { namespace unordered { namespace detail {
     template <typename Types>
     inline void table<Types>::reserve_for_insert(std::size_t size)
     {
-        if (!buckets_) {
-            create_buckets((std::max)(bucket_count_,
+        if (!this->buckets_) {
+            create_buckets((std::max)(this->bucket_count_,
                 min_buckets_for_size(size)));
         }
         // According to the standard this should be 'size >= max_load_',
         // but I think this is better, defect report filed.
-        else if(size > max_load_) {
+        else if(size > this->max_load_) {
             std::size_t num_buckets
                 = min_buckets_for_size((std::max)(size,
-                    size_ + (size_ >> 1)));
+                    this->size_ + (this->size_ >> 1)));
 
-            if (num_buckets != bucket_count_)
+            if (num_buckets != this->bucket_count_)
                 static_cast<table_impl*>(this)->rehash_impl(num_buckets);
         }
     }
@@ -3162,17 +3162,17 @@ namespace boost { namespace unordered { namespace detail {
     {
         using namespace std;
 
-        if(!size_) {
+        if(!this->size_) {
             delete_buckets();
-            bucket_count_ = policy::new_bucket_count(min_buckets);
+            this->bucket_count_ = policy::new_bucket_count(min_buckets);
         }
         else {
             min_buckets = policy::new_bucket_count((std::max)(min_buckets,
                 boost::unordered::detail::double_to_size(floor(
-                    static_cast<double>(size_) /
-                    static_cast<double>(mlf_))) + 1));
+                    static_cast<double>(this->size_) /
+                    static_cast<double>(this->mlf_))) + 1));
 
-            if(min_buckets != bucket_count_)
+            if(min_buckets != this->bucket_count_)
                 static_cast<table_impl*>(this)->rehash_impl(min_buckets);
         }
     }
@@ -3181,7 +3181,7 @@ namespace boost { namespace unordered { namespace detail {
     inline void table<Types>::reserve(std::size_t num_elements)
     {
         rehash(static_cast<std::size_t>(
-            std::ceil(static_cast<double>(num_elements) / mlf_)));
+            std::ceil(static_cast<double>(num_elements) / this->mlf_)));
     }
 
 #if defined(BOOST_MSVC)
