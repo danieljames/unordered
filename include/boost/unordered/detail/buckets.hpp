@@ -543,7 +543,7 @@ namespace boost { namespace unordered { namespace detail {
     };
 
     template <typename T>
-    struct pick_policy :
+    struct pick_policy2 :
         pick_policy_impl<
             std::numeric_limits<std::size_t>::digits,
             std::numeric_limits<std::size_t>::radix> {};
@@ -555,37 +555,40 @@ namespace boost { namespace unordered { namespace detail {
     // don't have enough unique values for this to be an issue.
 
     template <>
-    struct pick_policy<int> {
+    struct pick_policy2<int> {
         typedef prime_policy<std::size_t> type;
     };
 
     template <>
-    struct pick_policy<unsigned int> {
+    struct pick_policy2<unsigned int> {
         typedef prime_policy<std::size_t> type;
     };
 
     template <>
-    struct pick_policy<long> {
+    struct pick_policy2<long> {
         typedef prime_policy<std::size_t> type;
     };
 
     template <>
-    struct pick_policy<unsigned long> {
+    struct pick_policy2<unsigned long> {
         typedef prime_policy<std::size_t> type;
     };
 
     // TODO: Maybe not if std::size_t is smaller than long long.
 #if !defined(BOOST_NO_LONG_LONG)
     template <>
-    struct pick_policy<boost::long_long_type> {
+    struct pick_policy2<boost::long_long_type> {
         typedef prime_policy<std::size_t> type;
     };
 
     template <>
-    struct pick_policy<boost::ulong_long_type> {
+    struct pick_policy2<boost::ulong_long_type> {
         typedef prime_policy<std::size_t> type;
     };
 #endif
+
+    template <typename T>
+    struct pick_policy : pick_policy2<typename boost::remove_cv<T>::type> {};
 
     ////////////////////////////////////////////////////////////////////////////
     // Functions
