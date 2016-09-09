@@ -2465,29 +2465,22 @@ namespace boost { namespace unordered { namespace detail {
         value_base& operator=(value_base const&);
     };
 
-    template <typename Types>
+    template <typename NodePolicy, typename A>
     struct table_base
     {
-        typedef typename Types::node node;
-        typedef typename Types::bucket bucket;
-        typedef typename Types::value_type value_type;
-        typedef typename Types::link_pointer link_pointer;
-        typedef typename Types::value_allocator value_allocator;
+        typedef typename NodePolicy::template node_types<A> node_types;
+        typedef typename node_types::node node;
+        typedef typename node_types::bucket bucket;
+        typedef typename node_types::link_pointer link_pointer;
 
-        typedef typename boost::unordered::detail::
-            rebind_wrap<value_allocator, node>::type node_allocator;
-        typedef typename boost::unordered::detail::
-            rebind_wrap<value_allocator, bucket>::type bucket_allocator;
-        typedef boost::unordered::detail::allocator_traits<node_allocator>
-            node_allocator_traits;
-        typedef boost::unordered::detail::allocator_traits<bucket_allocator>
-            bucket_allocator_traits;
-        typedef typename node_allocator_traits::pointer
-            node_pointer;
-        typedef typename node_allocator_traits::const_pointer
-            const_node_pointer;
-        typedef typename bucket_allocator_traits::pointer
-            bucket_pointer;
+        typedef typename boost::unordered::detail::allocator_traits<A>::value_type value_type;
+        typedef typename boost::unordered::detail::rebind_wrap<A, node>::type node_allocator;
+        typedef typename boost::unordered::detail::rebind_wrap<A, bucket>::type bucket_allocator;
+        typedef boost::unordered::detail::allocator_traits<node_allocator> node_allocator_traits;
+        typedef boost::unordered::detail::allocator_traits<bucket_allocator> bucket_allocator_traits;
+        typedef typename node_allocator_traits::pointer node_pointer;
+        typedef typename node_allocator_traits::const_pointer const_node_pointer;
+        typedef typename bucket_allocator_traits::pointer bucket_pointer;
 
         typedef boost::unordered::detail::node_constructor<node_allocator>
             node_constructor;
@@ -2820,14 +2813,13 @@ namespace boost { namespace unordered { namespace detail {
         boost::unordered::detail::functions<
             typename Types::hasher,
             typename Types::key_equal>,
-        boost::unordered::detail::table_base<Types>
+        Types::table_base
     {
     private:
         table(table const&);
         table& operator=(table const&);
     public:
-        typedef boost::unordered::detail::table_base<Types> base;
-
+        typedef typename Types::table_base base;
         typedef typename Types::hasher hasher;
         typedef typename Types::key_equal key_equal;
         typedef typename Types::const_key_type const_key_type;
@@ -2989,19 +2981,19 @@ namespace boost { namespace unordered { namespace detail {
 
         std::size_t fix_bucket(std::size_t bucket_index, link_pointer prev)
         {
-            link_pointer end = prev->next_;
+            link_pointer next = prev->next_;
             std::size_t bucket_index2 = bucket_index;
 
-            if (end)
+            if (next)
             {
                 bucket_index2 = hash_to_bucket(
-                    static_cast<node_pointer>(end)->hash_);
+                    static_cast<node_pointer>(next)->hash_);
 
-                // If begin and end are in the same bucket, then
+                // If begin and next are in the same bucket, then
                 // there's nothing to do.
                 if (bucket_index == bucket_index2) return bucket_index2;
 
-                // Update the bucket containing end.
+                // Update the bucket containing next.
                 this->get_bucket(bucket_index2)->next_ = prev;
             }
 
@@ -3517,6 +3509,19 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename pick::link_pointer link_pointer;
     };
 
+    struct u
+    {
+        template <typename A>
+        struct node_types
+        {
+            typedef typename pick_node<A>::pick pick;
+
+            typedef typename pick::node node;
+            typedef typename pick::bucket bucket;
+            typedef typename pick::link_pointer link_pointer;
+        };
+    };
+
     template <typename Types>
     struct table_impl : boost::unordered::detail::table<Types>
     {
@@ -3962,9 +3967,9 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
                 prev = prev->next_;
             }
 
-            link_pointer end = next_node(prev)->next_;
+            link_pointer next = next_node(prev)->next_;
 
-            std::size_t deleted_count = this->delete_nodes(prev, end);
+            std::size_t deleted_count = this->delete_nodes(prev, next);
             this->fix_bucket(bucket_index, prev);
             return deleted_count;
         }
@@ -4190,6 +4195,19 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename pick::link_pointer link_pointer;
     };
 
+    struct g
+    {
+        template <typename A>
+        struct node_types
+        {
+            typedef typename pick_grouped_node<A>::pick pick;
+
+            typedef typename pick::node node;
+            typedef typename pick::bucket bucket;
+            typedef typename pick::link_pointer link_pointer;
+        };
+    };
+
     template <typename Types>
     struct grouped_table_impl : boost::unordered::detail::table<Types>
     {
@@ -4371,19 +4389,19 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             return true;
         }
 
-        static bool find(node_pointer n, node_pointer end, value_type const& v)
+        static bool find(node_pointer n, node_pointer n2, value_type const& v)
         {
-            for(;n != end; n = next_node(n))
+            for(;n != n2; n = next_node(n))
                 if (n->value() == v)
                     return true;
             return false;
         }
 
-        static std::size_t count_equal(node_pointer n, node_pointer end,
+        static std::size_t count_equal(node_pointer n, node_pointer n2,
             value_type const& v)
         {
             std::size_t count = 0;
-            for(;n != end; n = next_node(n))
+            for(;n != n2; n = next_node(n))
                 if (n->value() == v) ++count;
             return count;
         }
@@ -4617,9 +4635,9 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
                 prev = first_node->group_prev_;
             }
 
-            link_pointer end = first_node->group_prev_->next_;
+            link_pointer group_end = first_node->group_prev_->next_;
 
-            std::size_t deleted_count = this->delete_nodes(prev, end);
+            std::size_t deleted_count = this->delete_nodes(prev, group_end);
             this->fix_bucket(bucket_index, prev);
             return deleted_count;
         }
@@ -4766,23 +4784,24 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             this->create_buckets(num_buckets);
             link_pointer prev = this->get_previous_start();
             while (prev->next_)
-                prev = place_in_bucket(*this, prev, next_node(prev)->group_prev_);
+                prev = place_in_bucket(*this, prev);
         }
 
         // Iterate through the nodes placing them in the correct buckets.
         // pre: prev->next_ is not null.
-        static link_pointer place_in_bucket(table& dst,
-                link_pointer prev, node_pointer end)
+        static link_pointer place_in_bucket(table& dst, link_pointer prev)
         {
-            bucket_pointer b = dst.get_bucket(dst.hash_to_bucket(end->hash_));
+            node_pointer group_last = next_node(prev)->group_prev_;
+
+            bucket_pointer b = dst.get_bucket(dst.hash_to_bucket(group_last->hash_));
 
             if (!b->next_) {
                 b->next_ = prev;
-                return end;
+                return group_last;
             }
             else {
-                link_pointer next = end->next_;
-                end->next_ = b->next_->next_;
+                link_pointer next = group_last->next_;
+                group_last->next_ = b->next_->next_;
                 b->next_->next_ = prev->next_;
                 prev->next_ = next;
                 return prev;
@@ -4804,6 +4823,23 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             A, value_type>::type value_allocator;
         typedef boost::unordered::detail::allocator_traits<value_allocator>
             value_allocator_traits;
+
+        struct iterator_policy {
+            typedef boost::unordered::detail::u node_policy;
+
+            template <typename Node>
+            struct iterators
+            {
+                typedef boost::unordered::iterator_detail::
+                    c_iterator<Node> iterator;
+                typedef boost::unordered::iterator_detail::
+                    c_iterator<Node> c_iterator;
+            };
+        };
+
+        typedef boost::unordered::detail::table_base<
+            typename iterator_policy::node_policy,
+            value_allocator> table_base;
 
         typedef boost::unordered::detail::pick_node<value_allocator> pick;
         typedef typename pick::node node;
@@ -4840,6 +4876,23 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef boost::unordered::detail::allocator_traits<value_allocator>
             value_allocator_traits;
 
+        struct iterator_policy {
+            typedef boost::unordered::detail::g node_policy;
+
+            template <typename Node>
+            struct iterators
+            {
+                typedef boost::unordered::iterator_detail::
+                    c_iterator<Node> iterator;
+                typedef boost::unordered::iterator_detail::
+                    c_iterator<Node> c_iterator;
+            };
+        };
+
+        typedef boost::unordered::detail::table_base<
+            typename iterator_policy::node_policy,
+            value_allocator> table_base;
+
         typedef boost::unordered::detail::pick_grouped_node<value_allocator> pick;
         typedef typename pick::node node;
         typedef typename pick::bucket bucket;
@@ -4875,6 +4928,23 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef boost::unordered::detail::allocator_traits<value_allocator>
             value_allocator_traits;
 
+        struct iterator_policy {
+            typedef boost::unordered::detail::u node_policy;
+
+            template <typename Node>
+            struct iterators
+            {
+                typedef boost::unordered::iterator_detail::
+                    iterator<Node> iterator;
+                typedef boost::unordered::iterator_detail::
+                    c_iterator<Node> c_iterator;
+            };
+        };
+
+        typedef boost::unordered::detail::table_base<
+            typename iterator_policy::node_policy,
+            value_allocator> table_base;
+
         typedef boost::unordered::detail::pick_node<value_allocator> pick;
         typedef typename pick::node node;
         typedef typename pick::bucket bucket;
@@ -4909,6 +4979,23 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             A, value_type>::type value_allocator;
         typedef boost::unordered::detail::allocator_traits<value_allocator>
             value_allocator_traits;
+
+        struct iterator_policy {
+            typedef boost::unordered::detail::g node_policy;
+
+            template <typename Node>
+            struct iterators
+            {
+                typedef boost::unordered::iterator_detail::
+                    iterator<Node> iterator;
+                typedef boost::unordered::iterator_detail::
+                    c_iterator<Node> c_iterator;
+            };
+        };
+
+        typedef boost::unordered::detail::table_base<
+            typename iterator_policy::node_policy,
+            value_allocator> table_base;
 
         typedef boost::unordered::detail::pick_grouped_node<value_allocator> pick;
         typedef typename pick::node node;
