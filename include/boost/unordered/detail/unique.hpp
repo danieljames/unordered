@@ -211,7 +211,7 @@ namespace boost { namespace unordered { namespace detail {
                 Pred const& eq) const
         {
             std::size_t bucket_index = this->hash_to_bucket(key_hash);
-            node_pointer n = this->begin(bucket_index);
+            node_pointer n = this->begin_node(bucket_index);
 
             for (;;)
             {
@@ -238,7 +238,7 @@ namespace boost { namespace unordered { namespace detail {
             return this->find_node(k) ? 1 : 0;
         }
 
-        value_type& at(key_type const& k) const
+        value_type& at_(key_type const& k) const
         {
             if (this->size_) {
                 node_pointer n = this->find_node(k);
@@ -262,7 +262,7 @@ namespace boost { namespace unordered { namespace detail {
         {
             if(this->size_ != other.size_) return false;
     
-            for(node_pointer n1 = this->begin(); n1; n1 = next_node(n1))
+            for(node_pointer n1 = this->begin_node(); n1; n1 = next_node(n1))
             {
                 node_pointer n2 = other.find_node(other.get_key(n1->value()));
 
@@ -314,7 +314,7 @@ namespace boost { namespace unordered { namespace detail {
             return this->add_node(b.release(), key_hash);
         }
 
-        value_type& operator[](key_type const& k)
+        value_type& insert_default(key_type const& k)
         {
             std::size_t key_hash = this->hash(k);
             node_pointer pos = this->find_node(key_hash, k);
@@ -330,14 +330,14 @@ namespace boost { namespace unordered { namespace detail {
 
 #if defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
 #   if defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
-        emplace_return emplace(boost::unordered::detail::emplace_args1<
+        emplace_return emplace_(boost::unordered::detail::emplace_args1<
                 boost::unordered::detail::please_ignore_this_overload> const&)
         {
             BOOST_ASSERT(false);
             return emplace_return(iterator(), false);
         }
 
-        iterator emplace_hint(c_iterator,
+        iterator emplace_hint_(c_iterator,
             boost::unordered::detail::emplace_args1<
                 boost::unordered::detail::please_ignore_this_overload> const&)
         {
@@ -345,14 +345,14 @@ namespace boost { namespace unordered { namespace detail {
             return iterator();
         }
 #   else
-        emplace_return emplace(
+        emplace_return emplace_(
                 boost::unordered::detail::please_ignore_this_overload const&)
         {
             BOOST_ASSERT(false);
             return emplace_return(iterator(), false);
         }
 
-        iterator emplace_hint(c_iterator,
+        iterator emplace_hint_(c_iterator,
                 boost::unordered::detail::please_ignore_this_overload const&)
         {
             BOOST_ASSERT(false);
@@ -362,7 +362,7 @@ namespace boost { namespace unordered { namespace detail {
 #endif
 
         template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
-        emplace_return emplace(BOOST_UNORDERED_EMPLACE_ARGS)
+        emplace_return emplace_(BOOST_UNORDERED_EMPLACE_ARGS)
         {
 #if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
             return emplace_impl(
@@ -376,7 +376,7 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
-        iterator emplace_hint(c_iterator hint,
+        iterator emplace_hint_(c_iterator hint,
             BOOST_UNORDERED_EMPLACE_ARGS)
         {
 #if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
@@ -392,14 +392,14 @@ namespace boost { namespace unordered { namespace detail {
 
 #if defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
         template <typename A0>
-        emplace_return emplace(
+        emplace_return emplace_(
                 boost::unordered::detail::emplace_args1<A0> const& args)
         {
             return emplace_impl(extractor::extract(args.a0), args);
         }
 
         template <typename A0>
-        iterator emplace_hint(c_iterator hint,
+        iterator emplace_hint_(c_iterator hint,
                 boost::unordered::detail::emplace_args1<A0> const& args)
         {
             return emplace_hint_impl(hint, extractor::extract(args.a0), args);
@@ -589,7 +589,7 @@ namespace boost { namespace unordered { namespace detail {
             return deleted_count;
         }
 
-        iterator erase(c_iterator r)
+        iterator erase_(c_iterator r)
         {
             BOOST_ASSERT(r.node_);
             node_pointer next = next_node(r.node_);
@@ -625,7 +625,7 @@ namespace boost { namespace unordered { namespace detail {
         void copy_buckets(table const& src) {
             this->create_buckets(this->bucket_count_);
 
-            for(node_pointer n = src.begin(); n; n = next_node(n)) {
+            for(node_pointer n = src.begin_node(); n; n = next_node(n)) {
                 this->add_node(
                     boost::unordered::detail::func::construct_value(
                      this->node_alloc(), n->value()), n->hash_);
@@ -635,7 +635,7 @@ namespace boost { namespace unordered { namespace detail {
         void move_buckets(table const& src) {
             this->create_buckets(this->bucket_count_);
 
-            for(node_pointer n = src.begin(); n; n = next_node(n)) {
+            for(node_pointer n = src.begin_node(); n; n = next_node(n)) {
                 this->add_node(
                     boost::unordered::detail::func::construct_value(
                         this->node_alloc(), boost::move(n->value())), n->hash_);
@@ -645,7 +645,7 @@ namespace boost { namespace unordered { namespace detail {
         void assign_buckets(table const& src)
         {
             node_holder<node_allocator> holder(*this);
-            for(node_pointer n = src.begin(); n; n = next_node(n)) {
+            for(node_pointer n = src.begin_node(); n; n = next_node(n)) {
                 this->add_node(holder.copy_of(n->value()), n->hash_);
             }
         }
@@ -653,7 +653,7 @@ namespace boost { namespace unordered { namespace detail {
         void move_assign_buckets(table& src)
         {
             node_holder<node_allocator> holder(*this);
-            for(node_pointer n = src.begin(); n; n = next_node(n)) {
+            for(node_pointer n = src.begin_node(); n; n = next_node(n)) {
                 this->add_node(holder.move_copy_of(n->value()), n->hash_);
             }
         }

@@ -217,7 +217,7 @@ namespace boost { namespace unordered { namespace detail {
                 Pred const& eq) const
         {
             std::size_t bucket_index = this->hash_to_bucket(key_hash);
-            node_pointer n = this->begin(bucket_index);
+            node_pointer n = this->begin_node(bucket_index);
 
             for (;;)
             {
@@ -267,7 +267,7 @@ namespace boost { namespace unordered { namespace detail {
         {
             if(this->size_ != other.size_) return false;
     
-            for(node_pointer n1 = this->begin(); n1;)
+            for(node_pointer n1 = this->begin_node(); n1;)
             {
                 node_pointer n2 = other.find_node(other.get_key(n1->value()));
                 if (!n2) return false;
@@ -418,28 +418,28 @@ namespace boost { namespace unordered { namespace detail {
 
 #if defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
 #   if defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
-        iterator emplace(boost::unordered::detail::emplace_args1<
+        iterator emplace_(boost::unordered::detail::emplace_args1<
                 boost::unordered::detail::please_ignore_this_overload> const&)
         {
             BOOST_ASSERT(false);
             return iterator();
         }
 
-        iterator emplace_hint(c_iterator, boost::unordered::detail::emplace_args1<
+        iterator emplace_hint_(c_iterator, boost::unordered::detail::emplace_args1<
                 boost::unordered::detail::please_ignore_this_overload> const&)
         {
             BOOST_ASSERT(false);
             return iterator();
         }
 #   else
-        iterator emplace(
+        iterator emplace_(
                 boost::unordered::detail::please_ignore_this_overload const&)
         {
             BOOST_ASSERT(false);
             return iterator();
         }
 
-        iterator emplace_hint(c_iterator,
+        iterator emplace_hint_(c_iterator,
                 boost::unordered::detail::please_ignore_this_overload const&)
         {
             BOOST_ASSERT(false);
@@ -449,7 +449,7 @@ namespace boost { namespace unordered { namespace detail {
 #endif
 
         template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
-        iterator emplace(BOOST_UNORDERED_EMPLACE_ARGS)
+        iterator emplace_(BOOST_UNORDERED_EMPLACE_ARGS)
         {
             return iterator(emplace_impl(
                 boost::unordered::detail::func::construct_value_generic(
@@ -457,7 +457,7 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
-        iterator emplace_hint(c_iterator hint, BOOST_UNORDERED_EMPLACE_ARGS)
+        iterator emplace_hint_(c_iterator hint, BOOST_UNORDERED_EMPLACE_ARGS)
         {
             return iterator(emplace_hint_impl(hint,
                 boost::unordered::detail::func::construct_value_generic(
@@ -575,7 +575,7 @@ namespace boost { namespace unordered { namespace detail {
             return deleted_count;
         }
 
-        iterator erase(c_iterator r)
+        iterator erase_(c_iterator r)
         {
             BOOST_ASSERT(r.node_);
             node_pointer next = next_node(r.node_);
@@ -650,7 +650,7 @@ namespace boost { namespace unordered { namespace detail {
         void copy_buckets(table const& src) {
             this->create_buckets(this->bucket_count_);
 
-            for (node_pointer n = src.begin(); n;) {
+            for (node_pointer n = src.begin_node(); n;) {
                 std::size_t key_hash = n->hash_;
                 node_pointer group_end(next_group(n));
                 node_pointer pos = this->add_node(
@@ -668,7 +668,7 @@ namespace boost { namespace unordered { namespace detail {
         void move_buckets(table const& src) {
             this->create_buckets(this->bucket_count_);
 
-            for (node_pointer n = src.begin(); n;) {
+            for (node_pointer n = src.begin_node(); n;) {
                 std::size_t key_hash = n->hash_;
                 node_pointer group_end(next_group(n));
                 node_pointer pos = this->add_node(
@@ -685,7 +685,7 @@ namespace boost { namespace unordered { namespace detail {
 
         void assign_buckets(table const& src) {
             node_holder<node_allocator> holder(*this);
-            for (node_pointer n = src.begin(); n;) {
+            for (node_pointer n = src.begin_node(); n;) {
                 std::size_t key_hash = n->hash_;
                 node_pointer group_end(next_group(n));
                 node_pointer pos = this->add_node(holder.copy_of(n->value()), key_hash, node_pointer());
@@ -698,7 +698,7 @@ namespace boost { namespace unordered { namespace detail {
 
         void move_assign_buckets(table& src) {
             node_holder<node_allocator> holder(*this);
-            for (node_pointer n = src.begin(); n;) {
+            for (node_pointer n = src.begin_node(); n;) {
                 std::size_t key_hash = n->hash_;
                 node_pointer group_end(next_group(n));
                 node_pointer pos = this->add_node(holder.move_copy_of(n->value()), key_hash, node_pointer());

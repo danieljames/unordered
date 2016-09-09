@@ -409,7 +409,7 @@ namespace boost { namespace unordered { namespace detail {
             return constructor_.release();
         }
 
-        iterator begin() const
+        iterator begin_node() const
         {
             return iterator(nodes_);
         }

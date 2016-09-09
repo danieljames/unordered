@@ -178,12 +178,12 @@ namespace boost { namespace unordered { namespace detail {
             return get_bucket(bucket_index)->next_;
         }
 
-        node_pointer begin() const
+        node_pointer begin_node() const
         {
             return size_ ? next_node(get_previous_start()) : node_pointer();
         }
 
-        node_pointer begin(std::size_t bucket_index) const
+        node_pointer begin_node(std::size_t bucket_index) const
         {
             if (!size_) return node_pointer();
             link_pointer prev = get_previous_start(bucket_index);
@@ -204,7 +204,7 @@ namespace boost { namespace unordered { namespace detail {
 
         std::size_t bucket_size(std::size_t index) const
         {
-            node_pointer n = begin(index);
+            node_pointer n = begin_node(index);
             if (!n) return 0;
 
             std::size_t count = 0;
@@ -552,7 +552,7 @@ namespace boost { namespace unordered { namespace detail {
                 bucket_index2 = hash_to_bucket(
                     static_cast<node_pointer>(end)->hash_);
 
-                // If begin and end are in the same bucket, then
+                // If begin_node and end are in the same bucket, then
                 // there's nothing to do.
                 if (bucket_index == bucket_index2) return bucket_index2;
 
