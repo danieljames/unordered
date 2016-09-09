@@ -144,7 +144,7 @@ namespace boost { namespace unordered { namespace detail {
     template <typename Types>
     struct grouped_table_impl : boost::unordered::detail::table<Types>
     {
-        friend class boost::unordered::detail::table<Types>;
+        friend struct boost::unordered::detail::table<Types>;
 
     protected:
         typedef boost::unordered::detail::table<Types> table;
