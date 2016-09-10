@@ -424,24 +424,24 @@ namespace boost { namespace unordered { namespace detail {
     struct iterator_base : boost::unordered::detail::table_base<typename IteratorPolicy::node_policy, A>
     {
     protected:
-        typedef boost::unordered::detail::table_base<typename IteratorPolicy::node_policy, A> table_base;
-        typedef typename table_base::node node;
+        typedef boost::unordered::detail::table_base<typename IteratorPolicy::node_policy, A> base;
+        typedef typename base::node node;
         typedef typename IteratorPolicy::template iterators<node> iterator_types;
     public:
         typedef typename iterator_types::iterator iterator;
         typedef typename iterator_types::c_iterator const_iterator;
-        typedef typename table_base::node_allocator node_allocator;
+        typedef typename base::node_allocator node_allocator;
 
         ////////////////////////////////////////////////////////////////////////
         // Constructors
 
         iterator_base(std::size_t num_buckets, node_allocator const& a,
-                float mlf = 1.0f) : table_base(num_buckets, a, mlf) {}
+                float mlf = 1.0f) : base(num_buckets, a, mlf) {}
         iterator_base(iterator_base& x, boost::unordered::detail::move_tag m) :
-            table_base(x, m) {}
+            base(x, m) {}
         iterator_base(iterator_base& x, node_allocator const& a,
                 boost::unordered::detail::move_tag m) :
-            table_base(x, a, m) {}
+            base(x, a, m) {}
 
         ////////////////////////////////////////////////////////////////////////
         // Iterators
