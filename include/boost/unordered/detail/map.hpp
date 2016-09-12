@@ -8,14 +8,13 @@
 #include <boost/unordered/detail/unique.hpp>
 
 namespace boost { namespace unordered { namespace detail {
-    template <typename A, typename K, typename M>
+    template <typename A, typename K>
     struct map
     {
-        typedef std::pair<K const, M> value_type;
+        typedef A value_allocator;
+        typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
+        typedef typename value_allocator_traits::value_type value_type;
         typedef K key_type;
-
-        typedef typename ::boost::unordered::detail::rebind_wrap<
-            A, value_type>::type value_allocator;
 
         struct iterator_policy {
             typedef boost::unordered::detail::u node_policy;
@@ -51,7 +50,7 @@ namespace boost { namespace unordered { namespace detail {
 
         template <typename H, typename P>
         struct table_gen {
-            typedef boost::unordered::detail::table_impl<map<A,K,M>, H, P> table;
+            typedef boost::unordered::detail::table_impl<map<A, K>, H, P> table;
         };
     };
 
@@ -64,18 +63,17 @@ namespace boost { namespace unordered { namespace detail {
             A, value_type>::type value_allocator;
 
         typedef boost::unordered::detail::table_impl<
-            map<value_allocator, K, M>,
+            map<value_allocator, K>,
             H, P> base;
     };
 
-    template <typename A, typename K, typename M>
+    template <typename A, typename K>
     struct multimap
     {
-        typedef std::pair<K const, M> value_type;
+        typedef A value_allocator;
+        typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
+        typedef typename value_allocator_traits::value_type value_type;
         typedef K key_type;
-
-        typedef typename ::boost::unordered::detail::rebind_wrap<
-            A, value_type>::type value_allocator;
 
         struct iterator_policy {
             typedef boost::unordered::detail::g node_policy;
@@ -111,7 +109,7 @@ namespace boost { namespace unordered { namespace detail {
 
         template <typename H, typename P>
         struct table_gen {
-            typedef boost::unordered::detail::grouped_table_impl<multimap<A,K,M>, H, P> table;
+            typedef boost::unordered::detail::grouped_table_impl<multimap<A, K>, H, P> table;
         };
     };
 
@@ -124,7 +122,7 @@ namespace boost { namespace unordered { namespace detail {
             A, value_type>::type value_allocator;
 
         typedef boost::unordered::detail::grouped_table_impl<
-            multimap<value_allocator, K, M>,
+            multimap<value_allocator, K>,
             H, P> base;
     };
 }}}
