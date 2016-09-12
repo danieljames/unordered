@@ -184,11 +184,11 @@ namespace boost { namespace unordered { namespace iterator_detail {
 #if !defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS)
         template <typename>
         friend struct boost::unordered::iterator_detail::c_iterator;
-        template <typename>
+        template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::table;
-        template <typename>
+        template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::table_impl;
-        template <typename>
+        template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::grouped_table_impl;
     private:
 #endif
@@ -244,11 +244,11 @@ namespace boost { namespace unordered { namespace iterator_detail {
         friend struct boost::unordered::iterator_detail::iterator<Node>;
 
 #if !defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS)
-        template <typename>
+        template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::table;
-        template <typename>
+        template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::table_impl;
-        template <typename>
+        template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::grouped_table_impl;
 
     private:

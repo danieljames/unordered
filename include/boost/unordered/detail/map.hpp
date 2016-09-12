@@ -27,37 +27,34 @@ namespace boost { namespace unordered { namespace detail {
             typedef boost::unordered::iterator_detail::
                 cl_iterator<Node, Policy> c_iterator;
         };
+
+        template <typename ValueType>
+        struct value_things
+        {
+            typedef typename ValueType::first_type key_type2;
+            typedef boost::unordered::detail::map_extractor<ValueType> extractor;
+        };
     };
 
     struct map_policy
     {
         typedef map_iterator_policy iterator_policy;
         typedef boost::unordered::detail::u node_policy;
+
+        template <typename H, typename P, typename A>
+        struct table_gen {
+            typedef boost::unordered::detail::table_impl<map_policy, H, P, A> table;
+        };
     };
 
     struct multimap_policy
     {
         typedef map_iterator_policy iterator_policy;
         typedef boost::unordered::detail::g node_policy;
-    };
 
-    template <typename A>
-    struct map
-    {
-        typedef A value_allocator;
-        typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
-        typedef typename value_allocator_traits::value_type value_type;
-        typedef typename value_type::first_type key_type2;
-
-        typedef map_policy container_policy;
-
-        typedef boost::unordered::detail::map_extractor<value_type> extractor;
-
-        typedef typename boost::unordered::detail::pick_policy<key_type2>::type policy;
-
-        template <typename H, typename P>
+        template <typename H, typename P, typename A>
         struct table_gen {
-            typedef boost::unordered::detail::table_impl<map<A>, H, P, A> table;
+            typedef boost::unordered::detail::grouped_table_impl<multimap_policy, H, P, A> table;
         };
     };
 
@@ -68,28 +65,7 @@ namespace boost { namespace unordered { namespace detail {
             A, value_type>::type value_allocator;
 
         typedef boost::unordered::detail::table_impl<
-            map<value_allocator>,
-            H, P, value_allocator> base;
-    };
-
-    template <typename A>
-    struct multimap
-    {
-        typedef A value_allocator;
-        typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
-        typedef typename value_allocator_traits::value_type value_type;
-        typedef typename value_type::first_type key_type2;
-
-        typedef multimap_policy container_policy;
-
-        typedef boost::unordered::detail::map_extractor<value_type> extractor;
-
-        typedef typename boost::unordered::detail::pick_policy<key_type2>::type policy;
-
-        template <typename H, typename P>
-        struct table_gen {
-            typedef boost::unordered::detail::grouped_table_impl<multimap<A>, H, P, A> table;
-        };
+            map_policy, H, P, value_allocator> base;
     };
 
     template <typename K, typename M, typename H, typename P, typename A>
@@ -99,7 +75,6 @@ namespace boost { namespace unordered { namespace detail {
             A, value_type>::type value_allocator;
 
         typedef boost::unordered::detail::grouped_table_impl<
-            multimap<value_allocator>,
-            H, P, value_allocator> base;
+            multimap_policy, H, P, value_allocator> base;
     };
 }}}

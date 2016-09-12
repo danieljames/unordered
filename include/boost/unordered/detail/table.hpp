@@ -67,8 +67,8 @@ namespace boost { namespace unordered { namespace detail {
     template <typename NodePolicy, typename A>
     struct table_base
     {
-        template <typename Types, typename H, typename P, typename A2> friend struct table_impl;
-        template <typename Types, typename H, typename P, typename A2> friend struct grouped_table_impl;
+        template <typename Policies, typename H, typename P, typename A2> friend struct table_impl;
+        template <typename Policies, typename H, typename P, typename A2> friend struct grouped_table_impl;
         template <typename NodeAlloc> friend struct node_holder;
 
     protected:
@@ -421,13 +421,13 @@ namespace boost { namespace unordered { namespace detail {
         }
     };
 
-    template <typename ContainerPolicy, typename A>
-    struct iterator_base : boost::unordered::detail::table_base<typename ContainerPolicy::node_policy, A>
+    template <typename Policies, typename A>
+    struct iterator_base : boost::unordered::detail::table_base<typename Policies::node_policy, A>
     {
     protected:
-        typedef boost::unordered::detail::table_base<typename ContainerPolicy::node_policy, A> base;
+        typedef boost::unordered::detail::table_base<typename Policies::node_policy, A> base;
         typedef typename base::node node;
-        typedef typename ContainerPolicy::iterator_policy::template iterators<node> iterator_types;
+        typedef typename Policies::iterator_policy::template iterators<node> iterator_types;
     public:
         typedef typename iterator_types::iterator iterator;
         typedef typename iterator_types::c_iterator const_iterator;
@@ -478,13 +478,14 @@ namespace boost { namespace unordered { namespace detail {
         }
     };
 
-    template <typename ContainerPolicy, typename A, typename Policy>
-    struct policy_base : iterator_base<ContainerPolicy, A>
+    template <typename Policies, typename A>
+    struct policy_base : iterator_base<Policies, A>
     {
-        typedef iterator_base<ContainerPolicy, A> base;
+        typedef iterator_base<Policies, A> base;
         typedef typename base::node node;
-        typedef Policy policy;
-        typedef typename ContainerPolicy::iterator_policy::template local_iterators<node, policy> l_iterator_types;
+        typedef typename Policies::iterator_policy::template value_things<typename base::value_type>::key_type2 key_type2;
+        typedef typename boost::unordered::detail::pick_policy<key_type2>::type policy;
+        typedef typename Policies::iterator_policy::template local_iterators<node, policy> l_iterator_types;
         typedef typename l_iterator_types::iterator local_iterator;
         typedef typename l_iterator_types::c_iterator const_local_iterator;
         typedef typename base::node_pointer node_pointer;
@@ -615,15 +616,13 @@ namespace boost { namespace unordered { namespace detail {
 
     };
 
-    template <typename Types, typename H, typename P, typename A>
+    template <typename Policies, typename H, typename P, typename A>
     struct table :
         boost::unordered::detail::functions<H, P>,
-        boost::unordered::detail::policy_base<
-            typename Types::container_policy, A,
-            typename Types::policy>
+        boost::unordered::detail::policy_base<Policies, A>
     {
-        template <typename Types2, typename H2, typename P2, typename A2> friend struct table_impl;
-        template <typename Types2, typename H2, typename P2, typename A2> friend struct grouped_table_impl;
+        template <typename Policies2, typename H2, typename P2, typename A2> friend struct table_impl;
+        template <typename Policies2, typename H2, typename P2, typename A2> friend struct grouped_table_impl;
         template <typename NodeAlloc> friend struct node_holder;
 
     public:
@@ -633,16 +632,14 @@ namespace boost { namespace unordered { namespace detail {
         table(table const&);
         table& operator=(table const&);
     protected:
-        typedef boost::unordered::detail::policy_base<
-            typename Types::container_policy, A,
-            typename Types::policy> table_base;
+        typedef boost::unordered::detail::policy_base<Policies, A> table_base;
         typedef boost::unordered::detail::functions<H, P> functions;
         typedef typename functions::set_hash_functions set_hash_functions;
 
-        typedef typename Types::key_type2 key_type2;
-        typedef typename Types::extractor extractor;
-        typedef typename Types::template table_gen<H, P>::table table_impl;
-        typedef typename Types::policy policy;
+        typedef typename table_base::key_type2 key_type2;
+        typedef typename Policies::iterator_policy::template value_things<typename table_base::value_type>::extractor extractor;
+        typedef typename Policies::template table_gen<H, P, A>::table table_impl;
+        typedef typename table_base::policy policy;
 
         typedef typename table_base::bucket_pointer bucket_pointer;
         typedef typename table_base::node_allocator node_allocator;
@@ -915,8 +912,8 @@ namespace boost { namespace unordered { namespace detail {
     // Reserve & Rehash
 
     // basic exception safety
-    template <typename Types, typename H, typename P, typename A>
-    inline void table<Types, H, P, A>::reserve_for_insert(std::size_t size)
+    template <typename Policies, typename H, typename P, typename A>
+    inline void table<Policies, H, P, A>::reserve_for_insert(std::size_t size)
     {
         if (!this->buckets_) {
             this->create_buckets((std::max)(this->bucket_count_,
@@ -937,8 +934,8 @@ namespace boost { namespace unordered { namespace detail {
     // if hash function throws, basic exception safety
     // strong otherwise.
 
-    template <typename Types, typename H, typename P, typename A>
-    inline void table<Types, H, P, A>::rehash(std::size_t min_buckets)
+    template <typename Policies, typename H, typename P, typename A>
+    inline void table<Policies, H, P, A>::rehash(std::size_t min_buckets)
     {
         using namespace std;
 
@@ -957,8 +954,8 @@ namespace boost { namespace unordered { namespace detail {
         }
     }
 
-    template <typename Types, typename H, typename P, typename A>
-    inline void table<Types, H, P, A>::reserve(std::size_t num_elements)
+    template <typename Policies, typename H, typename P, typename A>
+    inline void table<Policies, H, P, A>::reserve(std::size_t num_elements)
     {
         rehash(static_cast<std::size_t>(
             std::ceil(static_cast<double>(num_elements) / this->mlf_)));

@@ -27,36 +27,34 @@ namespace boost { namespace unordered { namespace detail {
             typedef boost::unordered::iterator_detail::
                 cl_iterator<Node, Policy> c_iterator;
         };
+
+        template <typename ValueType>
+        struct value_things
+        {
+            typedef ValueType key_type2;
+            typedef boost::unordered::detail::set_extractor<ValueType> extractor;
+        };
     };
 
     struct set_policy
     {
         typedef set_iterator_policy iterator_policy;
         typedef boost::unordered::detail::u node_policy;
+
+        template <typename H, typename P, typename A>
+        struct table_gen {
+            typedef boost::unordered::detail::table_impl<set_policy, H, P, A> table;
+        };
     };
 
     struct multiset_policy
     {
         typedef set_iterator_policy iterator_policy;
         typedef boost::unordered::detail::g node_policy;
-    };
 
-    template <typename A>
-    struct set
-    {
-        typedef A value_allocator;
-        typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
-        typedef typename value_allocator_traits::value_type value_type;
-        typedef value_type key_type2;
-
-        typedef set_policy container_policy;
-        typedef boost::unordered::detail::set_extractor<value_type> extractor;
-
-        typedef typename boost::unordered::detail::pick_policy<value_type>::type policy;
-
-        template <typename H, typename P>
+        template <typename H, typename P, typename A>
         struct table_gen {
-            typedef boost::unordered::detail::table_impl<set<A>, H, P, A> table;
+            typedef boost::unordered::detail::grouped_table_impl<multiset_policy, H, P, A> table;
         };
     };
 
@@ -67,27 +65,7 @@ namespace boost { namespace unordered { namespace detail {
             A, value_type>::type value_allocator;
 
         typedef boost::unordered::detail::table_impl<
-            set<value_allocator>,
-            H, P, value_allocator> base;
-    };
-
-    template <typename A>
-    struct multiset
-    {
-        typedef A value_allocator;
-        typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
-        typedef typename value_allocator_traits::value_type value_type;
-        typedef value_type key_type2;
-
-        typedef multiset_policy container_policy;
-        typedef boost::unordered::detail::set_extractor<value_type> extractor;
-
-        typedef typename boost::unordered::detail::pick_policy<value_type>::type policy;
-
-        template <typename H, typename P>
-        struct table_gen {
-            typedef boost::unordered::detail::grouped_table_impl<multiset<A>, H, P, A> table;
-        };
+            set_policy, H, P, value_allocator> base;
     };
 
     template <typename T, typename H, typename P, typename A>
@@ -97,7 +75,6 @@ namespace boost { namespace unordered { namespace detail {
             A, value_type>::type value_allocator;
 
         typedef boost::unordered::detail::grouped_table_impl<
-            multiset<value_allocator>,
-            H, P, value_allocator> base;
+            multiset_policy, H, P, value_allocator> base;
     };
 }}}
