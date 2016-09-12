@@ -341,6 +341,23 @@ namespace boost { namespace unordered { namespace detail {
         compressed& operator=(compressed const&);
     };
 
+    ////////////////////////////////////////////////////////////////////////////
+    // pair_traits
+    //
+    // Used to get the types from a pair without instantiating it.
+
+    template <typename Pair>
+    struct pair_traits {
+        typedef typename Pair::first_type first_type;
+        typedef typename Pair::second_type second_type;
+    };
+
+    template <typename T1, typename T2>
+    struct pair_traits<std::pair<T1, T2> > {
+        typedef T1 first_type;
+        typedef T2 second_type;
+    };
+
 #if defined(BOOST_MSVC)
 #pragma warning(push)
 #pragma warning(disable:4512) // assignment operator could not be generated.
@@ -3237,11 +3254,13 @@ namespace boost { namespace unordered { namespace detail {
 #endif
     };
 
-    template <class Key, class ValueType>
+    template <class ValueType>
     struct map_extractor
     {
         typedef ValueType value_type;
-        typedef typename boost::remove_const<Key>::type key_type;
+        typedef typename boost::remove_const<
+            typename boost::unordered::detail::pair_traits<ValueType>::first_type
+        >::type key_type;
 
         static key_type const& extract(value_type const& v)
         {
@@ -4818,8 +4837,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename pick::link_pointer link_pointer;
 
         typedef boost::unordered::detail::table_impl<types> table;
-        typedef boost::unordered::detail::map_extractor<const_key_type, value_type>
-            extractor;
+        typedef boost::unordered::detail::map_extractor<value_type> extractor;
 
         typedef typename boost::unordered::detail::pick_policy<K>::type policy;
 
@@ -4854,8 +4872,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename pick::link_pointer link_pointer;
 
         typedef boost::unordered::detail::grouped_table_impl<types> table;
-        typedef boost::unordered::detail::map_extractor<const_key_type, value_type>
-            extractor;
+        typedef boost::unordered::detail::map_extractor<value_type> extractor;
 
         typedef typename boost::unordered::detail::pick_policy<K>::type policy;
 
