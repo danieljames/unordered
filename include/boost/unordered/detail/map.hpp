@@ -8,6 +8,39 @@
 #include <boost/unordered/detail/unique.hpp>
 
 namespace boost { namespace unordered { namespace detail {
+    struct map_iterator_policy
+    {
+        template <typename Node>
+        struct iterators
+        {
+            typedef boost::unordered::iterator_detail::
+                iterator<Node> iterator;
+            typedef boost::unordered::iterator_detail::
+                c_iterator<Node> c_iterator;
+        };
+
+        template <typename Node, typename Policy>
+        struct local_iterators
+        {
+            typedef boost::unordered::iterator_detail::
+                l_iterator<Node, Policy> iterator;
+            typedef boost::unordered::iterator_detail::
+                cl_iterator<Node, Policy> c_iterator;
+        };
+    };
+
+    struct map_policy
+    {
+        typedef map_iterator_policy iterator_policy;
+        typedef boost::unordered::detail::u node_policy;
+    };
+
+    struct multimap_policy
+    {
+        typedef map_iterator_policy iterator_policy;
+        typedef boost::unordered::detail::g node_policy;
+    };
+
     template <typename A, typename K>
     struct map
     {
@@ -16,37 +49,12 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename value_allocator_traits::value_type value_type;
         typedef K key_type;
 
-        struct iterator_policy {
-            typedef boost::unordered::detail::u node_policy;
-
-            template <typename Node>
-            struct iterators
-            {
-                typedef boost::unordered::iterator_detail::
-                    iterator<Node> iterator;
-                typedef boost::unordered::iterator_detail::
-                    c_iterator<Node> c_iterator;
-            };
-
-            template <typename Node, typename Policy>
-            struct local_iterators
-            {
-                typedef boost::unordered::iterator_detail::
-                    l_iterator<Node, Policy> iterator;
-                typedef boost::unordered::iterator_detail::
-                    cl_iterator<Node, Policy> c_iterator;
-            };
-        };
+        typedef map_policy container_policy;
 
         typedef boost::unordered::detail::map_extractor<key_type, value_type>
             extractor;
 
         typedef typename boost::unordered::detail::pick_policy<K>::type policy;
-
-        typedef boost::unordered::detail::policy_base<
-            iterator_policy,
-            value_allocator,
-            policy> table_base;
 
         template <typename H, typename P>
         struct table_gen {
@@ -75,37 +83,12 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename value_allocator_traits::value_type value_type;
         typedef K key_type;
 
-        struct iterator_policy {
-            typedef boost::unordered::detail::g node_policy;
-
-            template <typename Node>
-            struct iterators
-            {
-                typedef boost::unordered::iterator_detail::
-                    iterator<Node> iterator;
-                typedef boost::unordered::iterator_detail::
-                    c_iterator<Node> c_iterator;
-            };
-
-            template <typename Node, typename Policy>
-            struct local_iterators
-            {
-                typedef boost::unordered::iterator_detail::
-                    l_iterator<Node, Policy> iterator;
-                typedef boost::unordered::iterator_detail::
-                    cl_iterator<Node, Policy> c_iterator;
-            };
-        };
+        typedef multimap_policy container_policy;
 
         typedef boost::unordered::detail::map_extractor<key_type, value_type>
             extractor;
 
         typedef typename boost::unordered::detail::pick_policy<K>::type policy;
-
-        typedef boost::unordered::detail::policy_base<
-            iterator_policy,
-            value_allocator,
-            policy> table_base;
 
         template <typename H, typename P>
         struct table_gen {

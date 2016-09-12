@@ -421,13 +421,13 @@ namespace boost { namespace unordered { namespace detail {
         }
     };
 
-    template <typename IteratorPolicy, typename A>
-    struct iterator_base : boost::unordered::detail::table_base<typename IteratorPolicy::node_policy, A>
+    template <typename ContainerPolicy, typename A>
+    struct iterator_base : boost::unordered::detail::table_base<typename ContainerPolicy::node_policy, A>
     {
     protected:
-        typedef boost::unordered::detail::table_base<typename IteratorPolicy::node_policy, A> base;
+        typedef boost::unordered::detail::table_base<typename ContainerPolicy::node_policy, A> base;
         typedef typename base::node node;
-        typedef typename IteratorPolicy::template iterators<node> iterator_types;
+        typedef typename ContainerPolicy::iterator_policy::template iterators<node> iterator_types;
     public:
         typedef typename iterator_types::iterator iterator;
         typedef typename iterator_types::c_iterator const_iterator;
@@ -478,13 +478,13 @@ namespace boost { namespace unordered { namespace detail {
         }
     };
 
-    template <typename IteratorPolicy, typename A, typename Policy>
-    struct policy_base : iterator_base<IteratorPolicy, A>
+    template <typename ContainerPolicy, typename A, typename Policy>
+    struct policy_base : iterator_base<ContainerPolicy, A>
     {
-        typedef iterator_base<IteratorPolicy, A> base;
+        typedef iterator_base<ContainerPolicy, A> base;
         typedef typename base::node node;
         typedef Policy policy;
-        typedef typename IteratorPolicy::template local_iterators<node, policy> l_iterator_types;
+        typedef typename ContainerPolicy::iterator_policy::template local_iterators<node, policy> l_iterator_types;
         typedef typename l_iterator_types::iterator local_iterator;
         typedef typename l_iterator_types::c_iterator const_local_iterator;
         typedef typename base::node_pointer node_pointer;
@@ -618,7 +618,10 @@ namespace boost { namespace unordered { namespace detail {
     template <typename Types, typename H, typename P>
     struct table :
         boost::unordered::detail::functions<H, P>,
-        Types::table_base
+        boost::unordered::detail::policy_base<
+            typename Types::container_policy,
+            typename Types::value_allocator,
+            typename Types::policy>
     {
         template <typename Types2, typename H2, typename P2> friend struct table_impl;
         template <typename Types2, typename H2, typename P2> friend struct grouped_table_impl;
@@ -631,7 +634,10 @@ namespace boost { namespace unordered { namespace detail {
         table(table const&);
         table& operator=(table const&);
     protected:
-        typedef typename Types::table_base table_base;
+        typedef boost::unordered::detail::policy_base<
+            typename Types::container_policy,
+            typename Types::value_allocator,
+            typename Types::policy> table_base;
         typedef boost::unordered::detail::functions<H, P> functions;
         typedef typename functions::set_hash_functions set_hash_functions;
 
