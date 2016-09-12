@@ -51,8 +51,7 @@ namespace boost { namespace unordered { namespace detail {
 
         typedef map_policy container_policy;
 
-        typedef boost::unordered::detail::map_extractor<key_type2, value_type>
-            extractor;
+        typedef boost::unordered::detail::map_extractor<value_type> extractor;
 
         typedef typename boost::unordered::detail::pick_policy<key_type2>::type policy;
 
@@ -83,8 +82,7 @@ namespace boost { namespace unordered { namespace detail {
 
         typedef multimap_policy container_policy;
 
-        typedef boost::unordered::detail::map_extractor<key_type2, value_type>
-            extractor;
+        typedef boost::unordered::detail::map_extractor<value_type> extractor;
 
         typedef typename boost::unordered::detail::pick_policy<key_type2>::type policy;
 
