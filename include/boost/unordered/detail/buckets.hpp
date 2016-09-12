@@ -17,11 +17,11 @@
 
 namespace boost { namespace unordered { namespace detail {
 
-    template <typename Types> struct table;
+    template <typename Types, typename H, typename P> struct table;
     template <typename NodePointer> struct bucket;
     struct ptr_bucket;
-    template <typename Types> struct table_impl;
-    template <typename Types> struct grouped_table_impl;
+    template <typename Types, typename H, typename P> struct table_impl;
+    template <typename Types, typename H, typename P> struct grouped_table_impl;
 
 }}}
 

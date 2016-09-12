@@ -67,8 +67,8 @@ namespace boost { namespace unordered { namespace detail {
     template <typename NodePolicy, typename A>
     struct table_base
     {
-        template <typename Types2> friend struct table_impl;
-        template <typename Types2> friend struct grouped_table_impl;
+        template <typename Types, typename H, typename P> friend struct table_impl;
+        template <typename Types, typename H, typename P> friend struct grouped_table_impl;
         template <typename NodeAlloc> friend struct node_holder;
 
     protected:
@@ -615,40 +615,33 @@ namespace boost { namespace unordered { namespace detail {
 
     };
 
-    template <typename Types>
+    template <typename Types, typename H, typename P>
     struct table :
-        boost::unordered::detail::functions<
-            typename Types::hasher,
-            typename Types::key_equal>,
+        boost::unordered::detail::functions<H, P>,
         Types::table_base
     {
-        template <typename Types2> friend struct table_impl;
-        template <typename Types2> friend struct grouped_table_impl;
+        template <typename Types2, typename H2, typename P2> friend struct table_impl;
+        template <typename Types2, typename H2, typename P2> friend struct grouped_table_impl;
         template <typename NodeAlloc> friend struct node_holder;
 
+    public:
+        typedef H hasher;
+        typedef P key_equal;
     private:
         table(table const&);
         table& operator=(table const&);
     protected:
         typedef typename Types::table_base table_base;
-        typedef boost::unordered::detail::functions<
-            typename Types::hasher,
-            typename Types::key_equal> functions;
+       typedef boost::unordered::detail::functions<H, P> functions;
         typedef typename functions::set_hash_functions set_hash_functions;
 
-        typedef typename Types::hasher hasher;
-        typedef typename Types::key_equal key_equal;
         typedef typename Types::key_type key_type;
         typedef typename Types::extractor extractor;
         typedef typename Types::table table_impl;
         typedef typename Types::policy policy;
 
-        typedef typename table_base::bucket bucket;
-        typedef typename table_base::bucket_allocator bucket_allocator;
-        typedef typename table_base::bucket_allocator_traits bucket_allocator_traits;
         typedef typename table_base::bucket_pointer bucket_pointer;
         typedef typename table_base::node_allocator node_allocator;
-        typedef typename table_base::node_allocator_traits node_allocator_traits;
         typedef typename table_base::node_pointer node_pointer;
         typedef typename table_base::value_type value_type;
         typedef typename table_base::link_pointer link_pointer;
@@ -918,8 +911,8 @@ namespace boost { namespace unordered { namespace detail {
     // Reserve & Rehash
 
     // basic exception safety
-    template <typename Types>
-    inline void table<Types>::reserve_for_insert(std::size_t size)
+    template <typename Types, typename H, typename P>
+    inline void table<Types, H, P>::reserve_for_insert(std::size_t size)
     {
         if (!this->buckets_) {
             this->create_buckets((std::max)(this->bucket_count_,
@@ -940,8 +933,8 @@ namespace boost { namespace unordered { namespace detail {
     // if hash function throws, basic exception safety
     // strong otherwise.
 
-    template <typename Types>
-    inline void table<Types>::rehash(std::size_t min_buckets)
+    template <typename Types, typename H, typename P>
+    inline void table<Types, H, P>::rehash(std::size_t min_buckets)
     {
         using namespace std;
 
@@ -960,8 +953,8 @@ namespace boost { namespace unordered { namespace detail {
         }
     }
 
-    template <typename Types>
-    inline void table<Types>::reserve(std::size_t num_elements)
+    template <typename Types, typename H, typename P>
+    inline void table<Types, H, P>::reserve(std::size_t num_elements)
     {
         rehash(static_cast<std::size_t>(
             std::ceil(static_cast<double>(num_elements) / this->mlf_)));

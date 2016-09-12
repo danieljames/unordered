@@ -18,7 +18,6 @@ namespace boost { namespace unordered { namespace detail {
 
     template <typename A> struct grouped_node;
     template <typename T> struct grouped_ptr_node;
-    template <typename Types> struct grouped_table_impl;
 
     template <typename A>
     struct grouped_node :
@@ -154,13 +153,13 @@ namespace boost { namespace unordered { namespace detail {
         };
     };
 
-    template <typename Types>
-    struct grouped_table_impl : boost::unordered::detail::table<Types>
+    template <typename Types, typename H, typename P>
+    struct grouped_table_impl : boost::unordered::detail::table<Types, H, P>
     {
-        friend struct boost::unordered::detail::table<Types>;
+        friend struct boost::unordered::detail::table<Types, H, P>;
 
     protected:
-        typedef boost::unordered::detail::table<Types> table;
+        typedef boost::unordered::detail::table<Types, H, P> table;
         typedef typename table::value_type value_type;
         typedef typename table::bucket bucket;
         typedef typename table::policy policy;

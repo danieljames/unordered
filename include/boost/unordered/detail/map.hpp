@@ -14,14 +14,10 @@ namespace boost { namespace unordered { namespace detail {
         typedef boost::unordered::detail::map<A, K, M, H, P> types;
 
         typedef std::pair<K const, M> value_type;
-        typedef H hasher;
-        typedef P key_equal;
         typedef K key_type;
 
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
-        typedef boost::unordered::detail::allocator_traits<value_allocator>
-            value_allocator_traits;
 
         struct iterator_policy {
             typedef boost::unordered::detail::u node_policy;
@@ -46,11 +42,8 @@ namespace boost { namespace unordered { namespace detail {
         };
 
         typedef boost::unordered::detail::pick_node<value_allocator> pick;
-        typedef typename pick::node node;
-        typedef typename pick::bucket bucket;
-        typedef typename pick::link_pointer link_pointer;
 
-        typedef boost::unordered::detail::table_impl<types> table;
+        typedef boost::unordered::detail::table_impl<types, H, P> table;
         typedef boost::unordered::detail::map_extractor<key_type, value_type>
             extractor;
 
@@ -68,14 +61,10 @@ namespace boost { namespace unordered { namespace detail {
         typedef boost::unordered::detail::multimap<A, K, M, H, P> types;
 
         typedef std::pair<K const, M> value_type;
-        typedef H hasher;
-        typedef P key_equal;
         typedef K key_type;
 
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
-        typedef boost::unordered::detail::allocator_traits<value_allocator>
-            value_allocator_traits;
 
         struct iterator_policy {
             typedef boost::unordered::detail::g node_policy;
@@ -100,11 +89,8 @@ namespace boost { namespace unordered { namespace detail {
         };
 
         typedef boost::unordered::detail::pick_grouped_node<value_allocator> pick;
-        typedef typename pick::node node;
-        typedef typename pick::bucket bucket;
-        typedef typename pick::link_pointer link_pointer;
 
-        typedef boost::unordered::detail::grouped_table_impl<types> table;
+        typedef boost::unordered::detail::grouped_table_impl<types, H, P> table;
         typedef boost::unordered::detail::map_extractor<key_type, value_type>
             extractor;
 
