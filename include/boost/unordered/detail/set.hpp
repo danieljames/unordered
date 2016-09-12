@@ -55,15 +55,6 @@ namespace boost { namespace unordered { namespace detail {
 
         typedef typename boost::unordered::detail::pick_policy<T>::type policy;
 
-        typedef boost::unordered::iterator_detail::
-            c_iterator<node> iterator;
-        typedef boost::unordered::iterator_detail::
-            c_iterator<node> c_iterator;
-        typedef boost::unordered::iterator_detail::
-            cl_iterator<node, policy> l_iterator;
-        typedef boost::unordered::iterator_detail::
-            cl_iterator<node, policy> cl_iterator;
-
         typedef boost::unordered::detail::policy_base<
             iterator_policy,
             value_allocator,
@@ -116,15 +107,6 @@ namespace boost { namespace unordered { namespace detail {
         typedef boost::unordered::detail::set_extractor<value_type> extractor;
 
         typedef typename boost::unordered::detail::pick_policy<T>::type policy;
-
-        typedef boost::unordered::iterator_detail::
-            c_iterator<node> iterator;
-        typedef boost::unordered::iterator_detail::
-            c_iterator<node> c_iterator;
-        typedef boost::unordered::iterator_detail::
-            cl_iterator<node, policy> l_iterator;
-        typedef boost::unordered::iterator_detail::
-            cl_iterator<node, policy> cl_iterator;
 
         typedef boost::unordered::detail::policy_base<
             iterator_policy,

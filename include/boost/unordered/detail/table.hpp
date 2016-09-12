@@ -77,11 +77,12 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename node_types::bucket bucket;
         typedef typename node_types::link_pointer link_pointer;
 
-        typedef typename boost::unordered::detail::allocator_traits<A>::value_type value_type;
         typedef typename boost::unordered::detail::rebind_wrap<A, node>::type node_allocator;
         typedef typename boost::unordered::detail::rebind_wrap<A, bucket>::type bucket_allocator;
+        typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
         typedef boost::unordered::detail::allocator_traits<node_allocator> node_allocator_traits;
         typedef boost::unordered::detail::allocator_traits<bucket_allocator> bucket_allocator_traits;
+        typedef typename value_allocator_traits::value_type value_type;
         typedef typename node_allocator_traits::pointer node_pointer;
         typedef typename node_allocator_traits::const_pointer const_node_pointer;
         typedef typename bucket_allocator_traits::pointer bucket_pointer;
@@ -641,10 +642,6 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename Types::extractor extractor;
         typedef typename Types::table table_impl;
         typedef typename Types::policy policy;
-        typedef typename Types::iterator iterator;
-        typedef typename Types::c_iterator c_iterator;
-        typedef typename Types::l_iterator l_iterator;
-        typedef typename Types::cl_iterator cl_iterator;
 
         typedef typename table_base::bucket bucket;
         typedef typename table_base::bucket_allocator bucket_allocator;

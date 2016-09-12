@@ -168,11 +168,11 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename table::hasher hasher;
         typedef typename table::key_equal key_equal;
         typedef typename table::key_type key_type;
-        typedef typename table::node_constructor node_constructor;
-        typedef typename table::node_tmp node_tmp;
         typedef typename table::extractor extractor;
         typedef typename table::iterator iterator;
-        typedef typename table::c_iterator c_iterator;
+        typedef typename table::const_iterator c_iterator;
+        typedef typename table::node_constructor node_constructor;
+        typedef typename table::node_tmp node_tmp;
 
         typedef std::pair<iterator, bool> emplace_return;
 
