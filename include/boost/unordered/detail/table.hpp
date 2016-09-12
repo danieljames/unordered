@@ -641,7 +641,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef boost::unordered::detail::functions<H, P> functions;
         typedef typename functions::set_hash_functions set_hash_functions;
 
-        typedef typename Types::key_type key_type;
+        typedef typename Types::key_type2 key_type2;
         typedef typename Types::extractor extractor;
         typedef typename Types::template table_gen<H, P>::table table_impl;
         typedef typename Types::policy policy;
@@ -867,12 +867,12 @@ namespace boost { namespace unordered { namespace detail {
 
         // Accessors
 
-        key_type const& get_key(value_type const& x) const
+        key_type2 const& get_key(value_type const& x) const
         {
             return extractor::extract(x);
         }
 
-        std::size_t hash(key_type const& k) const
+        std::size_t hash(key_type2 const& k) const
         {
             return policy::apply_hash(this->hash_function(), k);
         }
@@ -891,13 +891,13 @@ namespace boost { namespace unordered { namespace detail {
 
         node_pointer find_node(
                 std::size_t key_hash,
-                key_type const& k) const
+                key_type2 const& k) const
         {
             return static_cast<table_impl const*>(this)->
                 find_node_impl(key_hash, k, this->key_eq());
         }
 
-        node_pointer find_node(key_type const& k) const
+        node_pointer find_node(key_type2 const& k) const
         {
             return static_cast<table_impl const*>(this)->
                 find_node_impl(hash(k), k, this->key_eq());

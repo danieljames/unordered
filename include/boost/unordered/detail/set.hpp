@@ -47,7 +47,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef A value_allocator;
         typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
         typedef typename value_allocator_traits::value_type value_type;
-        typedef value_type key_type;
+        typedef value_type key_type2;
 
         typedef set_policy container_policy;
         typedef boost::unordered::detail::set_extractor<value_type> extractor;
@@ -63,8 +63,6 @@ namespace boost { namespace unordered { namespace detail {
     template <typename T, typename H, typename P, typename A>
     struct set_base {
         typedef T value_type;
-        typedef T key_type;
-
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
 
@@ -79,7 +77,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef A value_allocator;
         typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
         typedef typename value_allocator_traits::value_type value_type;
-        typedef value_type key_type;
+        typedef value_type key_type2;
 
         typedef multiset_policy container_policy;
         typedef boost::unordered::detail::set_extractor<value_type> extractor;
@@ -95,8 +93,6 @@ namespace boost { namespace unordered { namespace detail {
     template <typename T, typename H, typename P, typename A>
     struct multiset_base {
         typedef T value_type;
-        typedef T key_type;
-
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
 

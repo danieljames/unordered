@@ -166,7 +166,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename table::link_pointer link_pointer;
         typedef typename table::hasher hasher;
         typedef typename table::key_equal key_equal;
-        typedef typename table::key_type key_type;
+        typedef typename table::key_type2 key_type2;
         typedef typename table::extractor extractor;
         typedef typename table::iterator iterator;
         typedef typename table::const_iterator c_iterator;
@@ -249,13 +249,13 @@ namespace boost { namespace unordered { namespace detail {
         }
 
     public:
-        std::size_t count(key_type const& k) const
+        std::size_t count(key_type2 const& k) const
         {
             return this->find_node(k) ? 1 : 0;
         }
 
     protected:
-        value_type& at_(key_type const& k) const
+        value_type& at_(key_type2 const& k) const
         {
             if (this->size_) {
                 node_pointer n = this->find_node(k);
@@ -268,7 +268,7 @@ namespace boost { namespace unordered { namespace detail {
 
     public:
         std::pair<iterator, iterator>
-            equal_range(key_type const& k) const
+            equal_range(key_type2 const& k) const
         {
             node_pointer n = this->find_node(k);
             return std::make_pair(iterator(n), iterator(n ? next_node(n) : n));
@@ -333,7 +333,7 @@ namespace boost { namespace unordered { namespace detail {
             return this->add_node(b.release(), key_hash);
         }
 
-        value_type& insert_default(key_type const& k)
+        value_type& insert_default(key_type2 const& k)
         {
             std::size_t key_hash = this->hash(k);
             node_pointer pos = this->find_node(key_hash, k);
@@ -426,7 +426,7 @@ namespace boost { namespace unordered { namespace detail {
 #endif
 
         template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
-        iterator emplace_hint_impl(c_iterator hint, key_type const& k,
+        iterator emplace_hint_impl(c_iterator hint, key_type2 const& k,
             BOOST_UNORDERED_EMPLACE_ARGS)
         {
             if (hint.node_ && this->key_eq()(k, this->get_key(*hint))) {
@@ -438,7 +438,7 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
-        emplace_return emplace_impl(key_type const& k,
+        emplace_return emplace_impl(key_type2 const& k,
             BOOST_UNORDERED_EMPLACE_ARGS)
         {
             std::size_t key_hash = this->hash(k);
@@ -464,7 +464,7 @@ namespace boost { namespace unordered { namespace detail {
                 boost::unordered::detail::func::construct_value_generic(
                     this->node_alloc(), BOOST_UNORDERED_EMPLACE_FORWARD),
                 this->node_alloc());
-            key_type const& k = this->get_key(b.node_->value());
+            key_type2 const& k = this->get_key(b.node_->value());
             if (hint.node_ && this->key_eq()(k, this->get_key(*hint))) {
                 return iterator(hint.node_);
             }
@@ -485,7 +485,7 @@ namespace boost { namespace unordered { namespace detail {
                 boost::unordered::detail::func::construct_value_generic(
                     this->node_alloc(), BOOST_UNORDERED_EMPLACE_FORWARD),
                 this->node_alloc());
-            key_type const& k = this->get_key(b.node_->value());
+            key_type2 const& k = this->get_key(b.node_->value());
             std::size_t key_hash = this->hash(k);
             node_pointer pos = this->find_node(key_hash, k);
             if (pos) {
@@ -512,13 +512,13 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         template <class InputIt>
-        void insert_range_impl(key_type const& k, InputIt i, InputIt j)
+        void insert_range_impl(key_type2 const& k, InputIt i, InputIt j)
         {
             insert_range_impl2(k, i, j);
 
             while(++i != j) {
                 // Note: can't use get_key as '*i' might not be value_type - it
-                // could be a pair with first_types as key_type without const or
+                // could be a pair with first_types as key_type2 without const or
                 // a different second_type.
                 //
                 // TODO: Might be worth storing the value_type instead of the
@@ -530,7 +530,7 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         template <class InputIt>
-        void insert_range_impl2(key_type const& k, InputIt i, InputIt j)
+        void insert_range_impl2(key_type2 const& k, InputIt i, InputIt j)
         {
             // No side effects in this initial code
             std::size_t key_hash = this->hash(k);
@@ -558,7 +558,7 @@ namespace boost { namespace unordered { namespace detail {
                     a.alloc_, a.node_->value_ptr(), *i);
                 node_tmp b(a.release(), a.alloc_);
 
-                key_type const& k = this->get_key(b.node_->value());
+                key_type2 const& k = this->get_key(b.node_->value());
                 std::size_t key_hash = this->hash(k);
                 node_pointer pos = this->find_node(key_hash, k);
 
@@ -579,7 +579,7 @@ namespace boost { namespace unordered { namespace detail {
         //
         // no throw
 
-        std::size_t erase_key(key_type const& k)
+        std::size_t erase_key(key_type2 const& k)
         {
             if(!this->size_) return 0;
 

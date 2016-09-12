@@ -49,9 +49,9 @@ namespace detail {
     struct set_extractor
     {
         typedef ValueType value_type;
-        typedef ValueType key_type;
+        typedef ValueType key_type2;
 
-        static key_type const& extract(value_type const& v)
+        static key_type2 const& extract(value_type const& v)
         {
             return v;
         }

@@ -41,71 +41,67 @@ namespace boost { namespace unordered { namespace detail {
         typedef boost::unordered::detail::g node_policy;
     };
 
-    template <typename A, typename K>
+    template <typename A>
     struct map
     {
         typedef A value_allocator;
         typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
         typedef typename value_allocator_traits::value_type value_type;
-        typedef K key_type;
+        typedef typename value_type::first_type key_type2;
 
         typedef map_policy container_policy;
 
-        typedef boost::unordered::detail::map_extractor<key_type, value_type>
+        typedef boost::unordered::detail::map_extractor<key_type2, value_type>
             extractor;
 
-        typedef typename boost::unordered::detail::pick_policy<K>::type policy;
+        typedef typename boost::unordered::detail::pick_policy<key_type2>::type policy;
 
         template <typename H, typename P>
         struct table_gen {
-            typedef boost::unordered::detail::table_impl<map<A, K>, H, P> table;
+            typedef boost::unordered::detail::table_impl<map<A>, H, P> table;
         };
     };
 
     template <typename K, typename M, typename H, typename P, typename A>
     struct map_base {
         typedef std::pair<K const, M> value_type;
-        typedef K key_type;
-
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
 
         typedef boost::unordered::detail::table_impl<
-            map<value_allocator, K>,
+            map<value_allocator>,
             H, P> base;
     };
 
-    template <typename A, typename K>
+    template <typename A>
     struct multimap
     {
         typedef A value_allocator;
         typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
         typedef typename value_allocator_traits::value_type value_type;
-        typedef K key_type;
+        typedef typename value_type::first_type key_type2;
 
         typedef multimap_policy container_policy;
 
-        typedef boost::unordered::detail::map_extractor<key_type, value_type>
+        typedef boost::unordered::detail::map_extractor<key_type2, value_type>
             extractor;
 
-        typedef typename boost::unordered::detail::pick_policy<K>::type policy;
+        typedef typename boost::unordered::detail::pick_policy<key_type2>::type policy;
 
         template <typename H, typename P>
         struct table_gen {
-            typedef boost::unordered::detail::grouped_table_impl<multimap<A, K>, H, P> table;
+            typedef boost::unordered::detail::grouped_table_impl<multimap<A>, H, P> table;
         };
     };
 
     template <typename K, typename M, typename H, typename P, typename A>
     struct multimap_base {
         typedef std::pair<K const, M> value_type;
-        typedef K key_type;
-
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
 
         typedef boost::unordered::detail::grouped_table_impl<
-            multimap<value_allocator, K>,
+            multimap<value_allocator>,
             H, P> base;
     };
 }}}
