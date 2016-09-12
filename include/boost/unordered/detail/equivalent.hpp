@@ -153,13 +153,13 @@ namespace boost { namespace unordered { namespace detail {
         };
     };
 
-    template <typename Types, typename H, typename P>
-    struct grouped_table_impl : boost::unordered::detail::table<Types, H, P>
+    template <typename Types, typename H, typename P, typename A>
+    struct grouped_table_impl : boost::unordered::detail::table<Types, H, P, A>
     {
-        friend struct boost::unordered::detail::table<Types, H, P>;
+        friend struct boost::unordered::detail::table<Types, H, P, A>;
 
     protected:
-        typedef boost::unordered::detail::table<Types, H, P> table;
+        typedef boost::unordered::detail::table<Types, H, P, A> table;
         typedef typename table::value_type value_type;
         typedef typename table::bucket bucket;
         typedef typename table::policy policy;

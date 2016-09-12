@@ -56,7 +56,7 @@ namespace boost { namespace unordered { namespace detail {
 
         template <typename H, typename P>
         struct table_gen {
-            typedef boost::unordered::detail::table_impl<set<A>, H, P> table;
+            typedef boost::unordered::detail::table_impl<set<A>, H, P, A> table;
         };
     };
 
@@ -68,7 +68,7 @@ namespace boost { namespace unordered { namespace detail {
 
         typedef boost::unordered::detail::table_impl<
             set<value_allocator>,
-            H, P> base;
+            H, P, value_allocator> base;
     };
 
     template <typename A>
@@ -86,7 +86,7 @@ namespace boost { namespace unordered { namespace detail {
 
         template <typename H, typename P>
         struct table_gen {
-            typedef boost::unordered::detail::grouped_table_impl<multiset<A>, H, P> table;
+            typedef boost::unordered::detail::grouped_table_impl<multiset<A>, H, P, A> table;
         };
     };
 
@@ -98,6 +98,6 @@ namespace boost { namespace unordered { namespace detail {
 
         typedef boost::unordered::detail::grouped_table_impl<
             multiset<value_allocator>,
-            H, P> base;
+            H, P, value_allocator> base;
     };
 }}}

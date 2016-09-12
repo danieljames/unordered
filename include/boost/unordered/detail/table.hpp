@@ -67,8 +67,8 @@ namespace boost { namespace unordered { namespace detail {
     template <typename NodePolicy, typename A>
     struct table_base
     {
-        template <typename Types, typename H, typename P> friend struct table_impl;
-        template <typename Types, typename H, typename P> friend struct grouped_table_impl;
+        template <typename Types, typename H, typename P, typename A2> friend struct table_impl;
+        template <typename Types, typename H, typename P, typename A2> friend struct grouped_table_impl;
         template <typename NodeAlloc> friend struct node_holder;
 
     protected:
@@ -615,16 +615,15 @@ namespace boost { namespace unordered { namespace detail {
 
     };
 
-    template <typename Types, typename H, typename P>
+    template <typename Types, typename H, typename P, typename A>
     struct table :
         boost::unordered::detail::functions<H, P>,
         boost::unordered::detail::policy_base<
-            typename Types::container_policy,
-            typename Types::value_allocator,
+            typename Types::container_policy, A,
             typename Types::policy>
     {
-        template <typename Types2, typename H2, typename P2> friend struct table_impl;
-        template <typename Types2, typename H2, typename P2> friend struct grouped_table_impl;
+        template <typename Types2, typename H2, typename P2, typename A2> friend struct table_impl;
+        template <typename Types2, typename H2, typename P2, typename A2> friend struct grouped_table_impl;
         template <typename NodeAlloc> friend struct node_holder;
 
     public:
@@ -635,8 +634,7 @@ namespace boost { namespace unordered { namespace detail {
         table& operator=(table const&);
     protected:
         typedef boost::unordered::detail::policy_base<
-            typename Types::container_policy,
-            typename Types::value_allocator,
+            typename Types::container_policy, A,
             typename Types::policy> table_base;
         typedef boost::unordered::detail::functions<H, P> functions;
         typedef typename functions::set_hash_functions set_hash_functions;
@@ -917,8 +915,8 @@ namespace boost { namespace unordered { namespace detail {
     // Reserve & Rehash
 
     // basic exception safety
-    template <typename Types, typename H, typename P>
-    inline void table<Types, H, P>::reserve_for_insert(std::size_t size)
+    template <typename Types, typename H, typename P, typename A>
+    inline void table<Types, H, P, A>::reserve_for_insert(std::size_t size)
     {
         if (!this->buckets_) {
             this->create_buckets((std::max)(this->bucket_count_,
@@ -939,8 +937,8 @@ namespace boost { namespace unordered { namespace detail {
     // if hash function throws, basic exception safety
     // strong otherwise.
 
-    template <typename Types, typename H, typename P>
-    inline void table<Types, H, P>::rehash(std::size_t min_buckets)
+    template <typename Types, typename H, typename P, typename A>
+    inline void table<Types, H, P, A>::rehash(std::size_t min_buckets)
     {
         using namespace std;
 
@@ -959,8 +957,8 @@ namespace boost { namespace unordered { namespace detail {
         }
     }
 
-    template <typename Types, typename H, typename P>
-    inline void table<Types, H, P>::reserve(std::size_t num_elements)
+    template <typename Types, typename H, typename P, typename A>
+    inline void table<Types, H, P, A>::reserve(std::size_t num_elements)
     {
         rehash(static_cast<std::size_t>(
             std::ceil(static_cast<double>(num_elements) / this->mlf_)));
