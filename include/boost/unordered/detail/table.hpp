@@ -632,12 +632,12 @@ namespace boost { namespace unordered { namespace detail {
         table& operator=(table const&);
     protected:
         typedef typename Types::table_base table_base;
-       typedef boost::unordered::detail::functions<H, P> functions;
+        typedef boost::unordered::detail::functions<H, P> functions;
         typedef typename functions::set_hash_functions set_hash_functions;
 
         typedef typename Types::key_type key_type;
         typedef typename Types::extractor extractor;
-        typedef typename Types::table table_impl;
+        typedef typename Types::template table_gen<H, P>::table table_impl;
         typedef typename Types::policy policy;
 
         typedef typename table_base::bucket_pointer bucket_pointer;

@@ -38,7 +38,7 @@ namespace unordered
 {
     template <class K, class T, class H, class P, class A>
     class unordered_map :
-        public boost::unordered::detail::map<A, K, T, H, P>::table
+        public boost::unordered::detail::map_base<K, T, H, P, A>::base
     {
 #if defined(BOOST_UNORDERED_USE_MOVE)
         BOOST_COPYABLE_AND_MOVABLE(unordered_map)
@@ -55,8 +55,7 @@ namespace unordered
 
     private:
 
-        typedef boost::unordered::detail::map<A, K, T, H, P> types;
-        typedef typename types::table table;
+        typedef typename boost::unordered::detail::map_base<K, T, H, P, A>::base table;
         typedef typename table::value_allocator_traits value_allocator_traits;
 
     public:
@@ -454,7 +453,7 @@ namespace unordered
 
     template <class K, class T, class H, class P, class A>
     class unordered_multimap :
-        public boost::unordered::detail::multimap<A, K, T, H, P>::table
+        public boost::unordered::detail::multimap_base<K, T, H, P, A>::base
     {
 #if defined(BOOST_UNORDERED_USE_MOVE)
         BOOST_COPYABLE_AND_MOVABLE(unordered_multimap)
@@ -470,8 +469,7 @@ namespace unordered
 
     private:
 
-        typedef boost::unordered::detail::multimap<A, K, T, H, P> types;
-        typedef typename types::table table;
+        typedef typename boost::unordered::detail::multimap_base<K, T, H, P, A>::base table;
         typedef typename table::value_allocator_traits value_allocator_traits;
 
     public:

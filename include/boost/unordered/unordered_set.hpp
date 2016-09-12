@@ -37,7 +37,7 @@ namespace unordered
 {
     template <class T, class H, class P, class A>
     class unordered_set :
-        public boost::unordered::detail::set<A, T, H, P>::table
+        public boost::unordered::detail::set_base<T, H, P, A>::base
     {
 #if defined(BOOST_UNORDERED_USE_MOVE)
         BOOST_COPYABLE_AND_MOVABLE(unordered_set)
@@ -52,8 +52,7 @@ namespace unordered
 
     private:
 
-        typedef boost::unordered::detail::set<A, T, H, P> types;
-        typedef typename types::table table;
+        typedef typename boost::unordered::detail::set_base<T, H, P, A>::base table;
         typedef typename table::value_allocator_traits value_allocator_traits;
 
     public:
@@ -433,7 +432,7 @@ namespace unordered
 
     template <class T, class H, class P, class A>
     class unordered_multiset :
-        public boost::unordered::detail::multiset<A, T, H, P>::table
+        public boost::unordered::detail::multiset_base<T, H, P, A>::base
     {
 #if defined(BOOST_UNORDERED_USE_MOVE)
         BOOST_COPYABLE_AND_MOVABLE(unordered_multiset)
@@ -448,8 +447,7 @@ namespace unordered
 
     private:
 
-        typedef boost::unordered::detail::multiset<A, T, H, P> types;
-        typedef typename types::table table;
+        typedef typename boost::unordered::detail::multiset_base<T, H, P, A>::base table;
         typedef typename table::value_allocator_traits value_allocator_traits;
 
     public:

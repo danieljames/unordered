@@ -8,11 +8,9 @@
 #include <boost/unordered/detail/unique.hpp>
 
 namespace boost { namespace unordered { namespace detail {
-    template <typename A, typename K, typename M, typename H, typename P>
+    template <typename A, typename K, typename M>
     struct map
     {
-        typedef boost::unordered::detail::map<A, K, M, H, P> types;
-
         typedef std::pair<K const, M> value_type;
         typedef K key_type;
 
@@ -41,9 +39,6 @@ namespace boost { namespace unordered { namespace detail {
             };
         };
 
-        typedef boost::unordered::detail::pick_node<value_allocator> pick;
-
-        typedef boost::unordered::detail::table_impl<types, H, P> table;
         typedef boost::unordered::detail::map_extractor<key_type, value_type>
             extractor;
 
@@ -53,13 +48,29 @@ namespace boost { namespace unordered { namespace detail {
             iterator_policy,
             value_allocator,
             policy> table_base;
+
+        template <typename H, typename P>
+        struct table_gen {
+            typedef boost::unordered::detail::table_impl<map<A,K,M>, H, P> table;
+        };
     };
 
-    template <typename A, typename K, typename M, typename H, typename P>
+    template <typename K, typename M, typename H, typename P, typename A>
+    struct map_base {
+        typedef std::pair<K const, M> value_type;
+        typedef K key_type;
+
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, value_type>::type value_allocator;
+
+        typedef boost::unordered::detail::table_impl<
+            map<value_allocator, K, M>,
+            H, P> base;
+    };
+
+    template <typename A, typename K, typename M>
     struct multimap
     {
-        typedef boost::unordered::detail::multimap<A, K, M, H, P> types;
-
         typedef std::pair<K const, M> value_type;
         typedef K key_type;
 
@@ -88,9 +99,6 @@ namespace boost { namespace unordered { namespace detail {
             };
         };
 
-        typedef boost::unordered::detail::pick_grouped_node<value_allocator> pick;
-
-        typedef boost::unordered::detail::grouped_table_impl<types, H, P> table;
         typedef boost::unordered::detail::map_extractor<key_type, value_type>
             extractor;
 
@@ -100,5 +108,23 @@ namespace boost { namespace unordered { namespace detail {
             iterator_policy,
             value_allocator,
             policy> table_base;
+
+        template <typename H, typename P>
+        struct table_gen {
+            typedef boost::unordered::detail::grouped_table_impl<multimap<A,K,M>, H, P> table;
+        };
+    };
+
+    template <typename K, typename M, typename H, typename P, typename A>
+    struct multimap_base {
+        typedef std::pair<K const, M> value_type;
+        typedef K key_type;
+
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, value_type>::type value_allocator;
+
+        typedef boost::unordered::detail::grouped_table_impl<
+            multimap<value_allocator, K, M>,
+            H, P> base;
     };
 }}}
