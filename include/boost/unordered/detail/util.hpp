@@ -244,6 +244,23 @@ namespace boost { namespace unordered { namespace detail {
         // move_assign explicit.
         compressed& operator=(compressed const&);
     };
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // get_key_type
+    //
+    // Used to get the first type of a pair without instantiating it.
+
+    template <typename Pair>
+    struct get_key_type {
+        typedef typename Pair::first_type type;
+    };
+
+    template <typename K, typename M>
+    struct get_key_type<std::pair<K, M> > {
+        typedef K type;
+    };
+
 }}}
 
 #endif
