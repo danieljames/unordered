@@ -32,6 +32,11 @@ namespace boost { namespace unordered { namespace detail {
             A, unique_node<A> >::type allocator;
         typedef typename ::boost::unordered::detail::
             allocator_traits<allocator>::pointer node_pointer;
+        typedef boost::unordered::detail::bucket<node_pointer> bucket;
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, bucket>::type bucket_allocator;
+        typedef typename ::boost::unordered::detail::
+            allocator_traits<bucket_allocator>::pointer bucket_pointer;
         typedef node_pointer link_pointer;
 
         link_pointer next_;
@@ -50,20 +55,37 @@ namespace boost { namespace unordered { namespace detail {
         unique_node& operator=(unique_node const&);
     };
 
+    template <typename A>
+    struct node_traits<unique_node<A> >
+    {
+        typedef unique_node<A> node;
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, node>::type allocator;
+        typedef typename ::boost::unordered::detail::
+            allocator_traits<allocator>::pointer node_pointer;
+        typedef boost::unordered::detail::bucket<node_pointer> bucket;
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, bucket>::type bucket_allocator;
+        typedef typename ::boost::unordered::detail::
+            allocator_traits<bucket_allocator>::pointer bucket_pointer;
+        typedef node_pointer link_pointer;
+    };
+
     template <typename T>
     struct ptr_node :
         boost::unordered::detail::ptr_bucket
     {
         typedef T value_type;
-        typedef boost::unordered::detail::ptr_bucket bucket_base;
+        typedef boost::unordered::detail::ptr_bucket bucket;
         typedef ptr_node<T>* node_pointer;
         typedef ptr_bucket* link_pointer;
+        typedef ptr_bucket* bucket_pointer;
 
         std::size_t hash_;
         boost::unordered::detail::value_base<T> value_base_;
 
         ptr_node() :
-            bucket_base(),
+            bucket(),
             hash_(0)
         {}
 
@@ -77,6 +99,16 @@ namespace boost { namespace unordered { namespace detail {
 
     private:
         ptr_node& operator=(ptr_node const&);
+    };
+
+    template <typename T>
+    struct node_traits<ptr_node<T> >
+    {
+        typedef ptr_node<T> node;
+        typedef ptr_bucket bucket;
+        typedef ptr_node<T>* node_pointer;
+        typedef ptr_bucket* link_pointer;
+        typedef ptr_bucket* bucket_pointer;
     };
 
     // If the allocator uses raw pointers use ptr_node
@@ -170,6 +202,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename table::extractor extractor;
         typedef typename table::iterator iterator;
         typedef typename table::const_iterator c_iterator;
+
         typedef typename table::node_constructor node_constructor;
         typedef typename table::node_tmp node_tmp;
 

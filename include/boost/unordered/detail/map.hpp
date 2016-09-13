@@ -36,10 +36,9 @@ namespace boost { namespace unordered { namespace detail {
         };
     };
 
-    struct map_policy
+    struct map_policy : boost::unordered::detail::u
     {
-        typedef map_iterator_policy iterator_policy;
-        typedef boost::unordered::detail::u node_policy;
+        typedef map_iterator_policy set_map_policies;
 
         template <typename H, typename P, typename A>
         struct table_gen {
@@ -47,10 +46,9 @@ namespace boost { namespace unordered { namespace detail {
         };
     };
 
-    struct multimap_policy
+    struct multimap_policy : boost::unordered::detail::g
     {
-        typedef map_iterator_policy iterator_policy;
-        typedef boost::unordered::detail::g node_policy;
+        typedef map_iterator_policy set_map_policies;
 
         template <typename H, typename P, typename A>
         struct table_gen {

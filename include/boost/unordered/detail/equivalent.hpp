@@ -30,6 +30,11 @@ namespace boost { namespace unordered { namespace detail {
             A, grouped_node<A> >::type allocator;
         typedef typename ::boost::unordered::detail::
             allocator_traits<allocator>::pointer node_pointer;
+        typedef boost::unordered::detail::bucket<node_pointer> bucket;
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, bucket>::type bucket_allocator;
+        typedef typename ::boost::unordered::detail::
+            allocator_traits<bucket_allocator>::pointer bucket_pointer;
         typedef node_pointer link_pointer;
 
         link_pointer next_;
@@ -51,21 +56,38 @@ namespace boost { namespace unordered { namespace detail {
         grouped_node& operator=(grouped_node const&);
     };
 
+    template <typename A>
+    struct node_traits<grouped_node<A> >
+    {
+        typedef grouped_node<A> node;
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, node>::type allocator;
+        typedef typename ::boost::unordered::detail::
+            allocator_traits<allocator>::pointer node_pointer;
+        typedef boost::unordered::detail::bucket<node_pointer> bucket;
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, bucket>::type bucket_allocator;
+        typedef typename ::boost::unordered::detail::
+            allocator_traits<bucket_allocator>::pointer bucket_pointer;
+        typedef node_pointer link_pointer;
+    };
+
     template <typename T>
     struct grouped_ptr_node :
         boost::unordered::detail::ptr_bucket
     {
         typedef T value_type;
-        typedef boost::unordered::detail::ptr_bucket bucket_base;
+        typedef boost::unordered::detail::ptr_bucket bucket;
         typedef grouped_ptr_node<T>* node_pointer;
         typedef ptr_bucket* link_pointer;
+        typedef ptr_bucket* bucket_pointer;
 
         node_pointer group_prev_;
         std::size_t hash_;
         boost::unordered::detail::value_base<T> value_base_;
 
         grouped_ptr_node() :
-            bucket_base(),
+            bucket(),
             group_prev_(0),
             hash_(0)
         {}
@@ -81,6 +103,16 @@ namespace boost { namespace unordered { namespace detail {
 
     private:
         grouped_ptr_node& operator=(grouped_ptr_node const&);
+    };
+
+    template <typename T>
+    struct node_traits<grouped_ptr_node<T> >
+    {
+        typedef grouped_ptr_node<T> node;
+        typedef ptr_bucket bucket;
+        typedef grouped_ptr_node<T>* node_pointer;
+        typedef ptr_bucket* link_pointer;
+        typedef ptr_bucket* bucket_pointer;
     };
 
     // If the allocator uses raw pointers use grouped_ptr_node
