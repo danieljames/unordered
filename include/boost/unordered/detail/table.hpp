@@ -216,8 +216,9 @@ namespace boost { namespace unordered { namespace detail {
     protected:
         typedef boost::unordered::detail::table_base<N> base;
         typedef typename base::node node;
-        typedef typename SetMapPolicies::template value_things<
-            typename base::value_type> value_things;
+        typedef typename base::node_pointer node_pointer;
+        typedef typename base::value_type value_type;
+        typedef typename SetMapPolicies::template value_things<value_type> value_things;
         typedef typename value_things::const_key_type const_key_type;
         typedef typename value_things::extractor extractor;
         typedef typename boost::unordered::detail::pick_policy<const_key_type>::type policy;
@@ -227,6 +228,8 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename base::size_type size_type;
         typedef typename iterator_types::iterator iterator;
         typedef typename iterator_types::c_iterator const_iterator;
+        typedef typename l_iterator_types::iterator local_iterator;
+        typedef typename l_iterator_types::c_iterator const_local_iterator;
 
     protected:
 
@@ -345,13 +348,13 @@ namespace boost { namespace unordered { namespace detail {
 
     template <typename NA, typename SetMapPolicies>
     struct memory_base : boost::unordered::detail::iterator_base<
-            typename boost::unordered::detail::allocator_traits<NA>::value_type
+            typename boost::unordered::detail::allocator_traits<NA>::value_type,
             SetMapPolicies>
     {
     protected:
-        typedef boost::unordered::detail::bucket_base<
+        typedef boost::unordered::detail::iterator_base<
             typename boost::unordered::detail::allocator_traits<NA>::value_type,
-            SetMapPolicies, BucketPolicies> base;
+            SetMapPolicies> base;
 
         typedef typename base::bucket bucket;
         typedef typename base::node_pointer node_pointer;
@@ -631,7 +634,8 @@ namespace boost { namespace unordered { namespace detail {
     protected:
         typedef boost::unordered::detail::functions<H, P> functions;
         typedef boost::unordered::detail::memory_base<
-            typename boost::unordered::detail::rebind_wrap<A, typename Policies::template node_types<A>::node>::type
+            typename boost::unordered::detail::rebind_wrap<A, typename Policies::template node_types<A>::node>::type,
+            typename Policies::set_map_policies
             > table_base;
 
         typedef typename Policies::template table_gen<H, P, A>::table table_impl;
