@@ -31,7 +31,7 @@ namespace boost { namespace unordered { namespace detail {
         template <typename ValueType>
         struct value_things
         {
-            typedef ValueType key_type2;
+            typedef ValueType const const_key_type;
             typedef boost::unordered::detail::set_extractor<ValueType> extractor;
         };
     };

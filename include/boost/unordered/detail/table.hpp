@@ -618,7 +618,7 @@ namespace boost { namespace unordered { namespace detail {
             typename boost::unordered::detail::pick_policy<
                 typename Policies::set_map_policies::template value_things<
                     typename boost::unordered::detail::allocator_traits<A>::value_type
-                >::key_type2
+                >::const_key_type
             >::type
         >
     {
@@ -641,8 +641,8 @@ namespace boost { namespace unordered { namespace detail {
 
     protected:
         typedef typename Policies::set_map_policies::template value_things<
-            value_type>::key_type2 key_type2;
-        typedef typename boost::unordered::detail::pick_policy<key_type2>::type policy;
+            value_type>::const_key_type_key_type;
+        typedef typename boost::unordered::detail::pick_policy<const_key_type>::type policy;
 
         typedef boost::unordered::detail::functions<H, P> functions;
         typedef boost::unordered::detail::memory_base<
@@ -892,12 +892,12 @@ namespace boost { namespace unordered { namespace detail {
 
         // Accessors
 
-        key_type2 const& get_key(value_type const& x) const
+        const_key_type& get_key(value_type const& x) const
         {
             return extractor::extract(x);
         }
 
-        std::size_t hash(key_type2 const& k) const
+        std::size_t hash(const_key_type& k) const
         {
             return policy::apply_hash(this->hash_function(), k);
         }
@@ -916,13 +916,13 @@ namespace boost { namespace unordered { namespace detail {
 
         node_pointer find_node(
                 std::size_t key_hash,
-                key_type2 const& k) const
+                const_key_type& k) const
         {
             return static_cast<table_impl const*>(this)->
                 find_node_impl(key_hash, k, this->key_eq());
         }
 
-        node_pointer find_node(key_type2 const& k) const
+        node_pointer find_node(const_key_type& k) const
         {
             return static_cast<table_impl const*>(this)->
                 find_node_impl(hash(k), k, this->key_eq());

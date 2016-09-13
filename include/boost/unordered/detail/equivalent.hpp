@@ -202,7 +202,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename table::link_pointer link_pointer;
         typedef typename table::hasher hasher;
         typedef typename table::key_equal key_equal;
-        typedef typename table::key_type2 key_type2;
+        typedef typename table::const_key_type_key_type;
         typedef typename table::extractor extractor;
         typedef typename table::iterator iterator;
         typedef typename table::const_iterator c_iterator;
@@ -287,7 +287,7 @@ namespace boost { namespace unordered { namespace detail {
         }
 
     public:
-        std::size_t count(key_type2 const& k) const
+        std::size_t count(const_key_type& k) const
         {
             node_pointer n = this->find_node(k);
             if (!n) return 0;
@@ -303,7 +303,7 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         std::pair<iterator, iterator>
-            equal_range(key_type2 const& k) const
+            equal_range(const_key_type& k) const
         {
             node_pointer n = this->find_node(k);
             return std::make_pair(iterator(n), iterator(n ? next_group(n) : n));
@@ -516,7 +516,7 @@ namespace boost { namespace unordered { namespace detail {
         iterator emplace_impl(node_pointer n)
         {
             node_tmp a(n, this->node_alloc());
-            key_type2 const& k = this->get_key(a.node_->value());
+            const_key_type& k = this->get_key(a.node_->value());
             std::size_t key_hash = this->hash(k);
             node_pointer position = this->find_node(key_hash, k);
             this->reserve_for_insert(this->size_ + 1);
@@ -526,7 +526,7 @@ namespace boost { namespace unordered { namespace detail {
         iterator emplace_hint_impl(c_iterator hint, node_pointer n)
         {
             node_tmp a(n, this->node_alloc());
-            key_type2 const& k = this->get_key(a.node_->value());
+            const_key_type& k = this->get_key(a.node_->value());
             if (hint.node_ && this->key_eq()(k, this->get_key(*hint))) {
                 this->reserve_for_insert(this->size_ + 1);
                 return iterator(this->add_using_hint(a.release(), hint.node_));
@@ -542,7 +542,7 @@ namespace boost { namespace unordered { namespace detail {
         void emplace_impl_no_rehash(node_pointer n)
         {
             node_tmp a(n, this->node_alloc());
-            key_type2 const& k = this->get_key(a.node_->value());
+            const_key_type& k = this->get_key(a.node_->value());
             std::size_t key_hash = this->hash(k);
             node_pointer position = this->find_node(key_hash, k);
             this->add_node(a.release(), key_hash, position);
@@ -593,7 +593,7 @@ namespace boost { namespace unordered { namespace detail {
         //
         // no throw
 
-        std::size_t erase_key(key_type2 const& k)
+        std::size_t erase_key(const_key_type& k)
         {
             if(!this->size_) return 0;
 
