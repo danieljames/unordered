@@ -1,4 +1,3 @@
-
 // Copyright (C) 2003-2004 Jeremy B. Maitin-Shepard.
 // Copyright (C) 2005-2016 Daniel James
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -118,6 +117,7 @@ namespace boost { namespace unordered { namespace detail {
     template <typename T> struct ptr_node;
     template <typename A> struct grouped_node;
     template <typename T> struct grouped_ptr_node;
+    template <typename Node> struct node_traits;
 
     static const float minimum_max_load_factor = 1e-3f;
     static const std::size_t default_bucket_count = 11;
@@ -2464,32 +2464,33 @@ namespace boost { namespace unordered { namespace detail {
         value_base& operator=(value_base const&);
     };
 
-    template <typename NodePolicy, typename A>
+    template <typename N, typename SetMapPolicies>
     struct table_base
     {
-        typedef typename NodePolicy::template node_types<A> node_types;
-        typedef typename node_types::node node;
-        typedef typename node_types::bucket bucket;
-        typedef typename node_types::link_pointer link_pointer;
+        typedef N node;
+        typedef boost::unordered::detail::node_traits<N> node_traits;
+        typedef typename node_traits::node_pointer node_pointer;
+        typedef typename node_traits::bucket_pointer bucket_pointer;
+        typedef typename node_traits::link_pointer link_pointer;
+        typedef typename node_traits::bucket bucket;
 
-        typedef typename boost::unordered::detail::rebind_wrap<A, node>::type node_allocator;
-        typedef typename boost::unordered::detail::rebind_wrap<A, bucket>::type bucket_allocator;
-        typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
-        typedef boost::unordered::detail::allocator_traits<node_allocator> node_allocator_traits;
-        typedef boost::unordered::detail::allocator_traits<bucket_allocator> bucket_allocator_traits;
-        typedef typename value_allocator_traits::value_type value_type;
-        typedef typename node_allocator_traits::pointer node_pointer;
-        typedef typename node_allocator_traits::const_pointer const_node_pointer;
-        typedef typename bucket_allocator_traits::pointer bucket_pointer;
+        typedef typename node_traits::value_type value_type;
+        typedef std::size_t size_type;
 
-        typedef boost::unordered::detail::node_constructor<node_allocator>
-            node_constructor;
+        typedef typename SetMapPolicies::template value_things<value_type> value_things;
+        typedef typename value_things::const_key_type const_key_type;
+        typedef typename value_things::extractor extractor;
+        typedef typename boost::unordered::detail::pick_policy<const_key_type>::type policy;
+        typedef typename SetMapPolicies::template iterators<node> iterator_types;
+        typedef typename SetMapPolicies::template local_iterators<node, policy> l_iterator_types;
+        typedef typename iterator_types::iterator iterator;
+        typedef typename iterator_types::c_iterator const_iterator;
+        typedef typename l_iterator_types::iterator local_iterator;
+        typedef typename l_iterator_types::c_iterator const_local_iterator;
 
         ////////////////////////////////////////////////////////////////////////
         // Members
 
-        boost::unordered::detail::compressed<bucket_allocator, node_allocator>
-            allocators_;
         std::size_t bucket_count_;
         std::size_t size_;
         float mlf_;
@@ -2499,38 +2500,34 @@ namespace boost { namespace unordered { namespace detail {
         ////////////////////////////////////////////////////////////////////////
         // Constructors
 
-        table_base(std::size_t num_buckets, node_allocator const& a,
-                float mlf = 1.0f) :
-            allocators_(a,a),
-            bucket_count_(num_buckets),
+        table_base() :
+            bucket_count_(0),
             size_(0),
-            mlf_(mlf),
+            mlf_(1.0f),
             max_load_(0),
-            buckets_()
-        {}
+            buckets_() {}
 
-        table_base(table_base& x, boost::unordered::detail::move_tag m) :
-            allocators_(x.allocators_, m),
-            bucket_count_(x.bucket_count_),
-            size_(x.size_),
-            mlf_(x.mlf_),
-            max_load_(x.max_load_),
-            buckets_(x.buckets_)
+        // Only call with nodes allocated with the currect allocator, or
+        // one that is equal to it.
+        void move_buckets_from(table_base& other)
         {
-            x.buckets_ = bucket_pointer();
-            x.size_ = 0;
-            x.max_load_ = 0;
+            BOOST_ASSERT(!this->buckets_);
+            this->buckets_ = other.buckets_;
+            this->bucket_count_ = other.bucket_count_;
+            this->size_ = other.size_;
+            other.buckets_ = bucket_pointer();
+            other.size_ = 0;
+            other.max_load_ = 0;
         }
 
-        table_base(table_base& x, node_allocator const& a,
-                boost::unordered::detail::move_tag) :
-            allocators_(a, a),
-            bucket_count_(x.bucket_count_),
-            size_(0),
-            mlf_(x.mlf_),
-            max_load_(x.max_load_),
-            buckets_()
-        {}
+        void swap(table_base& x)
+        {
+            boost::swap(this->buckets_, x.buckets_);
+            boost::swap(this->bucket_count_, x.bucket_count_);
+            boost::swap(this->size_, x.size_);
+            std::swap(this->mlf_, x.mlf_);
+            std::swap(this->max_load_, x.max_load_);
+        }
 
         ////////////////////////////////////////////////////////////////////////
         // Node functions
@@ -2541,26 +2538,6 @@ namespace boost { namespace unordered { namespace detail {
 
         ////////////////////////////////////////////////////////////////////////
         // Data access
-
-        bucket_allocator const& bucket_alloc() const
-        {
-            return this->allocators_.first();
-        }
-
-        node_allocator const& node_alloc() const
-        {
-            return this->allocators_.second();
-        }
-
-        bucket_allocator& bucket_alloc()
-        {
-            return this->allocators_.first();
-        }
-
-        node_allocator& node_alloc()
-        {
-            return this->allocators_.second();
-        }
 
         bucket_pointer get_bucket(std::size_t bucket_index) const
         {
@@ -2590,13 +2567,6 @@ namespace boost { namespace unordered { namespace detail {
             return prev ? next_node(prev) : node_pointer();
         }
 
-        float load_factor() const
-        {
-            BOOST_ASSERT(this->bucket_count_ != 0);
-            return static_cast<float>(this->size_)
-                / static_cast<float>(this->bucket_count_);
-        }
-
         void recalculate_max_load()
         {
             using namespace std;
@@ -2610,11 +2580,191 @@ namespace boost { namespace unordered { namespace detail {
 
         }
 
+        bool empty() const BOOST_NOEXCEPT
+        {
+            return this->size_ == 0;
+        }
+
+        size_type size() const BOOST_NOEXCEPT
+        {
+            return this->size_;
+        }
+
+        size_type bucket_count() const BOOST_NOEXCEPT
+        {
+            return this->bucket_count_;
+        }
+
+        float load_factor() const
+        {
+            BOOST_ASSERT(this->bucket_count_ != 0);
+            return static_cast<float>(this->size_)
+                / static_cast<float>(this->bucket_count_);
+        }
+
+        float max_load_factor() const BOOST_NOEXCEPT
+        {
+            return this->mlf_;
+        }
+
         void max_load_factor(float z)
         {
             BOOST_ASSERT(z > 0);
             this->mlf_ = (std::max)(z, minimum_max_load_factor);
             recalculate_max_load();
+        }
+
+        const_key_type& get_key(value_type const& x) const
+        {
+            return extractor::extract(x);
+        }
+
+        std::size_t hash_to_bucket(std::size_t hash_value) const
+        {
+            return policy::to_bucket(this->bucket_count_, hash_value);
+        }
+
+        std::size_t min_buckets_for_size(std::size_t s) const
+        {
+            BOOST_ASSERT(this->mlf_ >= minimum_max_load_factor);
+
+            using namespace std;
+
+            // From 6.3.1/13:
+            // size < mlf_ * count
+            // => count > size / mlf_
+            //
+            // Or from rehash post-condition:
+            // count > size / mlf_
+
+            return policy::new_bucket_count(
+                boost::unordered::detail::double_to_size(floor(
+                    static_cast<double>(s) /
+                    static_cast<double>(this->mlf_)) + 1));
+        }
+
+        std::size_t bucket_size(std::size_t index) const
+        {
+            node_pointer n = this->begin(index);
+            if (!n) return 0;
+
+            std::size_t count = 0;
+            while(n && hash_to_bucket(n->hash_) == index)
+            {
+                ++count;
+                n = next_node(n);
+            }
+
+            return count;
+        }
+    };
+
+    template <typename NA, typename SetMapPolicies>
+    struct table_memory : boost::unordered::detail::table_base<
+            typename boost::unordered::detail::allocator_traits<NA>::value_type,
+            SetMapPolicies>
+    {
+        typedef boost::unordered::detail::table_base<
+            typename boost::unordered::detail::allocator_traits<NA>::value_type,
+            SetMapPolicies> base;
+
+        typedef typename base::bucket bucket;
+        typedef typename base::node_pointer node_pointer;
+        typedef typename base::bucket_pointer bucket_pointer;
+        typedef typename base::link_pointer link_pointer;
+        typedef typename base::policy policy;
+        typedef NA node_allocator;
+        typedef typename boost::unordered::detail::rebind_wrap<node_allocator, bucket>::type bucket_allocator;
+        typedef boost::unordered::detail::allocator_traits<node_allocator> node_allocator_traits;
+        typedef boost::unordered::detail::allocator_traits<bucket_allocator> bucket_allocator_traits;
+
+        typedef boost::unordered::detail::node_constructor<node_allocator>
+            node_constructor;
+
+        ////////////////////////////////////////////////////////////////////////
+        // Members
+
+        boost::unordered::detail::compressed<bucket_allocator, node_allocator>
+            allocators_;
+
+        ////////////////////////////////////////////////////////////////////////
+        // Constructors
+
+        table_memory(node_allocator const& a) : allocators_(a,a) {}
+        table_memory(table_memory& x, boost::unordered::detail::move_tag m) : allocators_(x.allocators_,m) {}
+
+        ////////////////////////////////////////////////////////////////////////
+        // Swap and Move
+
+        void swap_allocators(table_memory& other, false_type)
+        {
+            boost::unordered::detail::func::ignore_unused_variable_warning(other);
+
+            // According to 23.2.1.8, if propagate_on_container_swap is
+            // false the behaviour is undefined unless the allocators
+            // are equal.
+            BOOST_ASSERT(this->node_alloc() == other.node_alloc());
+        }
+
+        void swap_allocators(table_memory& other, true_type)
+        {
+            this->allocators_.swap(other.allocators_);
+        }
+
+        void swap(table_memory& x) {
+            // I think swap can throw if Propagate::value,
+            // since the allocators' swap can throw. Not sure though.
+            swap_allocators(x,
+                boost::unordered::detail::integral_constant<bool,
+                    allocator_traits<node_allocator>::
+                    propagate_on_container_swap::value>());
+
+            this->base::swap(x);
+        }
+
+
+        ////////////////////////////////////////////////////////////////////////
+        // Data access
+
+        bucket_allocator const& bucket_alloc() const
+        {
+            return this->allocators_.first();
+        }
+
+        node_allocator const& node_alloc() const
+        {
+            return this->allocators_.second();
+        }
+
+        bucket_allocator& bucket_alloc()
+        {
+            return this->allocators_.first();
+        }
+
+        node_allocator& node_alloc()
+        {
+            return this->allocators_.second();
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+        // Load methods
+
+        std::size_t max_size() const
+        {
+            using namespace std;
+
+            // size < mlf_ * count
+            return boost::unordered::detail::double_to_size(ceil(
+                    static_cast<double>(this->mlf_) *
+                    static_cast<double>(max_bucket_count())
+                )) - 1;
+        }
+
+        std::size_t max_bucket_count() const
+        {
+            // -1 to account for the start bucket.
+            return policy::prev_bucket_count(
+                bucket_allocator_traits::max_size(this->bucket_alloc()) - 1);
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -2628,9 +2778,9 @@ namespace boost { namespace unordered { namespace detail {
             bucket_pointer constructed = new_buckets;
 
             BOOST_TRY {
-                bucket_pointer end = new_buckets
+                bucket_pointer end_ = new_buckets
                     + static_cast<std::ptrdiff_t>(length);
-                for(; constructed != end; ++constructed) {
+                for(; constructed != end_; ++constructed) {
                     new ((void*) boost::addressof(*constructed)) bucket();
                 }
 
@@ -2669,61 +2819,13 @@ namespace boost { namespace unordered { namespace detail {
 
             this->bucket_count_ = new_count;
             this->buckets_ = new_buckets;
-            recalculate_max_load();
-        }
-
-        ////////////////////////////////////////////////////////////////////////
-        // Swap and Move
-
-        void swap_allocators(table_base& other, false_type)
-        {
-            boost::unordered::detail::func::ignore_unused_variable_warning(other);
-
-            // According to 23.2.1.8, if propagate_on_container_swap is
-            // false the behaviour is undefined unless the allocators
-            // are equal.
-            BOOST_ASSERT(this->node_alloc() == other.node_alloc());
-        }
-
-        void swap_allocators(table_base& other, true_type)
-        {
-            this->allocators_.swap(other.allocators_);
-        }
-
-        void swap_table_base(table_base& x)
-        {
-            // I think swap can throw if Propagate::value,
-            // since the allocators' swap can throw. Not sure though.
-            swap_allocators(x,
-                boost::unordered::detail::integral_constant<bool,
-                    allocator_traits<node_allocator>::
-                    propagate_on_container_swap::value>());
-
-            boost::swap(this->buckets_, x.buckets_);
-            boost::swap(this->bucket_count_, x.bucket_count_);
-            boost::swap(this->size_, x.size_);
-            std::swap(this->mlf_, x.mlf_);
-            std::swap(this->max_load_, x.max_load_);
-        }
-
-        // Only call with nodes allocated with the currect allocator, or
-        // one that is equal to it. (Can't assert because other's
-        // allocators might have already been moved).
-        void move_buckets_from(table_base& other)
-        {
-            BOOST_ASSERT(!this->buckets_);
-            this->buckets_ = other.buckets_;
-            this->bucket_count_ = other.bucket_count_;
-            this->size_ = other.size_;
-            other.buckets_ = bucket_pointer();
-            other.size_ = 0;
-            other.max_load_ = 0;
+            this->recalculate_max_load();
         }
 
         ////////////////////////////////////////////////////////////////////////
         // Delete/destruct
 
-        ~table_base()
+        ~table_memory()
         {
             delete_buckets();
         }
@@ -2740,16 +2842,16 @@ namespace boost { namespace unordered { namespace detail {
             --this->size_;
         }
 
-        std::size_t delete_nodes(link_pointer prev, link_pointer end)
+        std::size_t delete_nodes(link_pointer prev, link_pointer end_)
         {
-            BOOST_ASSERT(prev->next_ != end);
+            BOOST_ASSERT(prev->next_ != end_);
 
             std::size_t count = 0;
 
             do {
                 delete_node(prev);
                 ++count;
-            } while (prev->next_ != end);
+            } while (prev->next_ != end_);
 
             return count;
         }
@@ -2757,11 +2859,11 @@ namespace boost { namespace unordered { namespace detail {
         void delete_buckets()
         {
             if(this->buckets_) {
-                if (this->size_) delete_nodes(get_previous_start(), link_pointer());
+                if (this->size_) delete_nodes(this->get_previous_start(), link_pointer());
 
                 if (bucket::extra_node) {
                     node_pointer n = static_cast<node_pointer>(
-                            get_bucket(this->bucket_count_)->next_);
+                            this->get_bucket(this->bucket_count_)->next_);
                     boost::unordered::detail::func::destroy(
                             boost::addressof(*n));
                     node_allocator_traits::deallocate(this->node_alloc(), n, 1);
@@ -2779,7 +2881,7 @@ namespace boost { namespace unordered { namespace detail {
         {
             if (!this->size_) return;
 
-            delete_nodes(get_previous_start(), link_pointer());
+            delete_nodes(this->get_previous_start(), link_pointer());
             clear_buckets();
 
             BOOST_ASSERT(!this->size_);
@@ -2787,8 +2889,8 @@ namespace boost { namespace unordered { namespace detail {
 
         void clear_buckets()
         {
-            bucket_pointer end = get_bucket(this->bucket_count_);
-            for(bucket_pointer it = this->buckets_; it != end; ++it)
+            bucket_pointer end_ = this->get_bucket(this->bucket_count_);
+            for(bucket_pointer it = this->buckets_; it != end_; ++it)
             {
                 it->next_ = node_pointer();
             }
@@ -2796,8 +2898,8 @@ namespace boost { namespace unordered { namespace detail {
 
         void destroy_buckets()
         {
-            bucket_pointer end = get_bucket(this->bucket_count_ + 1);
-            for(bucket_pointer it = this->buckets_; it != end; ++it)
+            bucket_pointer end_ = this->get_bucket(this->bucket_count_ + 1);
+            for(bucket_pointer it = this->buckets_; it != end_; ++it)
             {
                 boost::unordered::detail::func::destroy(
                     boost::addressof(*it));
@@ -2808,125 +2910,38 @@ namespace boost { namespace unordered { namespace detail {
         }
     };
 
-    template <typename Policies, typename A>
-    struct table_policy : table_base<typename Policies::node_policy, A>
-    {
-        typedef table_base<typename Policies::node_policy, A> base;
-        typedef typename base::node node;
-        typedef typename Policies::iterator_policy::template value_things<typename base::value_type>::const_key_type const_key_type;
-        typedef typename boost::unordered::detail::pick_policy<const_key_type>::type policy;
-        typedef typename Policies::iterator_policy::template iterators<node> iterator_types;
-        typedef typename Policies::iterator_policy::template local_iterators<node, policy> l_iterator_types;
-        typedef typename iterator_types::iterator iterator;
-        typedef typename iterator_types::c_iterator const_iterator;
-        typedef typename l_iterator_types::iterator local_iterator;
-        typedef typename l_iterator_types::c_iterator const_local_iterator;
-        typedef typename base::node_pointer node_pointer;
-        typedef typename base::node_allocator node_allocator;
-        typedef typename base::bucket_allocator_traits bucket_allocator_traits;
-        typedef std::size_t size_type;
-
-        ////////////////////////////////////////////////////////////////////////
-        // Data access
-
-        std::size_t max_bucket_count() const
-        {
-            // -1 to account for the start bucket.
-            return policy::prev_bucket_count(
-                bucket_allocator_traits::max_size(this->bucket_alloc()) - 1);
-        }
-
-        std::size_t hash_to_bucket(std::size_t hash_value) const
-        {
-            return policy::to_bucket(this->bucket_count_, hash_value);
-        }
-
-        std::size_t bucket_size(std::size_t index) const
-        {
-            node_pointer n = this->begin(index);
-            if (!n) return 0;
-
-            std::size_t count = 0;
-            while(n && hash_to_bucket(n->hash_) == index)
-            {
-                ++count;
-                n = base::next_node(n);
-            }
-
-            return count;
-        }
-
-        ////////////////////////////////////////////////////////////////////////
-        // Load methods
-
-        std::size_t max_size() const
-        {
-            using namespace std;
-
-            // size < mlf_ * count
-            return boost::unordered::detail::double_to_size(ceil(
-                    static_cast<double>(this->mlf_) *
-                    static_cast<double>(max_bucket_count())
-                )) - 1;
-        }
-
-        std::size_t min_buckets_for_size(std::size_t size) const
-        {
-            BOOST_ASSERT(this->mlf_ >= minimum_max_load_factor);
-
-            using namespace std;
-
-            // From 6.3.1/13:
-            // size < mlf_ * count
-            // => count > size / mlf_
-            //
-            // Or from rehash post-condition:
-            // count > size / mlf_
-
-            return policy::new_bucket_count(
-                boost::unordered::detail::double_to_size(floor(
-                    static_cast<double>(size) /
-                    static_cast<double>(this->mlf_)) + 1));
-        }
-
-        ////////////////////////////////////////////////////////////////////////
-        // Constructors
-
-        table_policy(std::size_t num_buckets, node_allocator const& a,
-                float mlf = 1.0f) : base(num_buckets, a, mlf) {}
-        table_policy(table_policy& x, boost::unordered::detail::move_tag m) :
-            base(x, m) {}
-        table_policy(table_policy& x, node_allocator const& a,
-                boost::unordered::detail::move_tag m) :
-            base(x, a, m) {}
-    };
-
     template <typename Policies, typename H, typename P, typename A>
     struct table :
         boost::unordered::detail::functions<H, P>,
-        boost::unordered::detail::table_policy<Policies, A>
+        boost::unordered::detail::table_memory<
+            typename boost::unordered::detail::rebind_wrap<A, typename Policies::template node_types<A>::node>::type,
+            typename Policies::set_map_policies
+        >
     {
     private:
         table(table const&);
         table& operator=(table const&);
     public:
+        typedef boost::unordered::detail::functions<H, P> functions;
+        typedef boost::unordered::detail::table_memory<
+            typename boost::unordered::detail::rebind_wrap<A, typename Policies::template node_types<A>::node>::type,
+            typename Policies::set_map_policies
+        > base;
+
         typedef H hasher;
         typedef P key_equal;
+        typedef A value_allocator;
+        typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
+        typedef typename value_allocator_traits::value_type value_type;
 
-        typedef boost::unordered::detail::table_policy<Policies, A> base;
-        typedef boost::unordered::detail::functions<H, P> functions;
-        typedef typename functions::set_hash_functions set_hash_functions;
-
-        typedef typename base::const_key_type const_key_type;
-        typedef typename Policies::iterator_policy::template value_things<typename base::value_type>::extractor extractor;
         typedef typename Policies::template table_gen<H, P, A>::table table_impl;
-        typedef typename base::policy policy;
-
-        typedef typename base::bucket_pointer bucket_pointer;
+        typedef typename functions::set_hash_functions set_hash_functions;
+        typedef typename base::link_pointer link_pointer;
         typedef typename base::node_allocator node_allocator;
         typedef typename base::node_pointer node_pointer;
-        typedef typename base::value_type value_type;
-        typedef typename base::link_pointer link_pointer;
+        typedef typename base::bucket_pointer bucket_pointer;
+        typedef typename base::const_key_type const_key_type;
+        typedef typename base::policy policy;
 
         typedef boost::unordered::detail::node_constructor<node_allocator>
             node_constructor;
@@ -2941,24 +2956,42 @@ namespace boost { namespace unordered { namespace detail {
                 key_equal const& eq,
                 node_allocator const& a) :
             functions(hf, eq),
-            base(policy::new_bucket_count(num_buckets), a)
-        {}
+            base(a)
+        {
+            this->bucket_count_ = policy::new_bucket_count(num_buckets);
+        }
 
         table(table const& x, node_allocator const& a) :
             functions(x),
-            base(x.min_buckets_for_size(x.size_), a, x.mlf_)
-        {}
+            base(a)
+        {
+            this->bucket_count_ = x.min_buckets_for_size(x.size_);
+            this->mlf_ = x.mlf_;
+        }
 
         table(table& x, boost::unordered::detail::move_tag m) :
             functions(x, m),
             base(x, m)
-        {}
+        {
+            this->bucket_count_ = x.bucket_count_;
+            this->size_ = x.size_;
+            this->mlf_ = x.mlf_;
+            this->max_load_ = x.max_load_;
+            this->buckets_ = x.buckets_;
+            x.buckets_ = bucket_pointer();
+            x.size_ = 0;
+            x.max_load_ = 0;
+        }
 
         table(table& x, node_allocator const& a,
                 boost::unordered::detail::move_tag m) :
             functions(x, m),
-            base(x, a, m)
-        {}
+            base(a)
+        {
+            this->bucket_count_ = x.bucket_count_;
+            this->mlf_ = x.mlf_;
+            this->max_load_ = x.max_load_;
+        }
 
         ////////////////////////////////////////////////////////////////////////
         // Initialisation.
@@ -2989,7 +3022,7 @@ namespace boost { namespace unordered { namespace detail {
         {
             set_hash_functions op1(*this, x);
             set_hash_functions op2(x, *this);
-            this->swap_table_base(x);
+            this->base::swap(x);
             op1.commit();
             op2.commit();
         }
@@ -3143,11 +3176,6 @@ namespace boost { namespace unordered { namespace detail {
 
         // Accessors
 
-        const_key_type& get_key(value_type const& x) const
-        {
-            return extractor::extract(x);
-        }
-
         std::size_t hash(const_key_type& k) const
         {
             return policy::apply_hash(this->hash_function(), k);
@@ -3191,17 +3219,17 @@ namespace boost { namespace unordered { namespace detail {
 
     // basic exception safety
     template <typename Policies, typename H, typename P, typename A>
-    inline void table<Policies, H, P, A>::reserve_for_insert(std::size_t size)
+    inline void table<Policies, H, P, A>::reserve_for_insert(std::size_t s)
     {
         if (!this->buckets_) {
             this->create_buckets((std::max)(this->bucket_count_,
-                this->min_buckets_for_size(size)));
+                this->min_buckets_for_size(s)));
         }
         // According to the standard this should be 'size >= max_load_',
         // but I think this is better, defect report filed.
-        else if(size > this->max_load_) {
+        else if(s > this->max_load_) {
             std::size_t num_buckets
-                = this->min_buckets_for_size((std::max)(size,
+                = this->min_buckets_for_size((std::max)(s,
                     this->size_ + (this->size_ >> 1)));
 
             if (num_buckets != this->bucket_count_)
@@ -3424,6 +3452,11 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             A, unique_node<A> >::type allocator;
         typedef typename ::boost::unordered::detail::
             allocator_traits<allocator>::pointer node_pointer;
+        typedef boost::unordered::detail::bucket<node_pointer> bucket;
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, bucket>::type bucket_allocator;
+        typedef typename ::boost::unordered::detail::
+            allocator_traits<bucket_allocator>::pointer bucket_pointer;
         typedef node_pointer link_pointer;
 
         link_pointer next_;
@@ -3442,20 +3475,40 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         unique_node& operator=(unique_node const&);
     };
 
+    template <typename A>
+    struct node_traits<unique_node<A> >
+    {
+        typedef typename
+            boost::unordered::detail::allocator_traits<A>::value_type
+            value_type;
+        typedef unique_node<A> node;
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, node>::type allocator;
+        typedef typename ::boost::unordered::detail::
+            allocator_traits<allocator>::pointer node_pointer;
+        typedef boost::unordered::detail::bucket<node_pointer> bucket;
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, bucket>::type bucket_allocator;
+        typedef typename ::boost::unordered::detail::
+            allocator_traits<bucket_allocator>::pointer bucket_pointer;
+        typedef node_pointer link_pointer;
+    };
+
     template <typename T>
     struct ptr_node :
         boost::unordered::detail::ptr_bucket
     {
         typedef T value_type;
-        typedef boost::unordered::detail::ptr_bucket bucket_base;
+        typedef boost::unordered::detail::ptr_bucket bucket;
         typedef ptr_node<T>* node_pointer;
         typedef ptr_bucket* link_pointer;
+        typedef ptr_bucket* bucket_pointer;
 
         std::size_t hash_;
         boost::unordered::detail::value_base<T> value_base_;
 
         ptr_node() :
-            bucket_base(),
+            bucket(),
             hash_(0)
         {}
 
@@ -3469,6 +3522,17 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
     private:
         ptr_node& operator=(ptr_node const&);
+    };
+
+    template <typename T>
+    struct node_traits<ptr_node<T> >
+    {
+        typedef T value_type;
+        typedef ptr_node<T> node;
+        typedef ptr_bucket bucket;
+        typedef ptr_node<T>* node_pointer;
+        typedef ptr_bucket* link_pointer;
+        typedef ptr_bucket* bucket_pointer;
     };
 
     // If the allocator uses raw pointers use ptr_node
@@ -3559,6 +3623,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename table::extractor extractor;
         typedef typename table::iterator iterator;
         typedef typename table::const_iterator c_iterator;
+
         typedef typename table::node_constructor node_constructor;
         typedef typename table::node_tmp node_tmp;
 
@@ -4104,6 +4169,11 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             A, grouped_node<A> >::type allocator;
         typedef typename ::boost::unordered::detail::
             allocator_traits<allocator>::pointer node_pointer;
+        typedef boost::unordered::detail::bucket<node_pointer> bucket;
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, bucket>::type bucket_allocator;
+        typedef typename ::boost::unordered::detail::
+            allocator_traits<bucket_allocator>::pointer bucket_pointer;
         typedef node_pointer link_pointer;
 
         link_pointer next_;
@@ -4125,21 +4195,41 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         grouped_node& operator=(grouped_node const&);
     };
 
+    template <typename A>
+    struct node_traits<grouped_node<A> >
+    {
+        typedef typename
+            boost::unordered::detail::allocator_traits<A>::value_type
+            value_type;
+        typedef grouped_node<A> node;
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, node>::type allocator;
+        typedef typename ::boost::unordered::detail::
+            allocator_traits<allocator>::pointer node_pointer;
+        typedef boost::unordered::detail::bucket<node_pointer> bucket;
+        typedef typename ::boost::unordered::detail::rebind_wrap<
+            A, bucket>::type bucket_allocator;
+        typedef typename ::boost::unordered::detail::
+            allocator_traits<bucket_allocator>::pointer bucket_pointer;
+        typedef node_pointer link_pointer;
+    };
+
     template <typename T>
     struct grouped_ptr_node :
         boost::unordered::detail::ptr_bucket
     {
         typedef T value_type;
-        typedef boost::unordered::detail::ptr_bucket bucket_base;
+        typedef boost::unordered::detail::ptr_bucket bucket;
         typedef grouped_ptr_node<T>* node_pointer;
         typedef ptr_bucket* link_pointer;
+        typedef ptr_bucket* bucket_pointer;
 
         node_pointer group_prev_;
         std::size_t hash_;
         boost::unordered::detail::value_base<T> value_base_;
 
         grouped_ptr_node() :
-            bucket_base(),
+            bucket(),
             group_prev_(0),
             hash_(0)
         {}
@@ -4155,6 +4245,17 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
     private:
         grouped_ptr_node& operator=(grouped_ptr_node const&);
+    };
+
+    template <typename T>
+    struct node_traits<grouped_ptr_node<T> >
+    {
+        typedef T value_type;
+        typedef grouped_ptr_node<T> node;
+        typedef ptr_bucket bucket;
+        typedef grouped_ptr_node<T>* node_pointer;
+        typedef ptr_bucket* link_pointer;
+        typedef ptr_bucket* bucket_pointer;
     };
 
     // If the allocator uses raw pointers use grouped_ptr_node
@@ -4232,8 +4333,6 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
     {
         typedef boost::unordered::detail::table<Policies, H, P, A> table;
         typedef typename table::value_type value_type;
-        typedef typename table::bucket bucket;
-        typedef typename table::policy policy;
         typedef typename table::node_pointer node_pointer;
         typedef typename table::node_allocator node_allocator;
         typedef typename table::node_allocator_traits node_allocator_traits;
@@ -4242,7 +4341,6 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename table::hasher hasher;
         typedef typename table::key_equal key_equal;
         typedef typename table::const_key_type const_key_type;
-        typedef typename table::extractor extractor;
         typedef typename table::iterator iterator;
         typedef typename table::const_iterator c_iterator;
         typedef typename table::node_constructor node_constructor;
@@ -4856,10 +4954,9 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         };
     };
 
-    struct set_policy
+    struct set_policy : boost::unordered::detail::u
     {
-        typedef set_iterator_policy iterator_policy;
-        typedef boost::unordered::detail::u node_policy;
+        typedef set_iterator_policy set_map_policies;
 
         template <typename H, typename P, typename A>
         struct table_gen {
@@ -4867,10 +4964,9 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         };
     };
 
-    struct multiset_policy
+    struct multiset_policy : boost::unordered::detail::g
     {
-        typedef set_iterator_policy iterator_policy;
-        typedef boost::unordered::detail::g node_policy;
+        typedef set_iterator_policy set_map_policies;
 
         template <typename H, typename P, typename A>
         struct table_gen {
@@ -4928,10 +5024,9 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         };
     };
 
-    struct map_policy
+    struct map_policy : boost::unordered::detail::u
     {
-        typedef map_iterator_policy iterator_policy;
-        typedef boost::unordered::detail::u node_policy;
+        typedef map_iterator_policy set_map_policies;
 
         template <typename H, typename P, typename A>
         struct table_gen {
@@ -4939,10 +5034,9 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         };
     };
 
-    struct multimap_policy
+    struct multimap_policy : boost::unordered::detail::g
     {
-        typedef map_iterator_policy iterator_policy;
-        typedef boost::unordered::detail::g node_policy;
+        typedef map_iterator_policy set_map_policies;
 
         template <typename H, typename P, typename A>
         struct table_gen {
