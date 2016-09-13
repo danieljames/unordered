@@ -75,6 +75,12 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename node_traits::link_pointer link_pointer;
         typedef typename node_traits::bucket bucket;
 
+    public:
+        typedef typename node_traits::value_type value_type;
+        typedef std::size_t size_type;
+
+    protected:
+
         ////////////////////////////////////////////////////////////////////////
         // Members
 
@@ -169,8 +175,6 @@ namespace boost { namespace unordered { namespace detail {
 
     public:
 
-        typedef std::size_t size_type;
-
         bool empty() const BOOST_NOEXCEPT
         {
             return this->size_ == 0;
@@ -212,10 +216,65 @@ namespace boost { namespace unordered { namespace detail {
     protected:
         typedef boost::unordered::detail::table_base<N> base;
         typedef typename base::node node;
+        typedef typename SetMapPolicies::template value_things<
+            typename base::value_type> value_things;
+        typedef typename value_things::const_key_type const_key_type;
+        typedef typename value_things::extractor extractor;
+        typedef typename boost::unordered::detail::pick_policy<const_key_type>::type policy;
         typedef typename SetMapPolicies::template iterators<node> iterator_types;
+        typedef typename SetMapPolicies::template local_iterators<node, policy> l_iterator_types;
     public:
+        typedef typename base::size_type size_type;
         typedef typename iterator_types::iterator iterator;
         typedef typename iterator_types::c_iterator const_iterator;
+
+    protected:
+
+        const_key_type& get_key(value_type const& x) const
+        {
+            return extractor::extract(x);
+        }
+
+        std::size_t hash_to_bucket(std::size_t hash_value) const
+        {
+            return policy::to_bucket(this->bucket_count_, hash_value);
+        }
+
+        std::size_t min_buckets_for_size(std::size_t size) const
+        {
+            BOOST_ASSERT(this->mlf_ >= minimum_max_load_factor);
+
+            using namespace std;
+
+            // From 6.3.1/13:
+            // size < mlf_ * count
+            // => count > size / mlf_
+            //
+            // Or from rehash post-condition:
+            // count > size / mlf_
+
+            return policy::new_bucket_count(
+                boost::unordered::detail::double_to_size(floor(
+                    static_cast<double>(size) /
+                    static_cast<double>(this->mlf_)) + 1));
+        }
+
+    public:
+
+        std::size_t bucket_size(std::size_t index) const
+        {
+            node_pointer n = this->begin_node(index);
+            if (!n) return 0;
+
+            std::size_t count = 0;
+            while(n && hash_to_bucket(n->hash_) == index)
+            {
+                ++count;
+                n = base::next_node(n);
+            }
+
+            return count;
+        }
 
         ////////////////////////////////////////////////////////////////////////
         // Iterators
@@ -249,70 +308,6 @@ namespace boost { namespace unordered { namespace detail {
         {
             return const_iterator();
         }
-    };
-
-    template <typename N, typename SetMapPolicies, typename BucketPolicies>
-    struct bucket_base : boost::unordered::detail::iterator_base<N, SetMapPolicies>
-    {
-    protected:
-        typedef boost::unordered::detail::iterator_base<N, SetMapPolicies> base;
-        typedef BucketPolicies policy;
-        typedef typename base::node node;
-        typedef typename base::node_pointer node_pointer;
-        typedef typename SetMapPolicies::template local_iterators<node, policy> l_iterator_types;
-    public:
-        typedef typename l_iterator_types::iterator local_iterator;
-        typedef typename l_iterator_types::c_iterator const_local_iterator;
-        typedef std::size_t size_type;
-
-    protected:
-        std::size_t hash_to_bucket(std::size_t hash_value) const
-        {
-            return policy::to_bucket(this->bucket_count_, hash_value);
-        }
-
-        std::size_t min_buckets_for_size(std::size_t size) const
-        {
-            BOOST_ASSERT(this->mlf_ >= minimum_max_load_factor);
-
-            using namespace std;
-
-            // From 6.3.1/13:
-            // size < mlf_ * count
-            // => count > size / mlf_
-            //
-            // Or from rehash post-condition:
-            // count > size / mlf_
-
-            return policy::new_bucket_count(
-                boost::unordered::detail::double_to_size(floor(
-                    static_cast<double>(size) /
-                    static_cast<double>(this->mlf_)) + 1));
-        }
-
-    public:
-        std::size_t bucket_size(std::size_t index) const
-        {
-            node_pointer n = this->begin_node(index);
-            if (!n) return 0;
-
-            std::size_t count = 0;
-            while(n && hash_to_bucket(n->hash_) == index)
-            {
-                ++count;
-                n = base::next_node(n);
-            }
-
-            return count;
-        }
-
-        ////////////////////////////////////////////////////////////////////////
-        // Iterators
-
-        using base::begin;
-        using base::end;
-        using base::cbegin;
-        using base::cend;
 
         local_iterator begin(size_type n)
         {
@@ -346,24 +341,23 @@ namespace boost { namespace unordered { namespace detail {
         {
             return const_local_iterator();
         }
-
     };
 
-    template <typename NA, typename SetMapPolicies, typename BucketPolicies>
-    struct memory_base : boost::unordered::detail::bucket_base<
-            typename boost::unordered::detail::allocator_traits<NA>::value_type,
-            SetMapPolicies, BucketPolicies>
+    template <typename NA, typename SetMapPolicies>
+    struct memory_base : boost::unordered::detail::iterator_base<
+            typename boost::unordered::detail::allocator_traits<NA>::value_type
+            SetMapPolicies>
     {
     protected:
         typedef boost::unordered::detail::bucket_base<
             typename boost::unordered::detail::allocator_traits<NA>::value_type,
             SetMapPolicies, BucketPolicies> base;
-        typedef BucketPolicies policy;
 
         typedef typename base::bucket bucket;
         typedef typename base::node_pointer node_pointer;
         typedef typename base::bucket_pointer bucket_pointer;
         typedef typename base::link_pointer link_pointer;
+        typedef typename base::policy policy;
         typedef NA node_allocator;
         typedef typename boost::unordered::detail::rebind_wrap<node_allocator, bucket>::type bucket_allocator;
         typedef boost::unordered::detail::allocator_traits<node_allocator> node_allocator_traits;
@@ -614,12 +608,7 @@ namespace boost { namespace unordered { namespace detail {
         boost::unordered::detail::functions<H, P>,
         boost::unordered::detail::memory_base<
             typename boost::unordered::detail::rebind_wrap<A, typename Policies::template node_types<A>::node>::type,
-            typename Policies::set_map_policies,
-            typename boost::unordered::detail::pick_policy<
-                typename Policies::set_map_policies::template value_things<
-                    typename boost::unordered::detail::allocator_traits<A>::value_type
-                >::const_key_type
-            >::type
+            typename Policies::set_map_policies
         >
     {
         template <typename Policies2, typename H2, typename P2, typename A2> friend struct table_impl;
@@ -640,24 +629,19 @@ namespace boost { namespace unordered { namespace detail {
         typedef P key_equal;
 
     protected:
-        typedef typename Policies::set_map_policies::template value_things<
-            value_type>::const_key_type_key_type;
-        typedef typename boost::unordered::detail::pick_policy<const_key_type>::type policy;
-
         typedef boost::unordered::detail::functions<H, P> functions;
         typedef boost::unordered::detail::memory_base<
-            typename boost::unordered::detail::rebind_wrap<A, typename Policies::template node_types<A>::node>::type,
-            typename Policies::set_map_policies,
-            policy
-        > table_base;
+            typename boost::unordered::detail::rebind_wrap<A, typename Policies::template node_types<A>::node>::type
+            > table_base;
 
         typedef typename Policies::template table_gen<H, P, A>::table table_impl;
-        typedef typename Policies::set_map_policies::template value_things<value_type>::extractor extractor;
         typedef typename functions::set_hash_functions set_hash_functions;
         typedef typename table_base::link_pointer link_pointer;
         typedef typename table_base::node_allocator node_allocator;
         typedef typename table_base::node_pointer node_pointer;
         typedef typename table_base::bucket_pointer bucket_pointer;
+        typedef typename table_base::const_key_type const_key_type;
+        typedef typename table_base::policy policy;
 
         typedef boost::unordered::detail::node_constructor<node_allocator>
             node_constructor;
@@ -891,11 +875,6 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         // Accessors
-
-        const_key_type& get_key(value_type const& x) const
-        {
-            return extractor::extract(x);
-        }
 
         std::size_t hash(const_key_type& k) const
         {

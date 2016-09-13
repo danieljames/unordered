@@ -58,6 +58,9 @@ namespace boost { namespace unordered { namespace detail {
     template <typename A>
     struct node_traits<unique_node<A> >
     {
+        typedef typename
+            boost::unordered::detail::allocator_traits<A>::value_type
+            value_type;
         typedef unique_node<A> node;
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, node>::type allocator;
@@ -104,6 +107,7 @@ namespace boost { namespace unordered { namespace detail {
     template <typename T>
     struct node_traits<ptr_node<T> >
     {
+        typedef T value_type;
         typedef ptr_node<T> node;
         typedef ptr_bucket bucket;
         typedef ptr_node<T>* node_pointer;
@@ -198,7 +202,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename table::link_pointer link_pointer;
         typedef typename table::hasher hasher;
         typedef typename table::key_equal key_equal;
-        typedef typename table::const_key_type_key_type;
+        typedef typename table::const_key_type const_key_type;
         typedef typename table::extractor extractor;
         typedef typename table::iterator iterator;
         typedef typename table::const_iterator c_iterator;

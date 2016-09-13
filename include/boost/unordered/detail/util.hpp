@@ -269,6 +269,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename Node::node_pointer node_pointer;
         typedef typename Node::bucket_pointer bucket_pointer;
         typedef typename Node::link_pointer link_pointer;
+        typedef typename Node::value_type value_type;
     };
 }}}
 
