@@ -195,18 +195,6 @@ namespace unordered
             return this->node_alloc();
         }
 
-        // size and capacity
-
-        bool empty() const BOOST_NOEXCEPT
-        {
-            return this->size_ == 0;
-        }
-
-        size_type size() const BOOST_NOEXCEPT
-        {
-            return this->size_;
-        }
-
         // emplace
 
 #if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
@@ -403,24 +391,10 @@ namespace unordered
 
         // bucket interface
 
-        size_type bucket_count() const BOOST_NOEXCEPT
-        {
-            return this->bucket_count_;
-        }
-
         size_type bucket(const key_type& k) const
         {
             return this->hash_to_bucket(this->hash(k));
         }
-
-        // hash policy
-
-        float max_load_factor() const BOOST_NOEXCEPT
-        {
-            return this->mlf_;
-        }
-
-        void max_load_factor(float) BOOST_NOEXCEPT;
 
 #if !BOOST_WORKAROUND(__BORLANDC__, < 0x0582)
         friend bool operator==<T,H,P,A>(
@@ -589,18 +563,6 @@ namespace unordered
         allocator_type get_allocator() const BOOST_NOEXCEPT
         {
             return this->node_alloc();
-        }
-
-        // size and capacity
-
-        bool empty() const BOOST_NOEXCEPT
-        {
-            return this->size_ == 0;
-        }
-
-        size_type size() const BOOST_NOEXCEPT
-        {
-            return this->size_;
         }
 
         // emplace
@@ -799,24 +761,10 @@ namespace unordered
 
         // bucket interface
 
-        size_type bucket_count() const BOOST_NOEXCEPT
-        {
-            return this->bucket_count_;
-        }
-
         size_type bucket(const key_type& k) const
         {
             return this->hash_to_bucket(this->hash(k));
         }
-
-        // hash policy
-
-        float max_load_factor() const BOOST_NOEXCEPT
-        {
-            return this->mlf_;
-        }
-
-        void max_load_factor(float) BOOST_NOEXCEPT;
 
 #if !BOOST_WORKAROUND(__BORLANDC__, < 0x0582)
         friend bool operator==<T,H,P,A>(
@@ -1045,14 +993,6 @@ namespace unordered
             CompatiblePredicate const& eq) const
     {
         return const_iterator(this->generic_find_node(k, h, eq));
-    }
-
-    // hash policy
-
-    template <class T, class H, class P, class A>
-    void unordered_set<T,H,P,A>::max_load_factor(float m) BOOST_NOEXCEPT
-    {
-        this->table::max_load_factor(m);
     }
 
     template <class T, class H, class P, class A>
@@ -1307,14 +1247,6 @@ namespace unordered
             CompatiblePredicate const& eq) const
     {
         return const_iterator(this->generic_find_node(k, h, eq));
-    }
-
-    // hash policy
-
-    template <class T, class H, class P, class A>
-    void unordered_multiset<T,H,P,A>::max_load_factor(float m) BOOST_NOEXCEPT
-    {
-        this->table::max_load_factor(m);
     }
 
     template <class T, class H, class P, class A>
