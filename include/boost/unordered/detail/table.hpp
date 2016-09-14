@@ -249,12 +249,14 @@ namespace boost { namespace unordered { namespace detail {
 
             using namespace std;
 
-            // From 6.3.1/13:
-            // size < mlf_ * count
-            // => count > size / mlf_
+            // From insert/emplace requirements:
+            //
+            // size <= mlf_ * count
+            // => count >= size / mlf_
             //
             // Or from rehash post-condition:
-            // count > size / mlf_
+            //
+            // count >= size / mlf_
 
             return policy::new_bucket_count(
                 boost::unordered::detail::double_to_size(floor(
