@@ -243,7 +243,7 @@ namespace boost { namespace unordered { namespace detail {
             return policy::to_bucket(this->bucket_count_, hash_value);
         }
 
-        std::size_t min_buckets_for_size(std::size_t size) const
+        std::size_t min_buckets_for_size(std::size_t s) const
         {
             BOOST_ASSERT(this->mlf_ >= minimum_max_load_factor);
 
@@ -258,7 +258,7 @@ namespace boost { namespace unordered { namespace detail {
 
             return policy::new_bucket_count(
                 boost::unordered::detail::double_to_size(floor(
-                    static_cast<double>(size) /
+                    static_cast<double>(s) /
                     static_cast<double>(this->mlf_)) + 1));
         }
 
