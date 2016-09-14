@@ -928,17 +928,17 @@ namespace boost { namespace unordered { namespace detail {
 
     // basic exception safety
     template <typename Policies, typename H, typename P, typename A>
-    inline void table<Policies, H, P, A>::reserve_for_insert(std::size_t size)
+    inline void table<Policies, H, P, A>::reserve_for_insert(std::size_t s)
     {
         if (!this->buckets_) {
             this->create_buckets((std::max)(this->bucket_count_,
-                this->min_buckets_for_size(size)));
+                this->min_buckets_for_size(s)));
         }
         // According to the standard this should be 'size >= max_load_',
         // but I think this is better, defect report filed.
-        else if(size > this->max_load_) {
+        else if(s > this->max_load_) {
             std::size_t num_buckets
-                = this->min_buckets_for_size((std::max)(size,
+                = this->min_buckets_for_size((std::max)(s,
                     this->size_ + (this->size_ >> 1)));
 
             if (num_buckets != this->bucket_count_)
