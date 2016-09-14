@@ -934,8 +934,6 @@ namespace boost { namespace unordered { namespace detail {
             this->create_buckets((std::max)(this->bucket_count_,
                 this->min_buckets_for_size(s)));
         }
-        // According to the standard this should be 'size >= max_load_',
-        // but I think this is better, defect report filed.
         else if(s > this->max_load_) {
             std::size_t num_buckets
                 = this->min_buckets_for_size((std::max)(s,
