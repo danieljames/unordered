@@ -1409,9 +1409,9 @@ namespace unordered
     {
         BOOST_MOVABLE_BUT_NOT_COPYABLE(node_handle_set)
 
-        template <typename Types>
+        template <typename Policies2, typename H2, typename P2, typename A2>
         friend struct ::boost::unordered::detail::table_impl;
-        template <typename Types>
+        template <typename Policies2, typename H2, typename P2, typename A2>
         friend struct ::boost::unordered::detail::grouped_table_impl;
 
         typedef typename boost::unordered::detail::rebind_wrap<A, T>::type value_allocator;
