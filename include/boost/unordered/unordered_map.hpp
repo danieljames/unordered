@@ -1800,8 +1800,7 @@ namespace unordered
         template <typename Policies2, typename H2, typename P2, typename A2>
         friend struct ::boost::unordered::detail::grouped_table_impl;
 
-        typedef std::pair<K const, T> value_type;
-        typedef typename boost::unordered::detail::rebind_wrap<A, value_type>::type value_allocator;
+        typedef typename boost::unordered::detail::rebind_wrap<A, std::pair<K const, T> >::type value_allocator;
         typedef boost::unordered::detail::allocator_traits<value_allocator> value_allocator_traits;
         typedef typename P::template node_types<value_allocator>::node node;
         typedef typename boost::unordered::detail::rebind_wrap<A, node>::type node_allocator;
