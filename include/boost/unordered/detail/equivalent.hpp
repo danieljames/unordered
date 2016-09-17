@@ -665,38 +665,6 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         ////////////////////////////////////////////////////////////////////////
-        // Extract
-
-        inline node_pointer extract_by_iterator(c_iterator n)
-        {
-            node_pointer i = n.node_;
-            BOOST_ASSERT(i);
-            node_pointer j(node_algo::next_node(i));
-            std::size_t bucket_index = this->hash_to_bucket(i->hash_);
-            // Split the groups containing 'i' and 'j'.
-            // And get the pointer to the node before i while
-            // we're at it.
-            link_pointer prev = node_algo::split_groups(i, j);
-
-            // If we don't have a 'prev' it means that i is at the
-            // beginning of a block, so search through the blocks in the
-            // same bucket.
-            if (!prev) {
-                prev = this->get_previous_start(bucket_index);
-                while (prev->next_ != i) {
-                    prev = node_algo::next_for_erase(prev);
-                }
-            }
-
-            prev->next_ = i->next_;
-            --this->size_;
-            this->fix_bucket(bucket_index, prev);
-            i->next_ = link_pointer();
-
-            return i;
-        }
-
-        ////////////////////////////////////////////////////////////////////////
         // Erase
         //
         // no throw
@@ -716,50 +684,6 @@ namespace boost { namespace unordered { namespace detail {
             std::size_t deleted_count = this->delete_nodes(prev, group_end);
             this->fix_bucket(bucket_index, prev);
             return deleted_count;
-        }
-
-        iterator erase_(c_iterator r)
-        {
-            BOOST_ASSERT(r.node_);
-            node_pointer next = node_algo::next_node(r.node_);
-            erase_nodes(r.node_, next);
-            return iterator(next);
-        }
-
-        iterator erase_range(c_iterator r1, c_iterator r2)
-        {
-            if (r1 == r2) return iterator(r2.node_);
-            erase_nodes(r1.node_, r2.node_);
-            return iterator(r2.node_);
-        }
-
-        link_pointer erase_nodes(node_pointer i, node_pointer j)
-        {
-            std::size_t bucket_index = this->hash_to_bucket(i->hash_);
-
-            // Split the groups containing 'i' and 'j'.
-            // And get the pointer to the node before i while
-            // we're at it.
-            link_pointer prev = node_algo::split_groups(i, j);
-
-            // If we don't have a 'prev' it means that i is at the
-            // beginning of a block, so search through the blocks in the
-            // same bucket.
-            if (!prev) {
-                prev = this->get_previous_start(bucket_index);
-                while (prev->next_ != i) {
-                    prev = node_algo::next_for_erase(prev);
-                }
-            }
-
-            // Delete the nodes.
-            // Is it inefficient to call fix_bucket for every node?
-            do {
-                this->delete_node(prev);
-                bucket_index = this->fix_bucket(bucket_index, prev);
-            } while (prev->next_ != j);
-
-            return prev;
         }
 
         ////////////////////////////////////////////////////////////////////////

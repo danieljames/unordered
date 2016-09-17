@@ -796,24 +796,6 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         ////////////////////////////////////////////////////////////////////////
-        // Extract
-
-        inline node_pointer extract_by_iterator(c_iterator i)
-        {
-            node_pointer n = i.node_;
-            BOOST_ASSERT(n);
-            std::size_t key_hash = n->hash_;
-            std::size_t bucket_index = this->hash_to_bucket(key_hash);
-            link_pointer prev = this->get_previous_start(bucket_index);
-            while(prev->next_ != n) { prev = prev->next_; }
-            prev->next_ = n->next_;
-            --this->size_;
-            this->fix_bucket(bucket_index, prev);
-            n->next_ = link_pointer();
-            return n;
-        }
-
-        ////////////////////////////////////////////////////////////////////////
         // Erase
         //
         // no throw
@@ -829,36 +811,6 @@ namespace boost { namespace unordered { namespace detail {
             this->delete_nodes(prev, next);
             this->fix_bucket(bucket_index, prev);
             return 1;
-        }
-
-        iterator erase_(c_iterator r)
-        {
-            BOOST_ASSERT(r.node_);
-            node_pointer next = next_node(r.node_);
-            erase_nodes(r.node_, next);
-            return iterator(next);
-        }
-
-        iterator erase_range(c_iterator r1, c_iterator r2)
-        {
-            if (r1 == r2) return iterator(r2.node_);
-            erase_nodes(r1.node_, r2.node_);
-            return iterator(r2.node_);
-        }
-
-        void erase_nodes(node_pointer i, node_pointer j)
-        {
-            std::size_t bucket_index = this->hash_to_bucket(i->hash_);
-
-            // Find the node before i.
-            link_pointer prev = this->get_previous_start(bucket_index);
-            while(prev->next_ != i) prev = prev->next_;
-
-            // Delete the nodes.
-            do {
-                this->delete_node(prev);
-                bucket_index = this->fix_bucket(bucket_index, prev);
-            } while (prev->next_ != j);
         }
 
         ////////////////////////////////////////////////////////////////////////
