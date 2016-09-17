@@ -30,6 +30,7 @@
 #include <boost/type_traits/is_nothrow_move_assignable.hpp>
 #include <boost/type_traits/is_convertible.hpp>
 #include <boost/type_traits/is_empty.hpp>
+#include <boost/type_traits/is_same.hpp>
 #include <boost/type_traits/remove_const.hpp>
 #include <boost/iterator/iterator_categories.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -3812,6 +3813,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
     {
         typedef boost::unordered::detail::table<Policies, H, P, A> table;
         typedef typename table::value_type value_type;
+        typedef typename table::node node;
         typedef typename table::bucket bucket;
         typedef typename table::policy policy;
         typedef typename table::node_pointer node_pointer;
@@ -4227,13 +4229,17 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             return iterator(pos);
         }
 
-        template <typename Policies2, typename H2, typename P2, typename A2>
-        void merge_(table_impl<Policies2, H2, P2, A2>& other) {
+        template <typename Policies2, typename H2, typename P2>
+        void merge_impl(boost::unordered::detail::table<Policies2, H2, P2, A>& other) {
+            typedef boost::unordered::detail::table<Policies2, H2, P2, A> other_table;
+            BOOST_STATIC_ASSERT((boost::is_same<node, typename other_table::node>::value));
+            BOOST_ASSERT(this->node_alloc() == other.node_alloc());
+
             if (other.size_) {
                 link_pointer prev = other.get_previous_start();
 
                 while(prev->next_) {
-                    node_pointer n = other.next_node(prev);
+                    node_pointer n = other_table::node_algo::next_node(prev);
                     const_key_type& k = this->get_key(n->value());
                     std::size_t key_hash = this->hash(k);
                     node_pointer pos = this->find_node(key_hash, k);
@@ -4243,6 +4249,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
                     }
                     else {
                         this->reserve_for_insert(this->size_ + 1);
+                        other_table::node_algo::split_groups(n, other_table::node_algo::next_node(n));
                         prev->next_ = n->next_;
                         --other.size_;
                         other.fix_bucket(other.hash_to_bucket(n->hash_), prev);
@@ -4690,11 +4697,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         template <typename A>
         struct node_types
         {
-#if BOOST_UNORDERED_INTEROPERABLE_NODES
-            typedef typename pick_node<A>::pick pick;
-#else
             typedef typename pick_grouped_node<A>::pick pick;
-#endif
 
             typedef typename pick::node node;
             typedef typename pick::bucket bucket;
@@ -5275,7 +5278,11 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         };
     };
 
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+    struct multiset_policy : boost::unordered::detail::u
+#else
     struct multiset_policy : boost::unordered::detail::g
+#endif
     {
         typedef set_iterator_policy set_map_policies;
 
@@ -5310,7 +5317,11 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef boost::unordered::detail::grouped_table_impl<
             multiset_policy, H, P, value_allocator> table;
 
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+        typedef boost::unordered::detail::u p;
+#else
         typedef boost::unordered::detail::g p;
+#endif
         typedef boost::unordered::node_handle_set<p, T, A> node_type;
     };
 
@@ -5370,7 +5381,11 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         };
     };
 
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+    struct multimap_policy : boost::unordered::detail::u
+#else
     struct multimap_policy : boost::unordered::detail::g
+#endif
     {
         typedef map_iterator_policy set_map_policies;
 
@@ -5405,7 +5420,11 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef boost::unordered::detail::grouped_table_impl<
             multimap_policy, H, P, value_allocator> table;
 
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+        typedef boost::unordered::detail::u p;
+#else
         typedef boost::unordered::detail::g p;
+#endif
         typedef boost::unordered::node_handle_map<p, K, M, A> node_type;
     };
 
