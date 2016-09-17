@@ -71,6 +71,11 @@
 namespace boost { namespace unordered { namespace detail {
 
     ////////////////////////////////////////////////////////////////////////////
+    // Forward declarations
+
+    template <typename Node> struct node_traits;
+
+    ////////////////////////////////////////////////////////////////////////////
     // Bits and pieces for implementing traits
 
     template <typename T> typename boost::add_lvalue_reference<T>::type make();
@@ -1213,7 +1218,8 @@ namespace boost { namespace unordered { namespace detail {
             node_allocator_traits;
         typedef typename node_allocator_traits::value_type node;
         typedef typename node_allocator_traits::pointer node_pointer;
-        typedef typename node::value_type value_type;
+        typedef boost::unordered::detail::node_traits<node> node_traits;
+        typedef typename node_traits::value_type value_type;
 
         node_allocator& alloc_;
         node_pointer node_;

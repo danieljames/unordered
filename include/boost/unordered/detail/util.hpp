@@ -262,8 +262,6 @@ namespace boost { namespace unordered { namespace detail {
         typedef K first_type;
         typedef K second_type;
     };
-
-    template <typename Node> struct node_traits;
 }}}
 
 #endif

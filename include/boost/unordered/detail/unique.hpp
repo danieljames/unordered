@@ -26,21 +26,16 @@ namespace boost { namespace unordered { namespace detail {
     struct unique_node :
         boost::unordered::detail::value_base<
             BOOST_DEDUCED_TYPENAME
-            ::boost::unordered::detail::allocator_traits<A>::value_type
+            boost::unordered::detail::allocator_traits<A>::value_type
         >
     {
-        typedef typename ::boost::unordered::detail::rebind_wrap<
-            A, unique_node<A> >::type allocator;
-        typedef typename ::boost::unordered::detail::
-            allocator_traits<allocator>::pointer node_pointer;
-        typedef boost::unordered::detail::bucket<node_pointer> bucket;
-        typedef typename ::boost::unordered::detail::rebind_wrap<
-            A, bucket>::type bucket_allocator;
-        typedef typename ::boost::unordered::detail::
-            allocator_traits<bucket_allocator>::pointer bucket_pointer;
-        typedef node_pointer link_pointer;
+        typedef typename boost::unordered::detail::allocator_traits<
+            typename boost::unordered::detail::rebind_wrap<A,
+                 unique_node<A>
+            >::type
+        >::pointer pointer;
 
-        link_pointer next_;
+        pointer next_;
         std::size_t hash_;
 
         unique_node() :
@@ -48,7 +43,7 @@ namespace boost { namespace unordered { namespace detail {
             hash_(0)
         {}
 
-        void init(node_pointer)
+        void init(pointer)
         {
         }
 
@@ -80,27 +75,21 @@ namespace boost { namespace unordered { namespace detail {
     struct ptr_node :
         boost::unordered::detail::ptr_bucket
     {
-        typedef T value_type;
-        typedef boost::unordered::detail::ptr_bucket bucket;
-        typedef ptr_node<T>* node_pointer;
-        typedef ptr_bucket* link_pointer;
-        typedef ptr_bucket* bucket_pointer;
-
         std::size_t hash_;
         boost::unordered::detail::value_base<T> value_base_;
 
         ptr_node() :
-            bucket(),
+            boost::unordered::detail::ptr_bucket(),
             hash_(0)
         {}
 
-        void init(node_pointer)
+        void init(ptr_node<T>*)
         {
         }
 
         void* address() { return value_base_.address(); }
-        value_type& value() { return value_base_.value(); }
-        value_type* value_ptr() { return value_base_.value_ptr(); }
+        T& value() { return value_base_.value(); }
+        T* value_ptr() { return value_base_.value_ptr(); }
 
     private:
         ptr_node& operator=(ptr_node const&);

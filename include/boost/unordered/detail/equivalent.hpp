@@ -28,19 +28,14 @@ namespace boost { namespace unordered { namespace detail {
             ::boost::unordered::detail::allocator_traits<A>::value_type
         >
     {
-        typedef typename ::boost::unordered::detail::rebind_wrap<
-            A, grouped_node<A> >::type allocator;
-        typedef typename ::boost::unordered::detail::
-            allocator_traits<allocator>::pointer node_pointer;
-        typedef boost::unordered::detail::bucket<node_pointer> bucket;
-        typedef typename ::boost::unordered::detail::rebind_wrap<
-            A, bucket>::type bucket_allocator;
-        typedef typename ::boost::unordered::detail::
-            allocator_traits<bucket_allocator>::pointer bucket_pointer;
-        typedef node_pointer link_pointer;
+        typedef typename boost::unordered::detail::allocator_traits<
+            typename boost::unordered::detail::rebind_wrap<A,
+                 grouped_node<A>
+            >::type
+        >::pointer pointer;
 
-        link_pointer next_;
-        node_pointer group_prev_;
+        pointer next_;
+        pointer group_prev_;
         std::size_t hash_;
 
         grouped_node() :
@@ -49,7 +44,7 @@ namespace boost { namespace unordered { namespace detail {
             hash_(0)
         {}
 
-        void init(node_pointer self)
+        void init(pointer self)
         {
             group_prev_ = self;
         }
@@ -81,30 +76,24 @@ namespace boost { namespace unordered { namespace detail {
     struct grouped_ptr_node :
         boost::unordered::detail::ptr_bucket
     {
-        typedef T value_type;
-        typedef boost::unordered::detail::ptr_bucket bucket;
-        typedef grouped_ptr_node<T>* node_pointer;
-        typedef ptr_bucket* link_pointer;
-        typedef ptr_bucket* bucket_pointer;
-
-        node_pointer group_prev_;
+        grouped_ptr_node<T>* group_prev_;
         std::size_t hash_;
         boost::unordered::detail::value_base<T> value_base_;
 
         grouped_ptr_node() :
-            bucket(),
+            boost::unordered::detail::ptr_bucket(),
             group_prev_(0),
             hash_(0)
         {}
 
-        void init(node_pointer self)
+        void init(grouped_ptr_node<T>* self)
         {
             group_prev_ = self;
         }
 
         void* address() { return value_base_.address(); }
-        value_type& value() { return value_base_.value(); }
-        value_type* value_ptr() { return value_base_.value_ptr(); }
+        T& value() { return value_base_.value(); }
+        T* value_ptr() { return value_base_.value_ptr(); }
 
     private:
         grouped_ptr_node& operator=(grouped_ptr_node const&);
