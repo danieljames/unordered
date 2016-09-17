@@ -12,6 +12,7 @@
 #pragma once
 #endif
 
+#include <boost/unordered/detail/unique.hpp>
 #include <boost/unordered/detail/extract_key.hpp>
 
 namespace boost { namespace unordered { namespace detail {
@@ -141,10 +142,14 @@ namespace boost { namespace unordered { namespace detail {
             return static_cast<node_pointer>(prev->next_)->group_prev_;
         }
 
+        static node_pointer last_for_rehash(link_pointer prev) {
+            return static_cast<node_pointer>(prev->next_)->group_prev_;
+        }
+
         // The 'void*' arguments are pointers to the table, which we
         // will ignore, but without groups they could be used to
         // access the various functions for dealing with values and keys.
-        static node_pointer next_group(node_pointer(n), void const*) {
+        static node_pointer next_group(node_pointer n, void const*) {
             return static_cast<node_pointer>(n->group_prev_->next_);
         }
 
@@ -207,29 +212,6 @@ namespace boost { namespace unordered { namespace detail {
             }
 
             return prev;
-        }
-
-
-        // Extract a group of nodes and place them in the correct bucket.
-        // pre: prev->next_ is not null.
-        template <typename Table>
-        static link_pointer place_in_bucket(Table& dst, link_pointer prev)
-        {
-            node_pointer group_last = static_cast<node_pointer>(prev->next_)->group_prev_;
-
-            bucket_pointer b = dst.get_bucket(dst.hash_to_bucket(group_last->hash_));
-
-            if (!b->next_) {
-                b->next_ = prev;
-                return group_last;
-            }
-            else {
-                link_pointer next = group_last->next_;
-                group_last->next_ = b->next_->next_;
-                b->next_->next_ = prev->next_;
-                prev->next_ = next;
-                return prev;
-            }
         }
     };
 
@@ -295,7 +277,11 @@ namespace boost { namespace unordered { namespace detail {
         template <typename A>
         struct node_types
         {
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+            typedef typename pick_node<A>::pick pick;
+#else
             typedef typename pick_grouped_node<A>::pick pick;
+#endif
 
             typedef typename pick::node node;
             typedef typename pick::bucket bucket;
@@ -769,11 +755,11 @@ namespace boost { namespace unordered { namespace detail {
             }
 
             // Delete the nodes.
+            // Is it inefficient to call fix_bucket for every node?
             do {
-                link_pointer group_end = node_algo::next_group(node_algo::next_node(prev), this);
-                this->delete_nodes(prev, group_end);
+                this->delete_node(prev);
                 bucket_index = this->fix_bucket(bucket_index, prev);
-            } while(prev->next_ != j);
+            } while (prev->next_ != j);
 
             return prev;
         }

@@ -208,6 +208,40 @@ namespace boost { namespace unordered { namespace detail {
             return prev->next_;
         }
 
+        // Group together all nodes with equal hash value, this may
+        // include nodes with different keys, but that's okay because
+        // they will end up in the same bucket.
+        static node_pointer last_for_rehash(link_pointer prev) {
+            node_pointer n = next_node(prev);
+            std::size_t hash = n->hash_;
+            while(true) {
+                node_pointer next = next_node(n);
+                if (!next || next->hash_ != hash) { return n; }
+                n = next;
+            }
+        }
+
+        template <typename Table>
+        static node_pointer next_group(node_pointer n, Table const* t) {
+            node_pointer n1 = n;
+            do {
+                n1 = next_node(n1);
+            } while (n1 && t->key_eq()(t->get_key(n->value()), t->get_key(n1->value())));
+            return n1;
+        }
+
+        template <typename Table>
+        static std::size_t count(node_pointer n, Table const* t) {
+            std::size_t x = 0;
+            node_pointer it = n;
+            do {
+                ++x;
+                it = next_node(it);
+            } while (it && t->key_eq()(t->get_key(n->value()), t->get_key(it->value())));
+
+            return x;
+        }
+
         // Add node 'n' after 'pos'.
         // This results in a different order to the grouped implementation.
         static inline void add_to_node_group(node_pointer n, node_pointer pos) {
@@ -221,26 +255,8 @@ namespace boost { namespace unordered { namespace detail {
             return n;
         }
 
-        // Extract a node and place it in the correct bucket.
-        // TODO: For tables with equivalent keys, this doesn't preserve
-        //       the order.
-        // pre: prev->next_ is not null.
-        template <typename Table>
-        static link_pointer place_in_bucket(Table& dst, link_pointer prev)
-        {
-            node_pointer n = next_node(prev);
-            bucket_pointer b = dst.get_bucket(dst.hash_to_bucket(n->hash_));
-
-            if (!b->next_) {
-                b->next_ = prev;
-                return n;
-            }
-            else {
-                prev->next_ = n->next_;
-                n->next_ = b->next_->next_;
-                b->next_->next_ = n;
-                return prev;
-            }
+        static link_pointer split_groups(node_pointer, node_pointer) {
+            return link_pointer();
         }
     };
 

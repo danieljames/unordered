@@ -653,8 +653,20 @@ namespace boost { namespace unordered { namespace detail {
 
             this->create_buckets(num_buckets);
             link_pointer prev = this->get_previous_start();
-            while (prev->next_)
-                prev = node_algo::place_in_bucket(*this, prev);
+            while (prev->next_) {
+                node_pointer group_last = node_algo::last_for_rehash(prev);
+                bucket_pointer b = this->get_bucket(this->hash_to_bucket(group_last->hash_));
+                if (!b->next_) {
+                    b->next_ = prev;
+                    prev = group_last;
+                }
+                else {
+                    link_pointer next = group_last->next_;
+                    group_last->next_ = b->next_->next_;
+                    b->next_->next_ = prev->next_;
+                    prev->next_ = next;
+                }
+            }
         }
     };
 
