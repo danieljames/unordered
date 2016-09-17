@@ -122,20 +122,13 @@ namespace boost { namespace unordered { namespace detail {
     // Otherwise use node.
 
     template <typename A, typename NodePtr, typename BucketPtr>
-    struct pick_node2
+    struct pick_node
     {
         typedef boost::unordered::detail::unique_node<A> node;
-
-        typedef typename boost::unordered::detail::allocator_traits<
-            typename boost::unordered::detail::rebind_wrap<A, node>::type
-        >::pointer node_pointer;
-
-        typedef boost::unordered::detail::bucket<node_pointer> bucket;
-        typedef node_pointer link_pointer;
     };
 
     template <typename A>
-    struct pick_node2<A,
+    struct pick_node<A,
         boost::unordered::detail::ptr_node<
             BOOST_DEDUCED_TYPENAME
             ::boost::unordered::detail::allocator_traits<A>::value_type
@@ -146,33 +139,6 @@ namespace boost { namespace unordered { namespace detail {
             BOOST_DEDUCED_TYPENAME
             ::boost::unordered::detail::allocator_traits<A>::value_type
         > node;
-        typedef boost::unordered::detail::ptr_bucket bucket;
-        typedef bucket* link_pointer;
-    };
-
-    template <typename A>
-    struct pick_node
-    {
-        typedef boost::unordered::detail::allocator_traits<
-            typename boost::unordered::detail::rebind_wrap<A,
-                boost::unordered::detail::ptr_node<
-                    BOOST_DEDUCED_TYPENAME
-                    ::boost::unordered::detail::allocator_traits<A>::value_type
-                > >::type
-        > tentative_node_traits;
-
-        typedef boost::unordered::detail::allocator_traits<
-            typename boost::unordered::detail::rebind_wrap<A,
-                boost::unordered::detail::ptr_bucket >::type
-        > tentative_bucket_traits;
-
-        typedef pick_node2<A,
-            typename tentative_node_traits::pointer,
-            typename tentative_bucket_traits::pointer> pick;
-
-        typedef typename pick::node node;
-        typedef typename pick::bucket bucket;
-        typedef typename pick::link_pointer link_pointer;
     };
 
     struct u
@@ -180,11 +146,22 @@ namespace boost { namespace unordered { namespace detail {
         template <typename A>
         struct node_types
         {
-            typedef typename pick_node<A>::pick pick;
+            typedef boost::unordered::detail::allocator_traits<
+                typename boost::unordered::detail::rebind_wrap<A,
+                    boost::unordered::detail::ptr_node<
+                        BOOST_DEDUCED_TYPENAME
+                        ::boost::unordered::detail::allocator_traits<A>::value_type
+                    > >::type
+            > tentative_node_traits;
 
-            typedef typename pick::node node;
-            typedef typename pick::bucket bucket;
-            typedef typename pick::link_pointer link_pointer;
+            typedef boost::unordered::detail::allocator_traits<
+                typename boost::unordered::detail::rebind_wrap<A,
+                    boost::unordered::detail::ptr_bucket >::type
+            > tentative_bucket_traits;
+
+            typedef typename pick_node<A,
+                typename tentative_node_traits::pointer,
+                typename tentative_bucket_traits::pointer>::node node;
         };
     };
 

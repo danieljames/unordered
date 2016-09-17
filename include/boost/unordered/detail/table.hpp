@@ -674,7 +674,9 @@ namespace boost { namespace unordered { namespace detail {
     struct table :
         boost::unordered::detail::functions<H, P>,
         boost::unordered::detail::memory_base<
-            typename boost::unordered::detail::rebind_wrap<A, typename Policies::template node_types<A>::node>::type,
+            typename boost::unordered::detail::rebind_wrap<A,
+                typename Policies::node_policy::template node_types<A>::node
+            >::type,
             typename Policies::set_map_policies
         >
     {
@@ -698,7 +700,9 @@ namespace boost { namespace unordered { namespace detail {
     protected:
         typedef boost::unordered::detail::functions<H, P> functions;
         typedef boost::unordered::detail::memory_base<
-            typename boost::unordered::detail::rebind_wrap<A, typename Policies::template node_types<A>::node>::type,
+            typename boost::unordered::detail::rebind_wrap<A,
+                 typename Policies::node_policy::template node_types<A>::node
+             >::type,
             typename Policies::set_map_policies
             > table_base;
 
