@@ -277,11 +277,7 @@ namespace boost { namespace unordered { namespace detail {
         template <typename A>
         struct node_types
         {
-#if BOOST_UNORDERED_INTEROPERABLE_NODES
-            typedef typename pick_node<A>::pick pick;
-#else
             typedef typename pick_grouped_node<A>::pick pick;
-#endif
 
             typedef typename pick::node node;
             typedef typename pick::bucket bucket;
@@ -293,6 +289,8 @@ namespace boost { namespace unordered { namespace detail {
     struct grouped_table_impl : boost::unordered::detail::table<Policies, H, P, A>
     {
         friend struct boost::unordered::detail::table<Policies, H, P, A>;
+        template <typename Policies2, typename H2, typename P2, typename A2>
+        friend struct boost::unordered::detail::table_impl;
 
     protected:
         typedef boost::unordered::detail::table<Policies, H, P, A> table;

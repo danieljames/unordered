@@ -47,7 +47,11 @@ namespace boost { namespace unordered { namespace detail {
         };
     };
 
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+    struct multimap_policy : boost::unordered::detail::u
+#else
     struct multimap_policy : boost::unordered::detail::g
+#endif
     {
         typedef map_iterator_policy set_map_policies;
 
@@ -80,7 +84,11 @@ namespace boost { namespace unordered { namespace detail {
         typedef boost::unordered::detail::grouped_table_impl<
             multimap_policy, H, P, value_allocator> base;
 
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+        typedef boost::unordered::detail::u p;
+#else
         typedef boost::unordered::detail::g p;
+#endif
         typedef boost::unordered::node_handle_map<p, K, M, A> node_type;
     };
 

@@ -667,14 +667,21 @@ namespace unordered
 
         template <typename H2, typename P2>
         void merge(boost::unordered_map<K,T,H2,P2,A>& source);
+
 #if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
         template <typename H2, typename P2>
         void merge(boost::unordered_map<K,T,H2,P2,A>&& source);
 #endif
-        //template <typename H2, typename P2>
-        //void merge(boost::unordered_multimap<K,T,H2,P2,A>& source);
-        //template <typename H2, typename P2>
-        //void merge(boost::unordered_multimap<K,T,H2,P2,A>&& source);
+
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+        template <typename H2, typename P2>
+        void merge(boost::unordered_multimap<K,T,H2,P2,A>& source);
+
+#if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
+        template <typename H2, typename P2>
+        void merge(boost::unordered_multimap<K,T,H2,P2,A>&& source);
+#endif
+#endif
 
         // observers
 
@@ -1101,14 +1108,21 @@ namespace unordered
 
         template <typename H2, typename P2>
         void merge(boost::unordered_multimap<K,T,H2,P2,A>& source);
+
 #if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
         template <typename H2, typename P2>
         void merge(boost::unordered_multimap<K,T,H2,P2,A>&& source);
 #endif
-        //template <typename H2, typename P2>
-        //void merge(boost::unordered_map<K,T,H2,P2,A>& source);
-        //template <typename H2, typename P2>
-        //void merge(boost::unordered_map<K,T,H2,P2,A>&& source);
+
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+        template <typename H2, typename P2>
+        void merge(boost::unordered_map<K,T,H2,P2,A>& source);
+
+#if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
+        template <typename H2, typename P2>
+        void merge(boost::unordered_map<K,T,H2,P2,A>&& source);
+#endif
+#endif
 
         // lookup
 
@@ -1353,7 +1367,7 @@ namespace unordered
     template <typename H2, typename P2>
     void unordered_map<K,T,H,P,A>::merge(boost::unordered_map<K,T,H2,P2,A>& source)
     {
-        this->merge_(source);
+        this->merge_impl(source);
     }
 
 #if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
@@ -1361,8 +1375,26 @@ namespace unordered
     template <typename H2, typename P2>
     void unordered_map<K,T,H,P,A>::merge(boost::unordered_map<K,T,H2,P2,A>&& source)
     {
-        this->merge_(source);
+        this->merge_impl(source);
     }
+#endif
+
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+    template <class K, class T, class H, class P, class A>
+    template <typename H2, typename P2>
+    void unordered_map<K,T,H,P,A>::merge(boost::unordered_multimap<K,T,H2,P2,A>& source)
+    {
+        this->merge_impl(source);
+    }
+
+#if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
+    template <class K, class T, class H, class P, class A>
+    template <typename H2, typename P2>
+    void unordered_map<K,T,H,P,A>::merge(boost::unordered_multimap<K,T,H2,P2,A>&& source)
+    {
+        this->merge_impl(source);
+    }
+#endif
 #endif
 
     // observers
@@ -1697,6 +1729,28 @@ namespace unordered
             insert(source.extract(source.begin()));
         }
     }
+#endif
+
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+    template <class K, class T, class H, class P, class A>
+    template <typename H2, typename P2>
+    void unordered_multimap<K,T,H,P,A>::merge(boost::unordered_map<K,T,H2,P2,A>& source)
+    {
+        while (!source.empty()) {
+            insert(source.extract(source.begin()));
+        }
+    }
+
+#if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
+    template <class K, class T, class H, class P, class A>
+    template <typename H2, typename P2>
+    void unordered_multimap<K,T,H,P,A>::merge(boost::unordered_map<K,T,H2,P2,A>&& source)
+    {
+        while (!source.empty()) {
+            insert(source.extract(source.begin()));
+        }
+    }
+#endif
 #endif
 
     // lookup

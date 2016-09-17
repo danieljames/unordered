@@ -45,7 +45,11 @@ namespace boost { namespace unordered { namespace detail {
         };
     };
 
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+    struct multiset_policy : boost::unordered::detail::u
+#else
     struct multiset_policy : boost::unordered::detail::g
+#endif
     {
         typedef set_iterator_policy set_map_policies;
 
@@ -78,7 +82,11 @@ namespace boost { namespace unordered { namespace detail {
         typedef boost::unordered::detail::grouped_table_impl<
             multiset_policy, H, P, value_allocator> base;
 
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+        typedef boost::unordered::detail::u p;
+#else
         typedef boost::unordered::detail::g p;
+#endif
         typedef boost::unordered::node_handle_set<p, T, A> node_type;
     };
 

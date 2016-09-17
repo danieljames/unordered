@@ -264,10 +264,13 @@ namespace boost { namespace unordered { namespace detail {
     struct table_impl : boost::unordered::detail::table<Policies, H, P, A>
     {
         friend struct boost::unordered::detail::table<Policies, H, P, A>;
+        template <typename Policies2, typename H2, typename P2, typename A2>
+        friend struct boost::unordered::detail::grouped_table_impl;
 
     protected:
         typedef boost::unordered::detail::table<Policies, H, P, A> table;
         typedef typename table::value_type value_type;
+        typedef typename table::node node;
         typedef typename table::bucket bucket;
         typedef typename table::policy policy;
         typedef typename table::node_pointer node_pointer;
@@ -687,13 +690,16 @@ namespace boost { namespace unordered { namespace detail {
             return iterator(pos);
         }
 
-        template <typename Policies2, typename H2, typename P2, typename A2>
-        void merge_(table_impl<Policies2, H2, P2, A2>& other) {
+        template <typename Table>
+        void merge_impl(Table& other) {
+            BOOST_STATIC_ASSERT((boost::is_same<node, typename Table::node>::value));
+            BOOST_ASSERT(this->node_alloc() == other.node_alloc());
+
             if (other.size_) {
                 link_pointer prev = other.get_previous_start();
 
                 while(prev->next_) {
-                    node_pointer n = other.next_node(prev);
+                    node_pointer n = Table::node_algo::next_node(prev);
                     const_key_type& k = this->get_key(n->value());
                     std::size_t key_hash = this->hash(k);
                     node_pointer pos = this->find_node(key_hash, k);
@@ -703,6 +709,7 @@ namespace boost { namespace unordered { namespace detail {
                     }
                     else {
                         this->reserve_for_insert(this->size_ + 1);
+                        Table::node_algo::split_groups(n, Table::node_algo::next_node(n));
                         prev->next_ = n->next_;
                         --other.size_;
                         other.fix_bucket(other.hash_to_bucket(n->hash_), prev);

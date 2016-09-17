@@ -23,6 +23,7 @@
 #include <boost/preprocessor/repetition/enum_params.hpp>
 #include <boost/preprocessor/repetition/enum_binary_params.hpp>
 #include <boost/preprocessor/repetition/repeat_from_to.hpp>
+#include <boost/type_traits/is_same.hpp>
 #include <boost/type_traits/is_class.hpp>
 #include <boost/type_traits/add_lvalue_reference.hpp>
 #include <boost/type_traits/aligned_storage.hpp>
@@ -39,6 +40,7 @@
 #include <boost/swap.hpp>
 #include <boost/assert.hpp>
 #include <boost/limits.hpp>
+#include <boost/static_assert.hpp>
 #include <iterator>
 #include <utility>
 #include <cmath>
