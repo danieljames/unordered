@@ -1,4 +1,3 @@
-
 // Copyright (C) 2003-2004 Jeremy B. Maitin-Shepard.
 // Copyright (C) 2005-2011 Daniel James
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -82,6 +81,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename node_traits::bucket_pointer bucket_pointer;
         typedef typename node_traits::link_pointer link_pointer;
         typedef typename node_traits::bucket bucket;
+        typedef typename node_traits::node_algo node_algo;
 
     public:
         typedef typename node_traits::value_type value_type;
@@ -131,13 +131,6 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         ////////////////////////////////////////////////////////////////////////
-        // Node functions
-
-        static inline node_pointer next_node(link_pointer n) {
-            return static_cast<node_pointer>(n->next_);
-        }
-
-        ////////////////////////////////////////////////////////////////////////
         // Data access
 
         bucket_pointer get_bucket(std::size_t bucket_index) const
@@ -158,14 +151,14 @@ namespace boost { namespace unordered { namespace detail {
 
         node_pointer begin_node() const
         {
-            return this->size_ ? next_node(get_previous_start()) : node_pointer();
+            return this->size_ ? node_algo::next_node(get_previous_start()) : node_pointer();
         }
 
         node_pointer begin_node(std::size_t bucket_index) const
         {
             if (!this->size_) return node_pointer();
             link_pointer prev = get_previous_start(bucket_index);
-            return prev ? next_node(prev) : node_pointer();
+            return prev ? node_algo::next_node(prev) : node_pointer();
         }
 
         void recalculate_max_load()
@@ -226,6 +219,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename base::node node;
         typedef typename base::node_pointer node_pointer;
         typedef typename base::value_type value_type;
+        typedef typename base::node_algo node_algo;
         typedef typename SetMapPolicies::template value_things<value_type> value_things;
         typedef typename value_things::const_key_type const_key_type;
         typedef typename value_things::extractor extractor;
@@ -283,7 +277,7 @@ namespace boost { namespace unordered { namespace detail {
             while(n && hash_to_bucket(n->hash_) == index)
             {
                 ++count;
-                n = base::next_node(n);
+                n = node_algo::next_node(n);
             }
 
             return count;
@@ -354,6 +348,37 @@ namespace boost { namespace unordered { namespace detail {
         {
             return const_local_iterator();
         }
+
+    protected:
+
+        template <class Key, class Pred>
+        node_pointer find_node_impl(
+                std::size_t key_hash,
+                Key const& k,
+                Pred const& eq) const
+        {
+            std::size_t bucket_index = this->hash_to_bucket(key_hash);
+            node_pointer n = this->begin_node(bucket_index);
+
+            for (;;)
+            {
+                if (!n) return n;
+
+                std::size_t node_hash = n->hash_;
+                if (key_hash == node_hash)
+                {
+                    if (eq(k, this->get_key(n->value())))
+                        return n;
+                }
+                else
+                {
+                    if (this->hash_to_bucket(node_hash) != bucket_index)
+                        return node_pointer();
+                }
+
+                n = node_algo::next_for_find(n);
+            }
+        }
     };
 
     template <typename NA, typename SetMapPolicies>
@@ -365,12 +390,15 @@ namespace boost { namespace unordered { namespace detail {
         typedef boost::unordered::detail::iterator_base<
             typename boost::unordered::detail::allocator_traits<NA>::value_type,
             SetMapPolicies> base;
+        template <typename N> friend struct node_algo;
+        template <typename N> friend struct grouped_node_algo;
 
         typedef typename base::bucket bucket;
         typedef typename base::node_pointer node_pointer;
         typedef typename base::bucket_pointer bucket_pointer;
         typedef typename base::link_pointer link_pointer;
         typedef typename base::policy policy;
+        typedef typename base::node_algo node_algo;
         typedef NA node_allocator;
         typedef typename boost::unordered::detail::rebind_wrap<node_allocator, bucket>::type bucket_allocator;
         typedef boost::unordered::detail::allocator_traits<node_allocator> node_allocator_traits;
@@ -614,6 +642,20 @@ namespace boost { namespace unordered { namespace detail {
             bucket_allocator_traits::deallocate(this->bucket_alloc(),
                 this->buckets_, this->bucket_count_ + 1);
         }
+
+        ///////////////////////////////////////////////////////////////////////
+        // Rehash
+
+        // strong otherwise exception safety
+        void rehash_impl(std::size_t num_buckets)
+        {
+            BOOST_ASSERT(this->buckets_);
+
+            this->create_buckets(num_buckets);
+            link_pointer prev = this->get_previous_start();
+            while (prev->next_)
+                prev = node_algo::place_in_bucket(*this, prev);
+        }
     };
 
     template <typename Policies, typename H, typename P, typename A>
@@ -656,6 +698,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename table_base::bucket_pointer bucket_pointer;
         typedef typename table_base::const_key_type const_key_type;
         typedef typename table_base::policy policy;
+        typedef typename table_base::node_algo node_algo;
 
         typedef boost::unordered::detail::node_constructor<node_allocator>
             node_constructor;
@@ -903,23 +946,62 @@ namespace boost { namespace unordered { namespace detail {
                 Hash const& hf,
                 Pred const& eq) const
         {
-            return static_cast<table_impl const*>(this)->
-                find_node_impl(policy::apply_hash(hf, k), k, eq);
+            return this->find_node_impl(policy::apply_hash(hf, k), k, eq);
         }
 
         node_pointer find_node(
                 std::size_t key_hash,
                 const_key_type& k) const
         {
-            return static_cast<table_impl const*>(this)->
-                find_node_impl(key_hash, k, this->key_eq());
+            return this->find_node_impl(key_hash, k, this->key_eq());
         }
 
         node_pointer find_node(const_key_type& k) const
         {
-            return static_cast<table_impl const*>(this)->
-                find_node_impl(hash(k), k, this->key_eq());
+            return this->find_node_impl(hash(k), k, this->key_eq());
         }
+
+        // Find the node before the key, so that it can be erased.
+        link_pointer find_previous_node(const_key_type& k,
+                std::size_t key_hash,
+                std::size_t bucket_index)
+        {
+            link_pointer prev = this->get_previous_start(bucket_index);
+            if (!prev) { return prev; }
+
+            for (;;)
+            {
+                if (!prev->next_) { return link_pointer(); }
+                std::size_t node_hash = node_algo::next_node(prev)->hash_;
+                if (this->hash_to_bucket(node_hash) != bucket_index) {
+                    return link_pointer();
+                }
+                if (node_hash == key_hash &&
+                        this->key_eq()(k, this->get_key(
+                        node_algo::next_node(prev)->value()))) {
+                    return prev;
+                }
+                prev = node_algo::next_for_erase(prev);
+            }
+        }
+
+        // Extract and erase
+ 
+        inline node_pointer extract_by_key(const_key_type& k)
+        {
+            if(!this->size_) { return node_pointer(); }
+            std::size_t key_hash = this->hash(k);
+            std::size_t bucket_index = this->hash_to_bucket(key_hash);
+            link_pointer prev = this->find_previous_node(k, key_hash, bucket_index);
+            if (!prev) { return node_pointer(); }
+            node_pointer n = node_algo::extract_first_node(prev);
+            --this->size_;
+            this->fix_bucket(bucket_index, prev);
+            n->next_ = link_pointer();
+
+            return n;
+        }
+
 
         // Reserve and rehash
 
@@ -948,7 +1030,7 @@ namespace boost { namespace unordered { namespace detail {
                     this->size_ + (this->size_ >> 1)));
 
             if (num_buckets != this->bucket_count_)
-                static_cast<table_impl*>(this)->rehash_impl(num_buckets);
+                this->rehash_impl(num_buckets);
         }
     }
 
@@ -971,7 +1053,7 @@ namespace boost { namespace unordered { namespace detail {
                     static_cast<double>(this->mlf_))) + 1));
 
             if(min_buckets != this->bucket_count_)
-                static_cast<table_impl*>(this)->rehash_impl(min_buckets);
+                this->rehash_impl(min_buckets);
         }
     }
 

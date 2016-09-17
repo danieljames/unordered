@@ -20,6 +20,7 @@ namespace boost { namespace unordered { namespace detail {
 
     template <typename A> struct unique_node;
     template <typename T> struct ptr_node;
+    template <typename N> struct node_algo;
 
     template <typename A>
     struct unique_node :
@@ -72,6 +73,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename ::boost::unordered::detail::
             allocator_traits<bucket_allocator>::pointer bucket_pointer;
         typedef node_pointer link_pointer;
+        typedef boost::unordered::detail::node_algo<node> node_algo;
     };
 
     template <typename T>
@@ -113,6 +115,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef ptr_node<T>* node_pointer;
         typedef ptr_bucket* link_pointer;
         typedef ptr_bucket* bucket_pointer;
+        typedef boost::unordered::detail::node_algo<node> node_algo;
     };
 
     // If the allocator uses raw pointers use ptr_node
@@ -185,6 +188,62 @@ namespace boost { namespace unordered { namespace detail {
         };
     };
 
+    template <typename N>
+    struct node_algo
+    {
+        typedef node_traits<N> traits;
+        typedef typename traits::node_pointer node_pointer;
+        typedef typename traits::link_pointer link_pointer;
+        typedef typename traits::bucket_pointer bucket_pointer;
+
+        static node_pointer next_node(link_pointer n) {
+            return static_cast<node_pointer>(n->next_);
+        }
+
+        static node_pointer next_for_find(node_pointer n) {
+            return static_cast<node_pointer>(n->next_);
+        }
+
+        static link_pointer next_for_erase(link_pointer prev) {
+            return prev->next_;
+        }
+
+        // Add node 'n' after 'pos'.
+        // This results in a different order to the grouped implementation.
+        static inline void add_to_node_group(node_pointer n, node_pointer pos) {
+            n->next_ = pos->next_;
+            pos->next_ = n;
+        }
+
+        static inline node_pointer extract_first_node(link_pointer prev) {
+            node_pointer n = next_node(prev);
+            prev->next_ = n->next_;
+            return n;
+        }
+
+        // Extract a node and place it in the correct bucket.
+        // TODO: For tables with equivalent keys, this doesn't preserve
+        //       the order.
+        // pre: prev->next_ is not null.
+        template <typename Table>
+        static link_pointer place_in_bucket(Table& dst, link_pointer prev)
+        {
+            node_pointer n = next_node(prev);
+            bucket_pointer b = dst.get_bucket(dst.hash_to_bucket(n->hash_));
+
+            if (!b->next_) {
+                b->next_ = prev;
+                return n;
+            }
+            else {
+                prev->next_ = n->next_;
+                n->next_ = b->next_->next_;
+                b->next_->next_ = n;
+                return prev;
+            }
+        }
+    };
+
     template <typename Policies, typename H, typename P, typename A>
     struct table_impl : boost::unordered::detail::table<Policies, H, P, A>
     {
@@ -208,6 +267,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename table::const_iterator c_iterator;
         typedef typename table::node_constructor node_constructor;
         typedef typename table::node_tmp node_tmp;
+        typedef typename table::node_algo node_algo;
         typedef std::pair<iterator, bool> emplace_return;
 
         // Constructors
@@ -253,35 +313,6 @@ namespace boost { namespace unordered { namespace detail {
         }
 
         // Accessors
-
-        template <class Key, class Pred>
-        node_pointer find_node_impl(
-                std::size_t key_hash,
-                Key const& k,
-                Pred const& eq) const
-        {
-            std::size_t bucket_index = this->hash_to_bucket(key_hash);
-            node_pointer n = this->begin_node(bucket_index);
-
-            for (;;)
-            {
-                if (!n) return n;
-
-                std::size_t node_hash = n->hash_;
-                if (key_hash == node_hash)
-                {
-                    if (eq(k, this->get_key(n->value())))
-                        return n;
-                }
-                else
-                {
-                    if (this->hash_to_bucket(node_hash) != bucket_index)
-                        return node_pointer();
-                }
-
-                n = next_node(n);
-            }
-        }
 
     public:
         std::size_t count(const_key_type& k) const
@@ -744,21 +775,6 @@ namespace boost { namespace unordered { namespace detail {
         ////////////////////////////////////////////////////////////////////////
         // Extract
 
-        inline node_pointer extract_by_key(const_key_type& k)
-        {
-            if (!this->size_) { return node_pointer(); }
-            std::size_t key_hash = this->hash(k);
-            std::size_t bucket_index = this->hash_to_bucket(key_hash);
-            link_pointer prev = find_previous_node(k, key_hash, bucket_index);
-            if (!prev) { return node_pointer(); }
-            node_pointer n = next_node(prev);
-            prev->next_ = n->next_;
-            --this->size_;
-            this->fix_bucket(bucket_index, prev);
-            n->next_ = link_pointer();
-            return n;
-        }
-
         inline node_pointer extract_by_iterator(c_iterator i)
         {
             node_pointer n = i.node_;
@@ -779,35 +795,12 @@ namespace boost { namespace unordered { namespace detail {
         //
         // no throw
 
-        link_pointer find_previous_node(const_key_type& k,
-                std::size_t key_hash,
-                std::size_t bucket_index)
-        {
-            link_pointer prev = this->get_previous_start(bucket_index);
-            if (!prev) { return prev; }
-
-            for (;;)
-            {
-                if (!prev->next_) { return link_pointer(); }
-                std::size_t node_hash = next_node(prev)->hash_;
-                if (this->hash_to_bucket(node_hash) != bucket_index) {
-                    return link_pointer();
-                }
-                if (node_hash == key_hash &&
-                        this->key_eq()(k, this->get_key(
-                        next_node(prev)->value()))) {
-                    return prev;
-                }
-                prev = prev->next_;
-            }
-        }
-
         std::size_t erase_key(const_key_type& k)
         {
             if (!this->size_) return 0;
             std::size_t key_hash = this->hash(k);
             std::size_t bucket_index = this->hash_to_bucket(key_hash);
-            link_pointer prev = find_previous_node(k, key_hash, bucket_index);
+            link_pointer prev = this->find_previous_node(k, key_hash, bucket_index);
             if (!prev) return 0;
             link_pointer next = next_node(prev)->next_;
             this->delete_nodes(prev, next);
@@ -881,36 +874,6 @@ namespace boost { namespace unordered { namespace detail {
             node_holder<node_allocator> holder(*this);
             for(node_pointer n = src.begin_node(); n; n = next_node(n)) {
                 this->add_node(holder.move_copy_of(n->value()), n->hash_);
-            }
-        }
-
-        // strong otherwise exception safety
-        void rehash_impl(std::size_t num_buckets)
-        {
-            BOOST_ASSERT(this->buckets_);
-
-            this->create_buckets(num_buckets);
-            link_pointer prev = this->get_previous_start();
-            while (prev->next_)
-                prev = place_in_bucket(*this, prev);
-        }
-
-        // Iterate through the nodes placing them in the correct buckets.
-        // pre: prev->next_ is not null.
-        static link_pointer place_in_bucket(table& dst, link_pointer prev)
-        {
-            node_pointer n = next_node(prev);
-            bucket_pointer b = dst.get_bucket(dst.hash_to_bucket(n->hash_));
-
-            if (!b->next_) {
-                b->next_ = prev;
-                return n;
-            }
-            else {
-                prev->next_ = n->next_;
-                n->next_ = b->next_->next_;
-                b->next_->next_ = n;
-                return prev;
             }
         }
     };
