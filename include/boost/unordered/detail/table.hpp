@@ -72,6 +72,18 @@
 #define BOOST_UNORDERED_EMPLACE_BOUND \
     BOOST_PP_INC(BOOST_UNORDERED_EMPLACE_LIMIT)
 
+// BOOST_UNORDERED_INTEROPERABLE_NODES - Use the same node type for
+// containers with unique and equivalent keys.
+//
+// 0 = Use different nodes
+// 1 = Use ungrouped nodes everywhere
+//
+// Might add an extra value to use grouped nodes everywhere later.
+
+#if !defined(BOOST_UNORDERED_INTEROPERABLE_NODES)
+#define BOOST_UNORDERED_INTEROPERABLE_NODES 0
+#endif
+
 // BOOST_UNORDERED_USE_ALLOCATOR_TRAITS - Pick which version of
 // allocator_traits to use.
 //
@@ -2971,8 +2983,20 @@ namespace boost { namespace unordered { namespace detail {
 
             this->create_buckets(num_buckets);
             link_pointer prev = this->get_previous_start();
-            while (prev->next_)
-                prev = node_algo::place_in_bucket(*this, prev);
+            while (prev->next_) {
+                node_pointer group_last = node_algo::last_for_rehash(prev);
+                bucket_pointer b = this->get_bucket(this->hash_to_bucket(group_last->hash_));
+                if (!b->next_) {
+                    b->next_ = prev;
+                    prev = group_last;
+                }
+                else {
+                    link_pointer next = group_last->next_;
+                    group_last->next_ = b->next_->next_;
+                    b->next_->next_ = prev->next_;
+                    prev->next_ = next;
+                }
+            }
         }
     };
 
@@ -3731,6 +3755,40 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             return prev->next_;
         }
 
+        // Group together all nodes with equal hash value, this may
+        // include nodes with different keys, but that's okay because
+        // they will end up in the same bucket.
+        static node_pointer last_for_rehash(link_pointer prev) {
+            node_pointer n = next_node(prev);
+            std::size_t hash = n->hash_;
+            while(true) {
+                node_pointer next = next_node(n);
+                if (!next || next->hash_ != hash) { return n; }
+                n = next;
+            }
+        }
+
+        template <typename Table>
+        static node_pointer next_group(node_pointer n, Table const* t) {
+            node_pointer n1 = n;
+            do {
+                n1 = next_node(n1);
+            } while (n1 && t->key_eq()(t->get_key(n->value()), t->get_key(n1->value())));
+            return n1;
+        }
+
+        template <typename Table>
+        static std::size_t count(node_pointer n, Table const* t) {
+            std::size_t x = 0;
+            node_pointer it = n;
+            do {
+                ++x;
+                it = next_node(it);
+            } while (it && t->key_eq()(t->get_key(n->value()), t->get_key(it->value())));
+
+            return x;
+        }
+
         // Add node 'n' after 'pos'.
         // This results in a different order to the grouped implementation.
         static inline void add_to_node_group(node_pointer n, node_pointer pos) {
@@ -3744,26 +3802,8 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             return n;
         }
 
-        // Extract a node and place it in the correct bucket.
-        // TODO: For tables with equivalent keys, this doesn't preserve
-        //       the order.
-        // pre: prev->next_ is not null.
-        template <typename Table>
-        static link_pointer place_in_bucket(Table& dst, link_pointer prev)
-        {
-            node_pointer n = next_node(prev);
-            bucket_pointer b = dst.get_bucket(dst.hash_to_bucket(n->hash_));
-
-            if (!b->next_) {
-                b->next_ = prev;
-                return n;
-            }
-            else {
-                prev->next_ = n->next_;
-                n->next_ = b->next_->next_;
-                b->next_->next_ = n;
-                return prev;
-            }
+        static link_pointer split_groups(node_pointer, node_pointer) {
+            return link_pointer();
         }
     };
 
@@ -4515,10 +4555,14 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             return static_cast<node_pointer>(prev->next_)->group_prev_;
         }
 
+        static node_pointer last_for_rehash(link_pointer prev) {
+            return static_cast<node_pointer>(prev->next_)->group_prev_;
+        }
+
         // The 'void*' arguments are pointers to the table, which we
         // will ignore, but without groups they could be used to
         // access the various functions for dealing with values and keys.
-        static node_pointer next_group(node_pointer(n), void const*) {
+        static node_pointer next_group(node_pointer n, void const*) {
             return static_cast<node_pointer>(n->group_prev_->next_);
         }
 
@@ -4581,29 +4625,6 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             }
 
             return prev;
-        }
-
-
-        // Extract a group of nodes and place them in the correct bucket.
-        // pre: prev->next_ is not null.
-        template <typename Table>
-        static link_pointer place_in_bucket(Table& dst, link_pointer prev)
-        {
-            node_pointer group_last = static_cast<node_pointer>(prev->next_)->group_prev_;
-
-            bucket_pointer b = dst.get_bucket(dst.hash_to_bucket(group_last->hash_));
-
-            if (!b->next_) {
-                b->next_ = prev;
-                return group_last;
-            }
-            else {
-                link_pointer next = group_last->next_;
-                group_last->next_ = b->next_->next_;
-                b->next_->next_ = prev->next_;
-                prev->next_ = next;
-                return prev;
-            }
         }
     };
 
@@ -4669,7 +4690,11 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         template <typename A>
         struct node_types
         {
+#if BOOST_UNORDERED_INTEROPERABLE_NODES
+            typedef typename pick_node<A>::pick pick;
+#else
             typedef typename pick_grouped_node<A>::pick pick;
+#endif
 
             typedef typename pick::node node;
             typedef typename pick::bucket bucket;
@@ -5138,11 +5163,11 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             }
 
             // Delete the nodes.
+            // Is it inefficient to call fix_bucket for every node?
             do {
-                link_pointer group_end = node_algo::next_group(node_algo::next_node(prev), this);
-                this->delete_nodes(prev, group_end);
+                this->delete_node(prev);
                 bucket_index = this->fix_bucket(bucket_index, prev);
-            } while(prev->next_ != j);
+            } while (prev->next_ != j);
 
             return prev;
         }

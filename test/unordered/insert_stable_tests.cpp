@@ -51,7 +51,10 @@ namespace insert_stable
 // The standard doesn't actually require this, it's just something I thought was desirable.
 // Apparently, libc++ also preserves insertion order of element with equivalent keys
 // but suffers a performance hit, so there's some pressure on it to change.
-#if !UNORDERED_TEST_STD
+//
+// This is now only supported when using grouped nodes. I can't see any
+// efficient way to do it otherwise.
+#if !BOOST_UNORDERED_INTEROPERABLE_NODES && !UNORDERED_TEST_STD
 
 UNORDERED_AUTO_TEST(stable_insert_test1) {
     typedef UNORDERED_NAMESPACE::unordered_multiset<insert_stable::member, boost::hash<insert_stable::member> > container;
