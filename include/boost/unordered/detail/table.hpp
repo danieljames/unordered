@@ -50,7 +50,72 @@
 #include <tuple>
 #endif
 
+#if !defined(BOOST_NO_CXX11_HDR_TYPE_TRAITS)
+#  include <type_traits>
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// Configuration
+//
+// Unless documented elsewhere these configuration macros should be considered
+// an implementation detail, I'll try not to break them, but you never know.
+
+// BOOST_UNORDERED_EMPLACE_LIMIT = The maximum number of parameters in emplace
+// (not including things like hints). Don't set it to a lower value, as that
+// might break something.
+
+#if !defined BOOST_UNORDERED_EMPLACE_LIMIT
+#   define BOOST_UNORDERED_EMPLACE_LIMIT 10
+#endif
+
+// BOOST_UNORDERED_USE_ALLOCATOR_TRAITS - Pick which version of
+// allocator_traits to use.
+//
+// 0 = Own partial implementation
+// 1 = std::allocator_traits
+// 2 = boost::container::allocator_traits
+
+#if !defined(BOOST_UNORDERED_USE_ALLOCATOR_TRAITS)
+#   if defined(__GXX_EXPERIMENTAL_CXX0X__) && \
+            (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))
+#       define BOOST_UNORDERED_USE_ALLOCATOR_TRAITS 0
+#   elif defined(BOOST_MSVC)
+#       if BOOST_MSVC < 1400
+            // Use container's allocator_traits for older versions of Visual
+            // C++ as I don't test with them.
+#           define BOOST_UNORDERED_USE_ALLOCATOR_TRAITS 2
+#       endif
+#   endif
+#endif
+
+#if !defined(BOOST_UNORDERED_USE_ALLOCATOR_TRAITS)
+#   define BOOST_UNORDERED_USE_ALLOCATOR_TRAITS 0
+#endif
+
+
+namespace boost { namespace unordered { namespace iterator_detail {
+    template <typename Node> struct iterator;
+    template <typename Node> struct c_iterator;
+    template <typename Node, typename Policy> struct l_iterator;
+    template <typename Node, typename Policy>
+        struct cl_iterator;
+
+}}}
+
 namespace boost { namespace unordered { namespace detail {
+
+    template <typename Types> struct table;
+    template <typename NodePointer> struct bucket;
+    struct ptr_bucket;
+    template <typename Types> struct table_impl;
+    template <typename Types> struct grouped_table_impl;
+
+    template <typename A, typename T> struct unique_node;
+    template <typename T> struct ptr_node;
+    template <typename Types> struct table_impl;
+    template <typename A, typename T> struct grouped_node;
+    template <typename T> struct grouped_ptr_node;
+    template <typename Types> struct grouped_table_impl;
 
     static const float minimum_max_load_factor = 1e-3f;
     static const std::size_t default_bucket_count = 11;
@@ -272,7 +337,6 @@ namespace boost { namespace unordered { namespace detail {
         // move_assign explicit.
         compressed& operator=(compressed const&);
     };
-}}}
 
 #if defined(BOOST_MSVC)
 #pragma warning(push)
@@ -281,10 +345,6 @@ namespace boost { namespace unordered { namespace detail {
                               // constructed with an initializer of the form ()
                               // will be default-initialized.
 #endif
-
-#define BOOST_UNORDERED_EMPLACE_LIMIT 10
-
-namespace boost { namespace unordered { namespace detail {
 
     ////////////////////////////////////////////////////////////////////////////
     // Bits and pieces for implementing traits
@@ -456,43 +516,10 @@ BOOST_PP_REPEAT_FROM_TO(4, BOOST_UNORDERED_EMPLACE_LIMIT, BOOST_UNORDERED_EARGS,
 
 #endif
 
-}}}
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// Pick which version of allocator_traits to use
-//
-// 0 = Own partial implementation
-// 1 = std::allocator_traits
-// 2 = boost::container::allocator_traits
-
-#if !defined(BOOST_UNORDERED_USE_ALLOCATOR_TRAITS)
-#   if defined(__GXX_EXPERIMENTAL_CXX0X__) && \
-            (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))
-#       define BOOST_UNORDERED_USE_ALLOCATOR_TRAITS 0
-#   elif defined(BOOST_MSVC)
-#       if BOOST_MSVC < 1400
-            // Use container's allocator_traits for older versions of Visual
-            // C++ as I don't test with them.
-#           define BOOST_UNORDERED_USE_ALLOCATOR_TRAITS 2
-#       endif
-#   endif
-#endif
-
-#if !defined(BOOST_UNORDERED_USE_ALLOCATOR_TRAITS)
-#   define BOOST_UNORDERED_USE_ALLOCATOR_TRAITS 0
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Some utilities for implementing allocator_traits, but useful elsewhere so
 // they're always defined.
-
-#if !defined(BOOST_NO_CXX11_HDR_TYPE_TRAITS)
-#  include <type_traits>
-#endif
-
-namespace boost { namespace unordered { namespace detail {
 
     ////////////////////////////////////////////////////////////////////////////
     // Integral_constrant, true_type, false_type
@@ -1054,6 +1081,9 @@ namespace boost { namespace unordered { namespace detail {
 
 #endif
 
+////////////////////////////////////////////////////////////////////////////
+// Functions used to construct nodes. Emulates variadic construction,
+// piecewise construction etc.
 
 namespace boost { namespace unordered { namespace detail { namespace func {
 
@@ -1533,16 +1563,6 @@ namespace boost { namespace unordered { namespace detail { namespace func {
 #pragma warning(pop)
 #endif
 
-namespace boost { namespace unordered { namespace detail {
-
-    template <typename Types> struct table;
-    template <typename NodePointer> struct bucket;
-    struct ptr_bucket;
-    template <typename Types> struct table_impl;
-    template <typename Types> struct grouped_table_impl;
-
-}}}
-
 // The 'iterator_detail' namespace was a misguided attempt at avoiding ADL
 // in the detail namespace. It didn't work because the template parameters
 // were in detail. I'm not changing it at the moment to be safe. I might
@@ -1551,16 +1571,6 @@ namespace boost { namespace unordered { namespace iterator_detail {
 
     ////////////////////////////////////////////////////////////////////////////
     // Iterators
-    //
-    // all no throw
-
-    template <typename Node> struct iterator;
-    template <typename Node> struct c_iterator;
-    template <typename Node, typename Policy> struct l_iterator;
-    template <typename Node, typename Policy>
-        struct cl_iterator;
-
-    // Local Iterators
     //
     // all no throw
 
@@ -2324,14 +2334,11 @@ namespace boost { namespace unordered { namespace detail {
 #   define BOOST_UNORDERED_RV_REF(T) \
         typename boost::unordered::detail::rv_ref<T>::type
 #endif
-}}}
 
 #if defined(BOOST_MSVC)
 #pragma warning(push)
 #pragma warning(disable:4127) // conditional expression is constant
 #endif
-
-namespace boost { namespace unordered { namespace detail {
 
     ////////////////////////////////////////////////////////////////////////////
     // convert double to std::size_t
@@ -3103,16 +3110,12 @@ namespace boost { namespace unordered { namespace detail {
         rehash(static_cast<std::size_t>(
             std::ceil(static_cast<double>(num_elements) / mlf_)));
     }
-}}}
 
 #if defined(BOOST_MSVC)
 #pragma warning(pop)
 #endif
 
-namespace boost {
-namespace unordered {
-namespace detail {
-
+    ////////////////////////////////////////////////////////////////////////
     // key extractors
     //
     // no throw
@@ -3279,13 +3282,9 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(boost::)
 BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 #endif
     };
-}}}
 
-namespace boost { namespace unordered { namespace detail {
-
-    template <typename A, typename T> struct unique_node;
-    template <typename T> struct ptr_node;
-    template <typename Types> struct table_impl;
+    ////////////////////////////////////////////////////////////////////////
+    // Unique nodes
 
     template <typename A, typename T>
     struct unique_node :
@@ -3935,13 +3934,9 @@ namespace boost { namespace unordered { namespace detail {
             }
         }
     };
-}}}
 
-namespace boost { namespace unordered { namespace detail {
-
-    template <typename A, typename T> struct grouped_node;
-    template <typename T> struct grouped_ptr_node;
-    template <typename Types> struct grouped_table_impl;
+    ////////////////////////////////////////////////////////////////////////
+    // Grouped nodes
 
     template <typename A, typename T>
     struct grouped_node :
