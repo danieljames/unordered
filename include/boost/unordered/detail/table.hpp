@@ -1,26 +1,54 @@
 
 // Copyright (C) 2003-2004 Jeremy B. Maitin-Shepard.
-// Copyright (C) 2005-2011 Daniel James
+// Copyright (C) 2005-2016 Daniel James
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef BOOST_UNORDERED_DETAIL_UTIL_HPP_INCLUDED
-#define BOOST_UNORDERED_DETAIL_UTIL_HPP_INCLUDED
+#ifndef BOOST_UNORDERED_DETAIL_ALL_HPP_INCLUDED
+#define BOOST_UNORDERED_DETAIL_ALL_HPP_INCLUDED
 
 #include <boost/config.hpp>
 #if defined(BOOST_HAS_PRAGMA_ONCE)
 #pragma once
 #endif
 
+#include <boost/unordered/detail/fwd.hpp>
+#include <boost/unordered/unordered_set_fwd.hpp>
+#include <boost/unordered/unordered_map_fwd.hpp>
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/repetition/enum.hpp>
+#include <boost/preprocessor/repetition/enum_params.hpp>
+#include <boost/preprocessor/repetition/enum_binary_params.hpp>
+#include <boost/preprocessor/repetition/repeat_from_to.hpp>
+#include <boost/preprocessor/seq/size.hpp>
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/type_traits/is_class.hpp>
+#include <boost/type_traits/add_lvalue_reference.hpp>
+#include <boost/type_traits/aligned_storage.hpp>
+#include <boost/type_traits/alignment_of.hpp>
+#include <boost/type_traits/is_nothrow_move_constructible.hpp>
+#include <boost/type_traits/is_nothrow_move_assignable.hpp>
 #include <boost/type_traits/is_convertible.hpp>
 #include <boost/type_traits/is_empty.hpp>
 #include <boost/iterator/iterator_categories.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <boost/utility/enable_if.hpp>
+#include <boost/utility/addressof.hpp>
+#include <boost/detail/no_exceptions_support.hpp>
 #include <boost/detail/select_type.hpp>
+#include <boost/throw_exception.hpp>
 #include <boost/move/move.hpp>
-#include <boost/preprocessor/seq/size.hpp>
-#include <boost/preprocessor/seq/enum.hpp>
 #include <boost/swap.hpp>
+#include <boost/assert.hpp>
+#include <boost/limits.hpp>
+#include <stdexcept>
+#include <iterator>
+#include <utility>
+#include <cmath>
+
+#if !defined(BOOST_NO_CXX11_HDR_TUPLE)
+#include <tuple>
+#endif
 
 namespace boost { namespace unordered { namespace detail {
 
@@ -161,7 +189,7 @@ namespace boost { namespace unordered { namespace detail {
         T& get() { return *this; }
         T const& get() const { return *this; }
     };
-    
+
     template <typename T, int Index>
     struct uncompressed_base
     {
@@ -173,7 +201,7 @@ namespace boost { namespace unordered { namespace detail {
     private:
         T value_;
     };
-    
+
     template <typename T, int Index>
     struct generate_base
       : boost::detail::if_true<
@@ -183,7 +211,7 @@ namespace boost { namespace unordered { namespace detail {
             boost::unordered::detail::uncompressed_base<T, Index>
         >
     {};
-    
+
     template <typename T1, typename T2>
     struct compressed
       : private boost::unordered::detail::generate_base<T1, 1>::type,
@@ -194,7 +222,7 @@ namespace boost { namespace unordered { namespace detail {
 
         typedef T1 first_type;
         typedef T2 second_type;
-        
+
         first_type& first() {
             return static_cast<base1*>(this)->get();
         }
@@ -232,7 +260,7 @@ namespace boost { namespace unordered { namespace detail {
             first() = boost::move(x.first());
             second() = boost::move(x.second());
         }
-        
+
         void swap(compressed& x)
         {
             boost::swap(first(), x.first());
@@ -245,53 +273,6 @@ namespace boost { namespace unordered { namespace detail {
         compressed& operator=(compressed const&);
     };
 }}}
-
-#endif
-
-// Copyright 2005-2011 Daniel James.
-// Copyright 2009 Pablo Halpern.
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-
-//  See http://www.boost.org/libs/unordered for documentation
-
-#ifndef BOOST_UNORDERED_ALLOCATE_HPP
-#define BOOST_UNORDERED_ALLOCATE_HPP
-
-#include <boost/config.hpp>
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#pragma once
-#endif
-
-// Some of these includes are required for other detail headers.
-#include <boost/unordered/detail/fwd.hpp>
-#include <boost/move/move.hpp>
-#include <boost/preprocessor/cat.hpp>
-#include <boost/preprocessor/repetition/enum.hpp>
-#include <boost/preprocessor/repetition/enum_params.hpp>
-#include <boost/preprocessor/repetition/enum_binary_params.hpp>
-#include <boost/preprocessor/repetition/repeat_from_to.hpp>
-#include <boost/type_traits/is_class.hpp>
-#include <boost/type_traits/add_lvalue_reference.hpp>
-#include <boost/type_traits/aligned_storage.hpp>
-#include <boost/type_traits/alignment_of.hpp>
-#include <boost/type_traits/is_nothrow_move_constructible.hpp>
-#include <boost/type_traits/is_nothrow_move_assignable.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/utility/enable_if.hpp>
-#include <boost/utility/addressof.hpp>
-#include <boost/detail/no_exceptions_support.hpp>
-#include <boost/detail/select_type.hpp>
-#include <boost/swap.hpp>
-#include <boost/assert.hpp>
-#include <boost/limits.hpp>
-#include <iterator>
-#include <utility>
-#include <cmath>
-
-#if !defined(BOOST_NO_CXX11_HDR_TUPLE)
-#include <tuple>
-#endif
 
 #if defined(BOOST_MSVC)
 #pragma warning(push)
@@ -1502,24 +1483,6 @@ namespace boost { namespace unordered { namespace detail { namespace func {
 #pragma warning(pop)
 #endif
 
-#endif
-
-// Copyright (C) 2003-2004 Jeremy B. Maitin-Shepard.
-// Copyright (C) 2005-2011 Daniel James
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-
-#ifndef BOOST_UNORDERED_DETAIL_MANAGER_HPP_INCLUDED
-#define BOOST_UNORDERED_DETAIL_MANAGER_HPP_INCLUDED
-
-#include <boost/config.hpp>
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#pragma once
-#endif
-
-#include <boost/unordered/detail/util.hpp>
-#include <boost/unordered/detail/allocate.hpp>
-
 namespace boost { namespace unordered { namespace detail {
 
     template <typename Types> struct table;
@@ -2161,7 +2124,7 @@ namespace boost { namespace unordered { namespace detail {
         {
             new((void*) &funcs_[which]) function_pair(f);
         }
-        
+
         void construct(bool which, function_pair& f,
                 boost::unordered::detail::true_type)
         {
@@ -2173,7 +2136,7 @@ namespace boost { namespace unordered { namespace detail {
         {
             boost::unordered::detail::func::destroy((function_pair*)(&funcs_[which]));
         }
-        
+
     public:
 
         typedef boost::unordered::detail::set_hash_functions<H, P,
@@ -2219,7 +2182,7 @@ namespace boost { namespace unordered { namespace detail {
         set_hash_functions& operator=(set_hash_functions const&);
 
         typedef functions<H, P> functions_type;
-    
+
         functions_type& functions_;
         bool tmp_functions_;
 
@@ -2262,7 +2225,7 @@ namespace boost { namespace unordered { namespace detail {
         functions_type& functions_;
         H hash_;
         P pred_;
-    
+
     public:
 
         set_hash_functions(functions_type& f, H const& h, P const& p) :
@@ -2281,7 +2244,7 @@ namespace boost { namespace unordered { namespace detail {
             functions_.current().second() = boost::move(pred_);
         }
     };
-    
+
     ////////////////////////////////////////////////////////////////////////////
     // rvalue parameters when type can't be a BOOST_RV_REF(T) parameter
     // e.g. for int
@@ -2312,23 +2275,6 @@ namespace boost { namespace unordered { namespace detail {
         typename boost::unordered::detail::rv_ref<T>::type
 #endif
 }}}
-
-#endif
-
-// Copyright (C) 2003-2004 Jeremy B. Maitin-Shepard.
-// Copyright (C) 2005-2011 Daniel James
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-
-#ifndef BOOST_UNORDERED_DETAIL_ALL_HPP_INCLUDED
-#define BOOST_UNORDERED_DETAIL_ALL_HPP_INCLUDED
-
-#include <boost/config.hpp>
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#pragma once
-#endif
-
-#include <boost/unordered/detail/buckets.hpp>
 
 #if defined(BOOST_MSVC)
 #pragma warning(push)
@@ -2503,7 +2449,7 @@ namespace boost { namespace unordered { namespace detail {
             link_pointer prev = get_previous_start(bucket_index);
             return prev ? iterator(prev->next_) : iterator();
         }
-        
+
         std::size_t hash_to_bucket(std::size_t hash_value) const
         {
             return policy::to_bucket(bucket_count_, hash_value);
@@ -2537,7 +2483,7 @@ namespace boost { namespace unordered { namespace detail {
         std::size_t max_size() const
         {
             using namespace std;
-    
+
             // size < mlf_ * count
             return boost::unordered::detail::double_to_size(ceil(
                     static_cast<double>(mlf_) *
@@ -2548,7 +2494,7 @@ namespace boost { namespace unordered { namespace detail {
         void recalculate_max_load()
         {
             using namespace std;
-    
+
             // From 6.3.1/13:
             // Only resize when size >= mlf_ * count
             max_load_ = buckets_ ? boost::unordered::detail::double_to_size(ceil(
@@ -2568,9 +2514,9 @@ namespace boost { namespace unordered { namespace detail {
         std::size_t min_buckets_for_size(std::size_t size) const
         {
             BOOST_ASSERT(mlf_ >= minimum_max_load_factor);
-    
+
             using namespace std;
-    
+
             // From 6.3.1/13:
             // size < mlf_ * count
             // => count > size / mlf_
@@ -3041,7 +2987,7 @@ namespace boost { namespace unordered { namespace detail {
             // For some stupid reason, I decided to support equality comparison
             // when different hash functions are used. So I can't use the hash
             // value from the node here.
-    
+
             return find_node(get_key(*n));
         }
 
@@ -3110,22 +3056,6 @@ namespace boost { namespace unordered { namespace detail {
 #pragma warning(pop)
 #endif
 
-#endif
-
-// Copyright (C) 2005-2011 Daniel James
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-
-#ifndef BOOST_UNORDERED_DETAIL_EXTRACT_KEY_HPP_INCLUDED
-#define BOOST_UNORDERED_DETAIL_EXTRACT_KEY_HPP_INCLUDED
-
-#include <boost/config.hpp>
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#pragma once
-#endif
-
-#include <boost/unordered/detail/table.hpp>
-
 namespace boost {
 namespace unordered {
 namespace detail {
@@ -3150,10 +3080,10 @@ namespace detail {
         template <typename T2>
         static choice1::type test(T2 const&);
         static choice2::type test(Key const&);
-        
+
         enum { value = sizeof(test(boost::unordered::detail::make<T>())) ==
             sizeof(choice2::type) };
-        
+
         typedef typename boost::detail::if_true<value>::
             BOOST_NESTED_TEMPLATE then<Key const&, no_key>::type type;
     };
@@ -3173,7 +3103,7 @@ namespace detail {
         {
             return no_key();
         }
-        
+
         template <class Arg>
         static no_key extract(Arg const&)
         {
@@ -3205,7 +3135,7 @@ namespace detail {
         {
             return v.first;
         }
-            
+
         template <class Second>
         static key_type const& extract(std::pair<key_type, Second> const& v)
         {
@@ -3297,25 +3227,6 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 #endif
     };
 }}}
-
-#endif
-
-// Copyright (C) 2003-2004 Jeremy B. Maitin-Shepard.
-// Copyright (C) 2005-2011 Daniel James
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-
-#ifndef BOOST_UNORDERED_DETAIL_UNIQUE_HPP_INCLUDED
-#define BOOST_UNORDERED_DETAIL_UNIQUE_HPP_INCLUDED
-
-#include <boost/config.hpp>
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#pragma once
-#endif
-
-#include <boost/unordered/detail/extract_key.hpp>
-#include <boost/throw_exception.hpp>
-#include <stdexcept>
 
 namespace boost { namespace unordered { namespace detail {
 
@@ -3546,7 +3457,7 @@ namespace boost { namespace unordered { namespace detail {
         bool equals(table_impl const& other) const
         {
             if(this->size_ != other.size_) return false;
-    
+
             for(iterator n1 = this->begin(); n1.node_; ++n1)
             {
                 iterator n2 = other.find_matching_node(n1);
@@ -3554,7 +3465,7 @@ namespace boost { namespace unordered { namespace detail {
                 if (!n2.node_ || *n1 != *n2)
                     return false;
             }
-    
+
             return true;
         }
 
@@ -3565,13 +3476,13 @@ namespace boost { namespace unordered { namespace detail {
                 std::size_t key_hash)
         {
             n->hash_ = key_hash;
-    
+
             bucket_pointer b = this->get_bucket(this->hash_to_bucket(key_hash));
 
             if (!b->next_)
             {
                 link_pointer start_node = this->get_previous_start();
-                
+
                 if (start_node->next_) {
                     this->get_bucket(this->hash_to_bucket(
                         static_cast<node_pointer>(start_node->next_)->hash_)
@@ -3797,7 +3708,7 @@ namespace boost { namespace unordered { namespace detail {
             // No side effects in this initial code
             std::size_t key_hash = this->hash(k);
             iterator pos = this->find_node(key_hash, k);
-    
+
             if (!pos.node_) {
                 node_tmp b(
                     boost::unordered::detail::func::construct_value(this->node_alloc(), *i),
@@ -3972,23 +3883,6 @@ namespace boost { namespace unordered { namespace detail {
         }
     };
 }}}
-
-#endif
-
-// Copyright (C) 2003-2004 Jeremy B. Maitin-Shepard.
-// Copyright (C) 2005-2011 Daniel James
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-
-#ifndef BOOST_UNORDERED_DETAIL_EQUIVALENT_HPP_INCLUDED
-#define BOOST_UNORDERED_DETAIL_EQUIVALENT_HPP_INCLUDED
-
-#include <boost/config.hpp>
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#pragma once
-#endif
-
-#include <boost/unordered/detail/extract_key.hpp>
 
 namespace boost { namespace unordered { namespace detail {
 
@@ -4221,7 +4115,7 @@ namespace boost { namespace unordered { namespace detail {
         bool equals(grouped_table_impl const& other) const
         {
             if(this->size_ != other.size_) return false;
-    
+
             for(iterator n1 = this->begin(); n1.node_;)
             {
                 iterator n2 = other.find_matching_node(n1);
@@ -4229,9 +4123,9 @@ namespace boost { namespace unordered { namespace detail {
                 iterator end1(n1.node_->group_prev_->next_);
                 iterator end2(n2.node_->group_prev_->next_);
                 if (!group_equals(n1, end1, n2, end2)) return false;
-                n1 = end1;    
+                n1 = end1;
             }
-    
+
             return true;
         }
 
@@ -4244,11 +4138,11 @@ namespace boost { namespace unordered { namespace detail {
 
                 ++n1;
                 ++n2;
-            
+
                 if (n1 == end1) return n2 == end2;
                 if (n2 == end2) return false;
             }
-            
+
             for(iterator n1a = n1, n2a = n2;;)
             {
                 ++n1a;
@@ -4274,7 +4168,7 @@ namespace boost { namespace unordered { namespace detail {
                 ++next;
                 if (matches != 1 + count_equal(next, end1, v)) return false;
             }
-            
+
             return true;
         }
 
@@ -4333,13 +4227,13 @@ namespace boost { namespace unordered { namespace detail {
                 if (!b->next_)
                 {
                     link_pointer start_node = this->get_previous_start();
-                    
+
                     if (start_node->next_) {
                         this->get_bucket(this->hash_to_bucket(
                             static_cast<node_pointer>(start_node->next_)->hash_
                         ))->next_ = n;
                     }
-    
+
                     b->next_ = start_node;
                     n->next_ = start_node->next_;
                     start_node->next_ = n;
@@ -4699,19 +4593,7 @@ namespace boost { namespace unordered { namespace detail {
             }
         }
     };
-}}}
 
-#endif
-
-// Copyright (C) 2005-2016 Daniel James
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-
-#include <boost/unordered/unordered_set_fwd.hpp>
-#include <boost/unordered/detail/equivalent.hpp>
-#include <boost/unordered/detail/unique.hpp>
-
-namespace boost { namespace unordered { namespace detail {
     template <typename A, typename T, typename H, typename P>
     struct set
     {
@@ -4758,17 +4640,7 @@ namespace boost { namespace unordered { namespace detail {
 
         typedef typename boost::unordered::detail::pick_policy<T>::type policy;
     };
-}}}
 
-// Copyright (C) 2005-2016 Daniel James
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-
-#include <boost/unordered/unordered_map_fwd.hpp>
-#include <boost/unordered/detail/equivalent.hpp>
-#include <boost/unordered/detail/unique.hpp>
-
-namespace boost { namespace unordered { namespace detail {
     template <typename A, typename K, typename M, typename H, typename P>
     struct map
     {
@@ -4820,3 +4692,5 @@ namespace boost { namespace unordered { namespace detail {
     };
 
 }}}
+
+#endif

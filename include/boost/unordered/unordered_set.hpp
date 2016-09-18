@@ -14,7 +14,7 @@
 #pragma once
 #endif
 
-#include <boost/unordered/detail/set.hpp>
+#include <boost/unordered/detail/table.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/move/move.hpp>
 
