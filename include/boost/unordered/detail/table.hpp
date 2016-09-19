@@ -2665,9 +2665,9 @@ namespace boost { namespace unordered { namespace detail {
             recalculate_max_load();
         }
 
-        const_key_type& get_key(value_type const& x) const
+        const_key_type& get_key(node_pointer n) const
         {
-            return extractor::extract(x);
+            return extractor::extract(n->value());
         }
 
         std::size_t hash_to_bucket(std::size_t hash_value) const
@@ -2727,7 +2727,7 @@ namespace boost { namespace unordered { namespace detail {
                 std::size_t node_hash = n->hash_;
                 if (key_hash == node_hash)
                 {
-                    if (eq(k, this->get_key(n->value())))
+                    if (eq(k, this->get_key(n)))
                         return n;
                 }
                 else
@@ -3416,7 +3416,7 @@ namespace boost { namespace unordered { namespace detail {
                 }
                 if (node_hash == key_hash &&
                         this->key_eq()(k, this->get_key(
-                        node_algo::next_node(prev)->value()))) {
+                        node_algo::next_node(prev)))) {
                     return prev;
                 }
                 prev = node_algo::next_for_erase(prev);
@@ -3836,7 +3836,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             node_pointer n1 = n;
             do {
                 n1 = next_node(n1);
-            } while (n1 && t->key_eq()(t->get_key(n->value()), t->get_key(n1->value())));
+            } while (n1 && t->key_eq()(t->get_key(n), t->get_key(n1)));
             return n1;
         }
 
@@ -3847,7 +3847,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             do {
                 ++x;
                 it = next_node(it);
-            } while (it && t->key_eq()(t->get_key(n->value()), t->get_key(it->value())));
+            } while (it && t->key_eq()(t->get_key(n), t->get_key(it)));
 
             return x;
         }
@@ -3969,7 +3969,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
             for(node_pointer n1 = this->begin(); n1; n1 = next_node(n1))
             {
-                node_pointer n2 = other.find_node(other.get_key(n1->value()));
+                node_pointer n2 = other.find_node(other.get_key(n1));
 
                 if (!n2 || n1->value() != n2->value())
                     return false;
@@ -4101,7 +4101,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         iterator emplace_hint_impl(c_iterator hint, const_key_type& k,
             BOOST_UNORDERED_EMPLACE_ARGS)
         {
-            if (hint.node_ && this->key_eq()(k, this->get_key(*hint))) {
+            if (hint.node_ && this->key_eq()(k, this->get_key(hint.node_))) {
                 return iterator(hint.node_);
             }
             else {
@@ -4136,8 +4136,8 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
                 boost::unordered::detail::func::construct_value_generic(
                     this->node_alloc(), BOOST_UNORDERED_EMPLACE_FORWARD),
                 this->node_alloc());
-            const_key_type& k = this->get_key(b.node_->value());
-            if (hint.node_ && this->key_eq()(k, this->get_key(*hint))) {
+            const_key_type& k = this->get_key(b.node_);
+            if (hint.node_ && this->key_eq()(k, this->get_key(hint.node_))) {
                 return iterator(hint.node_);
             }
             std::size_t key_hash = this->hash(k);
@@ -4157,7 +4157,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
                 boost::unordered::detail::func::construct_value_generic(
                     this->node_alloc(), BOOST_UNORDERED_EMPLACE_FORWARD),
                 this->node_alloc());
-            const_key_type& k = this->get_key(b.node_->value());
+            const_key_type& k = this->get_key(b.node_);
             std::size_t key_hash = this->hash(k);
             node_pointer pos = this->find_node(key_hash, k);
             if (pos) {
@@ -4257,7 +4257,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         template <typename NodeType, typename InsertReturnType>
         void move_insert_node_type(NodeType& np, InsertReturnType& result) {
             if (np) {
-                const_key_type& k = this->get_key(np.ptr_->value());
+                const_key_type& k = this->get_key(np.ptr_);
                 std::size_t key_hash = this->hash(k);
                 node_pointer pos = this->find_node(key_hash, k);
 
@@ -4277,8 +4277,8 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         template <typename NodeType>
         iterator move_insert_node_type_with_hint(c_iterator hint, NodeType& np) {
             if (!np) { return iterator(); }
-            const_key_type& k = this->get_key(np.ptr_->value());
-            if (hint.node_ && this->key_eq()(k, this->get_key(*hint))) {
+            const_key_type& k = this->get_key(np.ptr_);
+            if (hint.node_ && this->key_eq()(k, this->get_key(hint.node_))) {
                 return iterator(hint.node_);
             }
             std::size_t key_hash = this->hash(k);
@@ -4302,7 +4302,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
                 while(prev->next_) {
                     node_pointer n = other_table::node_algo::next_node(prev);
-                    const_key_type& k = this->get_key(n->value());
+                    const_key_type& k = this->get_key(n);
                     std::size_t key_hash = this->hash(k);
                     node_pointer pos = this->find_node(key_hash, k);
 
@@ -4381,7 +4381,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
                     a.alloc_, a.node_->value_ptr(), *i);
                 node_tmp b(a.release(), a.alloc_);
 
-                const_key_type& k = this->get_key(b.node_->value());
+                const_key_type& k = this->get_key(b.node_);
                 std::size_t key_hash = this->hash(k);
                 node_pointer pos = this->find_node(key_hash, k);
 
@@ -4761,7 +4761,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
             for(node_pointer n1 = this->begin(); n1;)
             {
-                node_pointer n2 = other.find_node(other.get_key(n1->value()));
+                node_pointer n2 = other.find_node(other.get_key(n1));
                 if (!n2) return false;
                 node_pointer end1 = node_algo::next_group(n1, this);
                 node_pointer end2 = node_algo::next_group(n2, this);
@@ -4946,7 +4946,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         iterator emplace_impl(node_pointer n)
         {
             node_tmp a(n, this->node_alloc());
-            const_key_type& k = this->get_key(a.node_->value());
+            const_key_type& k = this->get_key(a.node_);
             std::size_t key_hash = this->hash(k);
             node_pointer position = this->find_node(key_hash, k);
             this->reserve_for_insert(this->size_ + 1);
@@ -4956,8 +4956,8 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         iterator emplace_hint_impl(c_iterator hint, node_pointer n)
         {
             node_tmp a(n, this->node_alloc());
-            const_key_type& k = this->get_key(a.node_->value());
-            if (hint.node_ && this->key_eq()(k, this->get_key(*hint))) {
+            const_key_type& k = this->get_key(a.node_);
+            if (hint.node_ && this->key_eq()(k, this->get_key(hint.node_))) {
                 this->reserve_for_insert(this->size_ + 1);
                 return iterator(this->add_using_hint(a.release(), hint.node_));
             }
@@ -4972,7 +4972,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         void emplace_impl_no_rehash(node_pointer n)
         {
             node_tmp a(n, this->node_alloc());
-            const_key_type& k = this->get_key(a.node_->value());
+            const_key_type& k = this->get_key(a.node_);
             std::size_t key_hash = this->hash(k);
             node_pointer position = this->find_node(key_hash, k);
             this->add_node(a.release(), key_hash, position);
@@ -4983,7 +4983,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             iterator result;
 
             if (np) {
-                const_key_type& k = this->get_key(np.ptr_->value());
+                const_key_type& k = this->get_key(np.ptr_);
                 std::size_t key_hash = this->hash(k);
                 node_pointer pos = this->find_node(key_hash, k);
                 this->reserve_for_insert(this->size_ + 1);
@@ -4999,9 +4999,9 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             iterator result;
 
             if (np) {
-                const_key_type& k = this->get_key(np.ptr_->value());
+                const_key_type& k = this->get_key(np.ptr_);
 
-                if (hint.node_ && this->key_eq()(k, this->get_key(*hint))) {
+                if (hint.node_ && this->key_eq()(k, this->get_key(hint.node_))) {
                     this->reserve_for_insert(this->size_ + 1);
                     result = iterator(this->add_using_hint(np.ptr_, hint.node_));
                 }
