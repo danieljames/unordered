@@ -2462,7 +2462,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename Types::bucket bucket;
         typedef typename Types::hasher hasher;
         typedef typename Types::key_equal key_equal;
-        typedef typename Types::key_type key_type;
+        typedef typename Types::const_key_type const_key_type;
         typedef typename Types::extractor extractor;
         typedef typename Types::value_type value_type;
         typedef typename Types::table table_impl;
@@ -3071,12 +3071,12 @@ namespace boost { namespace unordered { namespace detail {
 
         // Accessors
 
-        key_type const& get_key(value_type const& x) const
+        const_key_type& get_key(value_type const& x) const
         {
             return extractor::extract(x);
         }
 
-        std::size_t hash(key_type const& k) const
+        std::size_t hash(const_key_type& k) const
         {
             return policy::apply_hash(this->hash_function(), k);
         }
@@ -3095,13 +3095,13 @@ namespace boost { namespace unordered { namespace detail {
 
         node_pointer find_node(
                 std::size_t key_hash,
-                key_type const& k) const
+                const_key_type& k) const
         {
             return static_cast<table_impl const*>(this)->
                 find_node_impl(key_hash, k, this->key_eq());
         }
 
-        node_pointer find_node(key_type const& k) const
+        node_pointer find_node(const_key_type& k) const
         {
             return static_cast<table_impl const*>(this)->
                 find_node_impl(hash(k), k, this->key_eq());
@@ -3468,7 +3468,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename table::link_pointer link_pointer;
         typedef typename table::hasher hasher;
         typedef typename table::key_equal key_equal;
-        typedef typename table::key_type key_type;
+        typedef typename table::const_key_type const_key_type;
         typedef typename table::node_constructor node_constructor;
         typedef typename table::node_tmp node_tmp;
         typedef typename table::extractor extractor;
@@ -3550,12 +3550,12 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             }
         }
 
-        std::size_t count(key_type const& k) const
+        std::size_t count(const_key_type& k) const
         {
             return this->find_node(k) ? 1 : 0;
         }
 
-        value_type& at(key_type const& k) const
+        value_type& at(const_key_type& k) const
         {
             if (this->size_) {
                 node_pointer n = this->find_node(k);
@@ -3567,7 +3567,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         }
 
         std::pair<iterator, iterator>
-            equal_range(key_type const& k) const
+            equal_range(const_key_type& k) const
         {
             node_pointer n = this->find_node(k);
             return std::make_pair(iterator(n), iterator(n ? next_node(n) : n));
@@ -3631,7 +3631,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             return this->add_node(b.release(), key_hash);
         }
 
-        value_type& operator[](key_type const& k)
+        value_type& operator[](const_key_type& k)
         {
             std::size_t key_hash = this->hash(k);
             node_pointer pos = this->find_node(key_hash, k);
@@ -3724,7 +3724,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 #endif
 
         template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
-        iterator emplace_hint_impl(c_iterator hint, key_type const& k,
+        iterator emplace_hint_impl(c_iterator hint, const_key_type& k,
             BOOST_UNORDERED_EMPLACE_ARGS)
         {
             if (hint.node_ && this->key_eq()(k, this->get_key(*hint))) {
@@ -3736,7 +3736,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         }
 
         template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
-        emplace_return emplace_impl(key_type const& k,
+        emplace_return emplace_impl(const_key_type& k,
             BOOST_UNORDERED_EMPLACE_ARGS)
         {
             std::size_t key_hash = this->hash(k);
@@ -3762,7 +3762,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
                 boost::unordered::detail::func::construct_value_generic(
                     this->node_alloc(), BOOST_UNORDERED_EMPLACE_FORWARD),
                 this->node_alloc());
-            key_type const& k = this->get_key(b.node_->value());
+            const_key_type& k = this->get_key(b.node_->value());
             if (hint.node_ && this->key_eq()(k, this->get_key(*hint))) {
                 return iterator(hint.node_);
             }
@@ -3783,7 +3783,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
                 boost::unordered::detail::func::construct_value_generic(
                     this->node_alloc(), BOOST_UNORDERED_EMPLACE_FORWARD),
                 this->node_alloc());
-            key_type const& k = this->get_key(b.node_->value());
+            const_key_type& k = this->get_key(b.node_->value());
             std::size_t key_hash = this->hash(k);
             node_pointer pos = this->find_node(key_hash, k);
             if (pos) {
@@ -3810,7 +3810,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         }
 
         template <class InputIt>
-        void insert_range_impl(key_type const& k, InputIt i, InputIt j)
+        void insert_range_impl(const_key_type& k, InputIt i, InputIt j)
         {
             insert_range_impl2(k, i, j);
 
@@ -3828,7 +3828,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         }
 
         template <class InputIt>
-        void insert_range_impl2(key_type const& k, InputIt i, InputIt j)
+        void insert_range_impl2(const_key_type& k, InputIt i, InputIt j)
         {
             // No side effects in this initial code
             std::size_t key_hash = this->hash(k);
@@ -3856,7 +3856,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
                     a.alloc_, a.node_->value_ptr(), *i);
                 node_tmp b(a.release(), a.alloc_);
 
-                key_type const& k = this->get_key(b.node_->value());
+                const_key_type& k = this->get_key(b.node_->value());
                 std::size_t key_hash = this->hash(k);
                 node_pointer pos = this->find_node(key_hash, k);
 
@@ -3877,7 +3877,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         //
         // no throw
 
-        std::size_t erase_key(key_type const& k)
+        std::size_t erase_key(const_key_type& k)
         {
             if(!this->size_) return 0;
 
@@ -4141,7 +4141,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename table::link_pointer link_pointer;
         typedef typename table::hasher hasher;
         typedef typename table::key_equal key_equal;
-        typedef typename table::key_type key_type;
+        typedef typename table::const_key_type const_key_type;
         typedef typename table::node_constructor node_constructor;
         typedef typename table::node_tmp node_tmp;
         typedef typename table::extractor extractor;
@@ -4225,7 +4225,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
             }
         }
 
-        std::size_t count(key_type const& k) const
+        std::size_t count(const_key_type& k) const
         {
             node_pointer n = this->find_node(k);
             if (!n) return 0;
@@ -4241,7 +4241,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         }
 
         std::pair<iterator, iterator>
-            equal_range(key_type const& k) const
+            equal_range(const_key_type& k) const
         {
             node_pointer n = this->find_node(k);
             return std::make_pair(iterator(n), iterator(n ? next_group(n) : n));
@@ -4453,7 +4453,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         iterator emplace_impl(node_pointer n)
         {
             node_tmp a(n, this->node_alloc());
-            key_type const& k = this->get_key(a.node_->value());
+            const_key_type& k = this->get_key(a.node_->value());
             std::size_t key_hash = this->hash(k);
             node_pointer position = this->find_node(key_hash, k);
             this->reserve_for_insert(this->size_ + 1);
@@ -4463,7 +4463,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         iterator emplace_hint_impl(c_iterator hint, node_pointer n)
         {
             node_tmp a(n, this->node_alloc());
-            key_type const& k = this->get_key(a.node_->value());
+            const_key_type& k = this->get_key(a.node_->value());
             if (hint.node_ && this->key_eq()(k, this->get_key(*hint))) {
                 this->reserve_for_insert(this->size_ + 1);
                 return iterator(this->add_using_hint(a.release(), hint.node_));
@@ -4479,7 +4479,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         void emplace_impl_no_rehash(node_pointer n)
         {
             node_tmp a(n, this->node_alloc());
-            key_type const& k = this->get_key(a.node_->value());
+            const_key_type& k = this->get_key(a.node_->value());
             std::size_t key_hash = this->hash(k);
             node_pointer position = this->find_node(key_hash, k);
             this->add_node(a.release(), key_hash, position);
@@ -4530,7 +4530,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         //
         // no throw
 
-        std::size_t erase_key(key_type const& k)
+        std::size_t erase_key(const_key_type& k)
         {
             if(!this->size_) return 0;
 
@@ -4735,7 +4735,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef T value_type;
         typedef H hasher;
         typedef P key_equal;
-        typedef T key_type;
+        typedef T const const_key_type;
 
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
@@ -4770,7 +4770,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef T value_type;
         typedef H hasher;
         typedef P key_equal;
-        typedef T key_type;
+        typedef T const const_key_type;
 
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
@@ -4805,7 +4805,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef std::pair<K const, M> value_type;
         typedef H hasher;
         typedef P key_equal;
-        typedef K key_type;
+        typedef K const const_key_type;
 
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
@@ -4818,7 +4818,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename pick::link_pointer link_pointer;
 
         typedef boost::unordered::detail::table_impl<types> table;
-        typedef boost::unordered::detail::map_extractor<key_type, value_type>
+        typedef boost::unordered::detail::map_extractor<const_key_type, value_type>
             extractor;
 
         typedef typename boost::unordered::detail::pick_policy<K>::type policy;
@@ -4841,7 +4841,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef std::pair<K const, M> value_type;
         typedef H hasher;
         typedef P key_equal;
-        typedef K key_type;
+        typedef K const const_key_type;
 
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
@@ -4854,7 +4854,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename pick::link_pointer link_pointer;
 
         typedef boost::unordered::detail::grouped_table_impl<types> table;
-        typedef boost::unordered::detail::map_extractor<key_type, value_type>
+        typedef boost::unordered::detail::map_extractor<const_key_type, value_type>
             extractor;
 
         typedef typename boost::unordered::detail::pick_policy<K>::type policy;
