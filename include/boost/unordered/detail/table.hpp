@@ -122,8 +122,8 @@ namespace boost { namespace unordered { namespace detail {
     template <typename Types, typename H, typename P, typename A> struct table;
     template <typename NodePointer> struct bucket;
     struct ptr_bucket;
-    template <typename Types, typename H, typename P, typename A> struct table_impl;
-    template <typename Types, typename H, typename P, typename A> struct grouped_table_impl;
+    template <typename Types, typename H, typename P, typename A> struct table_unique;
+    template <typename Types, typename H, typename P, typename A> struct table_equiv;
 
     template <typename A> struct unique_node;
     template <typename T> struct ptr_node;
@@ -1837,9 +1837,9 @@ namespace boost { namespace unordered { namespace iterator_detail {
         template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::table;
         template <typename, typename, typename, typename>
-        friend struct boost::unordered::detail::table_impl;
+        friend struct boost::unordered::detail::table_unique;
         template <typename, typename, typename, typename>
-        friend struct boost::unordered::detail::grouped_table_impl;
+        friend struct boost::unordered::detail::table_equiv;
     private:
 #endif
         typedef boost::unordered::detail::node_traits<Node> node_traits;
@@ -1898,9 +1898,9 @@ namespace boost { namespace unordered { namespace iterator_detail {
         template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::table;
         template <typename, typename, typename, typename>
-        friend struct boost::unordered::detail::table_impl;
+        friend struct boost::unordered::detail::table_unique;
         template <typename, typename, typename, typename>
-        friend struct boost::unordered::detail::grouped_table_impl;
+        friend struct boost::unordered::detail::table_equiv;
 
     private:
 #endif
@@ -3789,7 +3789,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
     };
 
     template <typename Policies, typename H, typename P, typename A>
-    struct table_impl : boost::unordered::detail::table<Policies, H, P, A>
+    struct table_unique : boost::unordered::detail::table<Policies, H, P, A>
     {
         typedef boost::unordered::detail::table<Policies, H, P, A> table;
         typedef typename table::value_type value_type;
@@ -3814,33 +3814,33 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
         // Constructors
 
-        table_impl(std::size_t n,
+        table_unique(std::size_t n,
                 hasher const& hf,
                 key_equal const& eq,
                 node_allocator const& a)
           : table(n, hf, eq, a)
         {}
 
-        table_impl(table_impl const& x)
+        table_unique(table_unique const& x)
           : table(x, node_allocator_traits::
                 select_on_container_copy_construction(x.node_alloc()))
         {
             this->init(x);
         }
 
-        table_impl(table_impl const& x,
+        table_unique(table_unique const& x,
                 node_allocator const& a)
           : table(x, a)
         {
             this->init(x);
         }
 
-        table_impl(table_impl& x,
+        table_unique(table_unique& x,
                 boost::unordered::detail::move_tag m)
           : table(x, m)
         {}
 
-        table_impl(table_impl& x,
+        table_unique(table_unique& x,
                 node_allocator const& a,
                 boost::unordered::detail::move_tag m)
           : table(x, a, m)
@@ -3881,7 +3881,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
         // equals
 
-        bool equals(table_impl const& other) const
+        bool equals(table_unique const& other) const
         {
             if(this->size_ != other.size_) return false;
 
@@ -4652,7 +4652,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
     };
 
     template <typename Policies, typename H, typename P, typename A>
-    struct grouped_table_impl : boost::unordered::detail::table<Policies, H, P, A>
+    struct table_equiv : boost::unordered::detail::table<Policies, H, P, A>
     {
         typedef boost::unordered::detail::table<Policies, H, P, A> table;
         typedef typename table::value_type value_type;
@@ -4672,33 +4672,33 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
         // Constructors
 
-        grouped_table_impl(std::size_t n,
+        table_equiv(std::size_t n,
                 hasher const& hf,
                 key_equal const& eq,
                 node_allocator const& a)
           : table(n, hf, eq, a)
         {}
 
-        grouped_table_impl(grouped_table_impl const& x)
+        table_equiv(table_equiv const& x)
           : table(x, node_allocator_traits::
                 select_on_container_copy_construction(x.node_alloc()))
         {
             this->init(x);
         }
 
-        grouped_table_impl(grouped_table_impl const& x,
+        table_equiv(table_equiv const& x,
                 node_allocator const& a)
           : table(x, a)
         {
             this->init(x);
         }
 
-        grouped_table_impl(grouped_table_impl& x,
+        table_equiv(table_equiv& x,
                 boost::unordered::detail::move_tag m)
           : table(x, m)
         {}
 
-        grouped_table_impl(grouped_table_impl& x,
+        table_equiv(table_equiv& x,
                 node_allocator const& a,
                 boost::unordered::detail::move_tag m)
           : table(x, a, m)
@@ -4721,7 +4721,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
         // Equality
 
-        bool equals(grouped_table_impl const& other) const
+        bool equals(table_equiv const& other) const
         {
             if(this->size_ != other.size_) return false;
 
@@ -5222,7 +5222,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
         template <typename H, typename P, typename A>
         struct table_gen {
-            typedef boost::unordered::detail::table_impl<set_policy, H, P, A> table;
+            typedef boost::unordered::detail::table_unique<set_policy, H, P, A> table;
         };
     };
 
@@ -5237,7 +5237,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
         template <typename H, typename P, typename A>
         struct table_gen {
-            typedef boost::unordered::detail::grouped_table_impl<multiset_policy, H, P, A> table;
+            typedef boost::unordered::detail::table_equiv<multiset_policy, H, P, A> table;
         };
     };
 
@@ -5248,7 +5248,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
 
-        typedef boost::unordered::detail::table_impl<
+        typedef boost::unordered::detail::table_unique<
             set_policy, H, P, value_allocator> table;
 
         typedef set_policy::node_policy p;
@@ -5263,7 +5263,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
 
-        typedef boost::unordered::detail::grouped_table_impl<
+        typedef boost::unordered::detail::table_equiv<
             multiset_policy, H, P, value_allocator> table;
 
         typedef multiset_policy::node_policy p;
@@ -5323,7 +5323,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
         template <typename H, typename P, typename A>
         struct table_gen {
-            typedef boost::unordered::detail::table_impl<map_policy, H, P, A> table;
+            typedef boost::unordered::detail::table_unique<map_policy, H, P, A> table;
         };
     };
 
@@ -5338,7 +5338,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
         template <typename H, typename P, typename A>
         struct table_gen {
-            typedef boost::unordered::detail::grouped_table_impl<multimap_policy, H, P, A> table;
+            typedef boost::unordered::detail::table_equiv<multimap_policy, H, P, A> table;
         };
     };
 
@@ -5349,7 +5349,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
 
-        typedef boost::unordered::detail::table_impl<
+        typedef boost::unordered::detail::table_unique<
             map_policy, H, P, value_allocator> table;
 
         typedef map_policy::node_policy p;
@@ -5364,7 +5364,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
 
-        typedef boost::unordered::detail::grouped_table_impl<
+        typedef boost::unordered::detail::table_equiv<
             multimap_policy, H, P, value_allocator> table;
 
         typedef multimap_policy::node_policy p;
