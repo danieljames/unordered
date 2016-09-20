@@ -31,6 +31,7 @@
 #include <boost/type_traits/is_nothrow_move_assignable.hpp>
 #include <boost/type_traits/is_convertible.hpp>
 #include <boost/type_traits/is_empty.hpp>
+#include <boost/type_traits/remove_const.hpp>
 #include <boost/iterator/iterator_categories.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/utility/enable_if.hpp>
@@ -107,18 +108,16 @@ namespace boost { namespace unordered { namespace iterator_detail {
 
 namespace boost { namespace unordered { namespace detail {
 
-    template <typename Types> struct table;
+    template <typename Types, typename H, typename P, typename A> struct table;
     template <typename NodePointer> struct bucket;
     struct ptr_bucket;
-    template <typename Types> struct table_impl;
-    template <typename Types> struct grouped_table_impl;
+    template <typename Types, typename H, typename P, typename A> struct table_impl;
+    template <typename Types, typename H, typename P, typename A> struct grouped_table_impl;
 
     template <typename A> struct unique_node;
     template <typename T> struct ptr_node;
-    template <typename Types> struct table_impl;
     template <typename A> struct grouped_node;
     template <typename T> struct grouped_ptr_node;
-    template <typename Types> struct grouped_table_impl;
 
     static const float minimum_max_load_factor = 1e-3f;
     static const std::size_t default_bucket_count = 11;
@@ -1797,11 +1796,11 @@ namespace boost { namespace unordered { namespace iterator_detail {
 #if !defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS)
         template <typename>
         friend struct boost::unordered::iterator_detail::c_iterator;
-        template <typename>
+        template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::table;
-        template <typename>
+        template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::table_impl;
-        template <typename>
+        template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::grouped_table_impl;
     private:
 #endif
@@ -1857,11 +1856,11 @@ namespace boost { namespace unordered { namespace iterator_detail {
         friend struct boost::unordered::iterator_detail::iterator<Node>;
 
 #if !defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS)
-        template <typename>
+        template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::table;
-        template <typename>
+        template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::table_impl;
-        template <typename>
+        template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::grouped_table_impl;
 
     private:
@@ -2473,11 +2472,12 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename node_types::bucket bucket;
         typedef typename node_types::link_pointer link_pointer;
 
-        typedef typename boost::unordered::detail::allocator_traits<A>::value_type value_type;
         typedef typename boost::unordered::detail::rebind_wrap<A, node>::type node_allocator;
         typedef typename boost::unordered::detail::rebind_wrap<A, bucket>::type bucket_allocator;
+        typedef boost::unordered::detail::allocator_traits<A> value_allocator_traits;
         typedef boost::unordered::detail::allocator_traits<node_allocator> node_allocator_traits;
         typedef boost::unordered::detail::allocator_traits<bucket_allocator> bucket_allocator_traits;
+        typedef typename value_allocator_traits::value_type value_type;
         typedef typename node_allocator_traits::pointer node_pointer;
         typedef typename node_allocator_traits::const_pointer const_node_pointer;
         typedef typename bucket_allocator_traits::pointer bucket_pointer;
@@ -2808,13 +2808,17 @@ namespace boost { namespace unordered { namespace detail {
         }
     };
 
-    template <typename IteratorPolicy, typename A, typename Policy>
-    struct table_policy : table_base<typename IteratorPolicy::node_policy, A>
+    template <typename Policies, typename A>
+    struct table_policy : table_base<typename Policies::node_policy, A>
     {
-        typedef table_base<typename IteratorPolicy::node_policy, A> base;
+        typedef table_base<typename Policies::node_policy, A> base;
         typedef typename base::node node;
-        typedef Policy policy;
-        typedef typename IteratorPolicy::template local_iterators<node, policy> l_iterator_types;
+        typedef typename Policies::iterator_policy::template value_things<typename base::value_type>::const_key_type const_key_type;
+        typedef typename boost::unordered::detail::pick_policy<const_key_type>::type policy;
+        typedef typename Policies::iterator_policy::template iterators<node> iterator_types;
+        typedef typename Policies::iterator_policy::template local_iterators<node, policy> l_iterator_types;
+        typedef typename iterator_types::iterator iterator;
+        typedef typename iterator_types::c_iterator const_iterator;
         typedef typename l_iterator_types::iterator local_iterator;
         typedef typename l_iterator_types::c_iterator const_local_iterator;
         typedef typename base::node_pointer node_pointer;
@@ -2897,40 +2901,29 @@ namespace boost { namespace unordered { namespace detail {
             base(x, a, m) {}
     };
 
-    template <typename Types>
+    template <typename Policies, typename H, typename P, typename A>
     struct table :
-        boost::unordered::detail::functions<
-            typename Types::hasher,
-            typename Types::key_equal>,
-        Types::table_base
+        boost::unordered::detail::functions<H, P>,
+        boost::unordered::detail::table_policy<Policies, A>
     {
     private:
         table(table const&);
         table& operator=(table const&);
     public:
-        typedef typename Types::table_base base;
-        typedef boost::unordered::detail::functions<
-            typename Types::hasher,
-            typename Types::key_equal> functions;
+        typedef H hasher;
+        typedef P key_equal;
+
+        typedef boost::unordered::detail::table_policy<Policies, A> base;
+        typedef boost::unordered::detail::functions<H, P> functions;
         typedef typename functions::set_hash_functions set_hash_functions;
 
-        typedef typename Types::hasher hasher;
-        typedef typename Types::key_equal key_equal;
-        typedef typename Types::const_key_type const_key_type;
-        typedef typename Types::extractor extractor;
-        typedef typename Types::table table_impl;
-        typedef typename Types::policy policy;
-        typedef typename Types::iterator iterator;
-        typedef typename Types::c_iterator c_iterator;
-        typedef typename Types::l_iterator l_iterator;
-        typedef typename Types::cl_iterator cl_iterator;
+        typedef typename base::const_key_type const_key_type;
+        typedef typename Policies::iterator_policy::template value_things<typename base::value_type>::extractor extractor;
+        typedef typename Policies::template table_gen<H, P, A>::table table_impl;
+        typedef typename base::policy policy;
 
-        typedef typename base::bucket bucket;
-        typedef typename base::bucket_allocator bucket_allocator;
-        typedef typename base::bucket_allocator_traits bucket_allocator_traits;
         typedef typename base::bucket_pointer bucket_pointer;
         typedef typename base::node_allocator node_allocator;
-        typedef typename base::node_allocator_traits node_allocator_traits;
         typedef typename base::node_pointer node_pointer;
         typedef typename base::value_type value_type;
         typedef typename base::link_pointer link_pointer;
@@ -3197,8 +3190,8 @@ namespace boost { namespace unordered { namespace detail {
     // Reserve & Rehash
 
     // basic exception safety
-    template <typename Types>
-    inline void table<Types>::reserve_for_insert(std::size_t size)
+    template <typename Policies, typename H, typename P, typename A>
+    inline void table<Policies, H, P, A>::reserve_for_insert(std::size_t size)
     {
         if (!this->buckets_) {
             this->create_buckets((std::max)(this->bucket_count_,
@@ -3219,8 +3212,8 @@ namespace boost { namespace unordered { namespace detail {
     // if hash function throws, basic exception safety
     // strong otherwise.
 
-    template <typename Types>
-    inline void table<Types>::rehash(std::size_t min_buckets)
+    template <typename Policies, typename H, typename P, typename A>
+    inline void table<Policies, H, P, A>::rehash(std::size_t min_buckets)
     {
         using namespace std;
 
@@ -3239,8 +3232,8 @@ namespace boost { namespace unordered { namespace detail {
         }
     }
 
-    template <typename Types>
-    inline void table<Types>::reserve(std::size_t num_elements)
+    template <typename Policies, typename H, typename P, typename A>
+    inline void table<Policies, H, P, A>::reserve(std::size_t num_elements)
     {
         rehash(static_cast<std::size_t>(
             std::ceil(static_cast<double>(num_elements) / this->mlf_)));
@@ -3548,10 +3541,10 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         };
     };
 
-    template <typename Types>
-    struct table_impl : boost::unordered::detail::table<Types>
+    template <typename Policies, typename H, typename P, typename A>
+    struct table_impl : boost::unordered::detail::table<Policies, H, P, A>
     {
-        typedef boost::unordered::detail::table<Types> table;
+        typedef boost::unordered::detail::table<Policies, H, P, A> table;
         typedef typename table::value_type value_type;
         typedef typename table::bucket bucket;
         typedef typename table::policy policy;
@@ -3563,11 +3556,11 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename table::hasher hasher;
         typedef typename table::key_equal key_equal;
         typedef typename table::const_key_type const_key_type;
-        typedef typename table::node_constructor node_constructor;
-        typedef typename table::node_tmp node_tmp;
         typedef typename table::extractor extractor;
         typedef typename table::iterator iterator;
-        typedef typename table::c_iterator c_iterator;
+        typedef typename table::const_iterator c_iterator;
+        typedef typename table::node_constructor node_constructor;
+        typedef typename table::node_tmp node_tmp;
 
         typedef std::pair<iterator, bool> emplace_return;
 
@@ -3910,7 +3903,7 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 
             while(++i != j) {
                 // Note: can't use get_key as '*i' might not be value_type - it
-                // could be a pair with first_types as key_type without const or
+                // could be a pair with first_type as key_type without const or
                 // a different second_type.
                 //
                 // TODO: Might be worth storing the value_type instead of the
@@ -4234,10 +4227,10 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         };
     };
 
-    template <typename Types>
-    struct grouped_table_impl : boost::unordered::detail::table<Types>
+    template <typename Policies, typename H, typename P, typename A>
+    struct grouped_table_impl : boost::unordered::detail::table<Policies, H, P, A>
     {
-        typedef boost::unordered::detail::table<Types> table;
+        typedef boost::unordered::detail::table<Policies, H, P, A> table;
         typedef typename table::value_type value_type;
         typedef typename table::bucket bucket;
         typedef typename table::policy policy;
@@ -4249,11 +4242,11 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         typedef typename table::hasher hasher;
         typedef typename table::key_equal key_equal;
         typedef typename table::const_key_type const_key_type;
-        typedef typename table::node_constructor node_constructor;
-        typedef typename table::node_tmp node_tmp;
         typedef typename table::extractor extractor;
         typedef typename table::iterator iterator;
-        typedef typename table::c_iterator c_iterator;
+        typedef typename table::const_iterator c_iterator;
+        typedef typename table::node_constructor node_constructor;
+        typedef typename table::node_tmp node_tmp;
 
         // Constructors
 
@@ -4835,252 +4828,148 @@ BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
         }
     };
 
+    struct set_iterator_policy
+    {
+        template <typename Node>
+        struct iterators
+        {
+            typedef boost::unordered::iterator_detail::
+                c_iterator<Node> iterator;
+            typedef boost::unordered::iterator_detail::
+                c_iterator<Node> c_iterator;
+        };
+
+        template <typename Node, typename Policy>
+        struct local_iterators
+        {
+            typedef boost::unordered::iterator_detail::
+                cl_iterator<Node, Policy> iterator;
+            typedef boost::unordered::iterator_detail::
+                cl_iterator<Node, Policy> c_iterator;
+        };
+
+        template <typename ValueType>
+        struct value_things
+        {
+            typedef ValueType const const_key_type;
+            typedef boost::unordered::detail::set_extractor<ValueType> extractor;
+        };
+    };
+
+    struct set_policy
+    {
+        typedef set_iterator_policy iterator_policy;
+        typedef boost::unordered::detail::u node_policy;
+
+        template <typename H, typename P, typename A>
+        struct table_gen {
+            typedef boost::unordered::detail::table_impl<set_policy, H, P, A> table;
+        };
+    };
+
+    struct multiset_policy
+    {
+        typedef set_iterator_policy iterator_policy;
+        typedef boost::unordered::detail::g node_policy;
+
+        template <typename H, typename P, typename A>
+        struct table_gen {
+            typedef boost::unordered::detail::grouped_table_impl<multiset_policy, H, P, A> table;
+        };
+    };
+
     template <typename A, typename T, typename H, typename P>
     struct set
     {
-        typedef boost::unordered::detail::set<A, T, H, P> types;
-
         typedef T value_type;
-        typedef H hasher;
-        typedef P key_equal;
-        typedef T const const_key_type;
-
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
-        typedef boost::unordered::detail::allocator_traits<value_allocator>
-            value_allocator_traits;
 
-        struct iterator_policy {
-            typedef boost::unordered::detail::u node_policy;
-
-            template <typename Node>
-            struct iterators
-            {
-                typedef boost::unordered::iterator_detail::
-                    c_iterator<Node> iterator;
-                typedef boost::unordered::iterator_detail::
-                    c_iterator<Node> c_iterator;
-            };
-
-            template <typename Node, typename Policy>
-            struct local_iterators
-            {
-                typedef boost::unordered::iterator_detail::
-                    cl_iterator<Node, Policy> iterator;
-                typedef boost::unordered::iterator_detail::
-                    cl_iterator<Node, Policy> c_iterator;
-            };
-        };
-
-        typedef boost::unordered::detail::pick_node<value_allocator> pick;
-        typedef typename pick::node node;
-        typedef typename pick::bucket bucket;
-        typedef typename pick::link_pointer link_pointer;
-
-        typedef boost::unordered::detail::table_impl<types> table;
-        typedef boost::unordered::detail::set_extractor<value_type> extractor;
-
-        typedef typename boost::unordered::detail::pick_policy<T>::type policy;
-
-        typedef boost::unordered::iterator_detail::
-            c_iterator<node> iterator;
-        typedef boost::unordered::iterator_detail::
-            c_iterator<node> c_iterator;
-        typedef boost::unordered::iterator_detail::
-            cl_iterator<node, policy> l_iterator;
-        typedef boost::unordered::iterator_detail::
-            cl_iterator<node, policy> cl_iterator;
-
-        typedef boost::unordered::detail::table_policy<
-            iterator_policy,
-            value_allocator,
-            policy> table_base;
+        typedef boost::unordered::detail::table_impl<
+            set_policy, H, P, value_allocator> table;
     };
 
     template <typename A, typename T, typename H, typename P>
     struct multiset
     {
-        typedef boost::unordered::detail::multiset<A, T, H, P> types;
-
         typedef T value_type;
-        typedef H hasher;
-        typedef P key_equal;
-        typedef T const const_key_type;
-
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
-        typedef boost::unordered::detail::allocator_traits<value_allocator>
-            value_allocator_traits;
 
-        struct iterator_policy {
-            typedef boost::unordered::detail::g node_policy;
+        typedef boost::unordered::detail::grouped_table_impl<
+            multiset_policy, H, P, value_allocator> table;
+    };
 
-            template <typename Node>
-            struct iterators
-            {
-                typedef boost::unordered::iterator_detail::
-                    c_iterator<Node> iterator;
-                typedef boost::unordered::iterator_detail::
-                    c_iterator<Node> c_iterator;
-            };
-
-            template <typename Node, typename Policy>
-            struct local_iterators
-            {
-                typedef boost::unordered::iterator_detail::
-                    cl_iterator<Node, Policy> iterator;
-                typedef boost::unordered::iterator_detail::
-                    cl_iterator<Node, Policy> c_iterator;
-            };
+    struct map_iterator_policy
+    {
+        template <typename Node>
+        struct iterators
+        {
+            typedef boost::unordered::iterator_detail::
+                iterator<Node> iterator;
+            typedef boost::unordered::iterator_detail::
+                c_iterator<Node> c_iterator;
         };
 
-        typedef boost::unordered::detail::pick_grouped_node<value_allocator> pick;
-        typedef typename pick::node node;
-        typedef typename pick::bucket bucket;
-        typedef typename pick::link_pointer link_pointer;
+        template <typename Node, typename Policy>
+        struct local_iterators
+        {
+            typedef boost::unordered::iterator_detail::
+                l_iterator<Node, Policy> iterator;
+            typedef boost::unordered::iterator_detail::
+                cl_iterator<Node, Policy> c_iterator;
+        };
 
-        typedef boost::unordered::detail::grouped_table_impl<types> table;
-        typedef boost::unordered::detail::set_extractor<value_type> extractor;
+        template <typename ValueType>
+        struct value_things
+        {
+            typedef typename boost::unordered::detail::pair_traits<ValueType>::first_type const_key_type;
+            typedef boost::unordered::detail::map_extractor<ValueType> extractor;
+        };
+    };
 
-        typedef typename boost::unordered::detail::pick_policy<T>::type policy;
+    struct map_policy
+    {
+        typedef map_iterator_policy iterator_policy;
+        typedef boost::unordered::detail::u node_policy;
 
-        typedef boost::unordered::iterator_detail::
-            c_iterator<node> iterator;
-        typedef boost::unordered::iterator_detail::
-            c_iterator<node> c_iterator;
-        typedef boost::unordered::iterator_detail::
-            cl_iterator<node, policy> l_iterator;
-        typedef boost::unordered::iterator_detail::
-            cl_iterator<node, policy> cl_iterator;
+        template <typename H, typename P, typename A>
+        struct table_gen {
+            typedef boost::unordered::detail::table_impl<map_policy, H, P, A> table;
+        };
+    };
 
-        typedef boost::unordered::detail::table_policy<
-            iterator_policy,
-            value_allocator,
-            policy> table_base;
+    struct multimap_policy
+    {
+        typedef map_iterator_policy iterator_policy;
+        typedef boost::unordered::detail::g node_policy;
+
+        template <typename H, typename P, typename A>
+        struct table_gen {
+            typedef boost::unordered::detail::grouped_table_impl<multimap_policy, H, P, A> table;
+        };
     };
 
     template <typename A, typename K, typename M, typename H, typename P>
     struct map
     {
-        typedef boost::unordered::detail::map<A, K, M, H, P> types;
-
         typedef std::pair<K const, M> value_type;
-        typedef H hasher;
-        typedef P key_equal;
-        typedef K const const_key_type;
-
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
-        typedef boost::unordered::detail::allocator_traits<value_allocator>
-            value_allocator_traits;
 
-        struct iterator_policy {
-            typedef boost::unordered::detail::u node_policy;
-
-            template <typename Node>
-            struct iterators
-            {
-                typedef boost::unordered::iterator_detail::
-                    iterator<Node> iterator;
-                typedef boost::unordered::iterator_detail::
-                    c_iterator<Node> c_iterator;
-            };
-
-            template <typename Node, typename Policy>
-            struct local_iterators
-            {
-                typedef boost::unordered::iterator_detail::
-                    l_iterator<Node, Policy> iterator;
-                typedef boost::unordered::iterator_detail::
-                    cl_iterator<Node, Policy> c_iterator;
-            };
-        };
-
-        typedef boost::unordered::detail::pick_node<value_allocator> pick;
-        typedef typename pick::node node;
-        typedef typename pick::bucket bucket;
-        typedef typename pick::link_pointer link_pointer;
-
-        typedef boost::unordered::detail::table_impl<types> table;
-        typedef boost::unordered::detail::map_extractor<value_type> extractor;
-
-        typedef typename boost::unordered::detail::pick_policy<K>::type policy;
-
-        typedef boost::unordered::iterator_detail::
-            iterator<node> iterator;
-        typedef boost::unordered::iterator_detail::
-            c_iterator<node> c_iterator;
-        typedef boost::unordered::iterator_detail::
-            l_iterator<node, policy> l_iterator;
-        typedef boost::unordered::iterator_detail::
-            cl_iterator<node, policy> cl_iterator;
-
-        typedef boost::unordered::detail::table_policy<
-            iterator_policy,
-            value_allocator,
-            policy> table_base;
+        typedef boost::unordered::detail::table_impl<
+            map_policy, H, P, value_allocator> table;
     };
 
     template <typename A, typename K, typename M, typename H, typename P>
     struct multimap
     {
-        typedef boost::unordered::detail::multimap<A, K, M, H, P> types;
-
         typedef std::pair<K const, M> value_type;
-        typedef H hasher;
-        typedef P key_equal;
-        typedef K const const_key_type;
-
         typedef typename ::boost::unordered::detail::rebind_wrap<
             A, value_type>::type value_allocator;
-        typedef boost::unordered::detail::allocator_traits<value_allocator>
-            value_allocator_traits;
 
-        struct iterator_policy {
-            typedef boost::unordered::detail::g node_policy;
-
-            template <typename Node>
-            struct iterators
-            {
-                typedef boost::unordered::iterator_detail::
-                    iterator<Node> iterator;
-                typedef boost::unordered::iterator_detail::
-                    c_iterator<Node> c_iterator;
-            };
-
-            template <typename Node, typename Policy>
-            struct local_iterators
-            {
-                typedef boost::unordered::iterator_detail::
-                    l_iterator<Node, Policy> iterator;
-                typedef boost::unordered::iterator_detail::
-                    cl_iterator<Node, Policy> c_iterator;
-            };
-        };
-
-        typedef boost::unordered::detail::pick_grouped_node<value_allocator> pick;
-        typedef typename pick::node node;
-        typedef typename pick::bucket bucket;
-        typedef typename pick::link_pointer link_pointer;
-
-        typedef boost::unordered::detail::grouped_table_impl<types> table;
-        typedef boost::unordered::detail::map_extractor<value_type> extractor;
-
-        typedef typename boost::unordered::detail::pick_policy<K>::type policy;
-
-        typedef boost::unordered::iterator_detail::
-            iterator<node> iterator;
-        typedef boost::unordered::iterator_detail::
-            c_iterator<node> c_iterator;
-        typedef boost::unordered::iterator_detail::
-            l_iterator<node, policy> l_iterator;
-        typedef boost::unordered::iterator_detail::
-            cl_iterator<node, policy> cl_iterator;
-
-        typedef boost::unordered::detail::table_policy<
-            iterator_policy,
-            value_allocator,
-            policy> table_base;
+        typedef boost::unordered::detail::grouped_table_impl<
+            multimap_policy, H, P, value_allocator> table;
     };
 }}}
 

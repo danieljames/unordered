@@ -51,9 +51,8 @@ namespace unordered
 
     private:
 
-        typedef boost::unordered::detail::set<A, T, H, P> types;
-        typedef typename types::value_allocator_traits value_allocator_traits;
-        typedef typename types::table table;
+        typedef typename boost::unordered::detail::set<A, T, H, P>::table table;
+        typedef typename table::value_allocator_traits value_allocator_traits;
 
     public:
 
@@ -66,9 +65,9 @@ namespace unordered
         typedef std::size_t size_type;
         typedef std::ptrdiff_t difference_type;
 
-        typedef typename table::cl_iterator const_local_iterator;
-        typedef typename table::l_iterator local_iterator;
-        typedef typename table::c_iterator const_iterator;
+        typedef typename table::const_local_iterator const_local_iterator;
+        typedef typename table::local_iterator local_iterator;
+        typedef typename table::const_iterator const_iterator;
         typedef typename table::iterator iterator;
 
     private:
@@ -542,9 +541,8 @@ namespace unordered
 
     private:
 
-        typedef boost::unordered::detail::multiset<A, T, H, P> types;
-        typedef typename types::value_allocator_traits value_allocator_traits;
-        typedef typename types::table table;
+        typedef typename boost::unordered::detail::multiset<A, T, H, P>::table table;
+        typedef typename table::value_allocator_traits value_allocator_traits;
 
     public:
 
@@ -557,9 +555,9 @@ namespace unordered
         typedef std::size_t size_type;
         typedef std::ptrdiff_t difference_type;
 
-        typedef typename table::cl_iterator const_local_iterator;
-        typedef typename table::l_iterator local_iterator;
-        typedef typename table::c_iterator const_iterator;
+        typedef typename table::const_local_iterator const_local_iterator;
+        typedef typename table::local_iterator local_iterator;
+        typedef typename table::const_iterator const_iterator;
         typedef typename table::iterator iterator;
 
     private:
