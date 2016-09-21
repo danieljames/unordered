@@ -119,9 +119,12 @@ namespace boost { namespace unordered { namespace iterator_detail {
 
 namespace boost { namespace unordered { namespace detail {
 
-    template <typename Types, typename H, typename P, typename A> struct table;
     template <typename NodePointer> struct bucket;
     struct ptr_bucket;
+
+    template <typename N, typename SetMapPolicies> struct table_base;
+    template <typename, typename> struct table_memory;
+    template <typename Types, typename H, typename P, typename A> struct table;
     template <typename Types, typename H, typename P, typename A> struct table_unique;
     template <typename Types, typename H, typename P, typename A> struct table_equiv;
 
@@ -1834,8 +1837,10 @@ namespace boost { namespace unordered { namespace iterator_detail {
 #if !defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS)
         template <typename>
         friend struct boost::unordered::iterator_detail::c_iterator;
-        template <typename, typename, typename, typename>
-        friend struct boost::unordered::detail::table;
+        template <typename, typename>
+        friend struct boost::unordered::detail::table_base;
+        template <typename, typename>
+        friend struct boost::unordered::detail::table_memory;
         template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::table_unique;
         template <typename, typename, typename, typename>
@@ -1895,8 +1900,10 @@ namespace boost { namespace unordered { namespace iterator_detail {
         friend struct boost::unordered::iterator_detail::iterator<Node>;
 
 #if !defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS)
-        template <typename, typename, typename, typename>
-        friend struct boost::unordered::detail::table;
+        template <typename, typename>
+        friend struct boost::unordered::detail::table_base;
+        template <typename, typename>
+        friend struct boost::unordered::detail::table_memory;
         template <typename, typename, typename, typename>
         friend struct boost::unordered::detail::table_unique;
         template <typename, typename, typename, typename>
@@ -2535,6 +2542,7 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename SetMapPolicies::template local_iterators<node, policy> l_iterator_types;
         typedef typename iterator_types::iterator iterator;
         typedef typename iterator_types::c_iterator const_iterator;
+        typedef typename iterator_types::c_iterator c_iterator;
         typedef typename l_iterator_types::iterator local_iterator;
         typedef typename l_iterator_types::c_iterator const_local_iterator;
 
@@ -2731,6 +2739,65 @@ namespace boost { namespace unordered { namespace detail {
                 n = node_algo::next_for_find(n);
             }
         }
+
+        ////////////////////////////////////////////////////////////////////////
+        // Fix buckets after delete
+        //
+
+        std::size_t fix_bucket(std::size_t bucket_index, link_pointer prev)
+        {
+            link_pointer next = prev->next_;
+            std::size_t bucket_index2 = bucket_index;
+
+            if (next)
+            {
+                bucket_index2 = this->hash_to_bucket(
+                    static_cast<node_pointer>(next)->hash_);
+
+                // If begin and next are in the same bucket, then
+                // there's nothing to do.
+                if (bucket_index == bucket_index2) return bucket_index2;
+
+                // Update the bucket containing next.
+                this->get_bucket(bucket_index2)->next_ = prev;
+            }
+
+            // Check if this bucket is now empty.
+            bucket_pointer this_bucket = this->get_bucket(bucket_index);
+            if (this_bucket->next_ == prev)
+                this_bucket->next_ = link_pointer();
+
+            return bucket_index2;
+        }
+
+        inline node_pointer extract_by_iterator(c_iterator n)
+        {
+            node_pointer i = n.node_;
+            BOOST_ASSERT(i);
+            node_pointer j(node_algo::next_node(i));
+            std::size_t bucket_index = this->hash_to_bucket(i->hash_);
+            // Split the groups containing 'i' and 'j'.
+            // And get the pointer to the node before i while
+            // we're at it.
+            link_pointer prev = node_algo::split_groups(i, j);
+
+            // If we don't have a 'prev' it means that i is at the
+            // beginning of a block, so search through the blocks in the
+            // same bucket.
+            if (!prev) {
+                prev = this->get_previous_start(bucket_index);
+                while (prev->next_ != i) {
+                    prev = node_algo::next_for_erase(prev);
+                }
+            }
+
+            prev->next_ = i->next_;
+            --this->size_;
+            this->fix_bucket(bucket_index, prev);
+            i->next_ = link_pointer();
+
+            return i;
+        }
     };
 
     template <typename NA, typename SetMapPolicies>
@@ -2748,6 +2815,8 @@ namespace boost { namespace unordered { namespace detail {
         typedef typename base::link_pointer link_pointer;
         typedef typename base::policy policy;
         typedef typename base::node_algo node_algo;
+        typedef typename base::iterator iterator;
+        typedef typename base::const_iterator c_iterator;
         typedef NA node_allocator;
         typedef typename boost::unordered::detail::rebind_wrap<node_allocator, bucket>::type bucket_allocator;
         typedef boost::unordered::detail::allocator_traits<node_allocator> node_allocator_traits;
@@ -3009,6 +3078,54 @@ namespace boost { namespace unordered { namespace detail {
                 }
             }
         }
+
+        iterator erase(c_iterator r)
+        {
+            BOOST_ASSERT(r.node_);
+            node_pointer next = node_algo::next_node(r.node_);
+            this->erase_nodes(r.node_, next);
+            return iterator(next);
+        }
+
+        iterator erase_range(c_iterator r1, c_iterator r2) {
+            if (r1 == r2) return iterator(r2.node_);
+            erase_nodes(r1.node_, r2.node_);
+            return iterator(r2.node_);
+        }
+
+        link_pointer erase_nodes(node_pointer i, node_pointer j) {
+            std::size_t bucket_index = this->hash_to_bucket(i->hash_);
+
+            // Split the groups containing 'i' and 'j'.
+            // And get the pointer to the node before i while
+            // we're at it.
+            link_pointer prev = node_algo::split_groups(i, j);
+
+            // If we don't have a 'prev' it means that i is at the
+            // beginning of a block, so search through the blocks in the
+            // same bucket.
+            if (!prev) {
+                prev = this->get_previous_start(bucket_index);
+                while (prev->next_ != i) {
+                    prev = node_algo::next_for_erase(prev);
+                }
+            }
+
+            // Delete the nodes.
+            // Is it inefficient to call fix_bucket for every node?
+            do {
+                this->delete_node(prev);
+                bucket_index = this->fix_bucket(bucket_index, prev);
+            } while (prev->next_ != j);
+
+            return prev;
+        }
+
+        // Reserve and rehash
+
+        void reserve_for_insert(std::size_t);
+        void rehash(std::size_t);
+        void reserve(std::size_t);
     };
 
     template <typename Policies, typename H, typename P, typename A>
@@ -3133,36 +3250,6 @@ namespace boost { namespace unordered { namespace detail {
             this->base::swap(x);
             op1.commit();
             op2.commit();
-        }
-
-        ////////////////////////////////////////////////////////////////////////
-        // Fix buckets after delete
-        //
-
-        std::size_t fix_bucket(std::size_t bucket_index, link_pointer prev)
-        {
-            link_pointer next = prev->next_;
-            std::size_t bucket_index2 = bucket_index;
-
-            if (next)
-            {
-                bucket_index2 = this->hash_to_bucket(
-                    static_cast<node_pointer>(next)->hash_);
-
-                // If begin and next are in the same bucket, then
-                // there's nothing to do.
-                if (bucket_index == bucket_index2) return bucket_index2;
-
-                // Update the bucket containing next.
-                this->get_bucket(bucket_index2)->next_ = prev;
-            }
-
-            // Check if this bucket is now empty.
-            bucket_pointer this_bucket = this->get_bucket(bucket_index);
-            if (this_bucket->next_ == prev)
-                this_bucket->next_ = link_pointer();
-
-            return bucket_index2;
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -3352,92 +3439,14 @@ namespace boost { namespace unordered { namespace detail {
 
             return n;
         }
-
-        inline node_pointer extract_by_iterator(c_iterator n)
-        {
-            node_pointer i = n.node_;
-            BOOST_ASSERT(i);
-            node_pointer j(node_algo::next_node(i));
-            std::size_t bucket_index = this->hash_to_bucket(i->hash_);
-            // Split the groups containing 'i' and 'j'.
-            // And get the pointer to the node before i while
-            // we're at it.
-            link_pointer prev = node_algo::split_groups(i, j);
-
-            // If we don't have a 'prev' it means that i is at the
-            // beginning of a block, so search through the blocks in the
-            // same bucket.
-            if (!prev) {
-                prev = this->get_previous_start(bucket_index);
-                while (prev->next_ != i) {
-                    prev = node_algo::next_for_erase(prev);
-                }
-            }
-
-            prev->next_ = i->next_;
-            --this->size_;
-            this->fix_bucket(bucket_index, prev);
-            i->next_ = link_pointer();
-
-            return i;
-        }
-
-        iterator erase(c_iterator r)
-        {
-            BOOST_ASSERT(r.node_);
-            node_pointer next = node_algo::next_node(r.node_);
-            this->erase_nodes(r.node_, next);
-            return iterator(next);
-        }
-
-
-        iterator erase_range(c_iterator r1, c_iterator r2) {
-            if (r1 == r2) return iterator(r2.node_);
-            erase_nodes(r1.node_, r2.node_);
-            return iterator(r2.node_);
-        }
-
-        link_pointer erase_nodes(node_pointer i, node_pointer j) {
-            std::size_t bucket_index = this->hash_to_bucket(i->hash_);
-
-            // Split the groups containing 'i' and 'j'.
-            // And get the pointer to the node before i while
-            // we're at it.
-            link_pointer prev = node_algo::split_groups(i, j);
-
-            // If we don't have a 'prev' it means that i is at the
-            // beginning of a block, so search through the blocks in the
-            // same bucket.
-            if (!prev) {
-                prev = this->get_previous_start(bucket_index);
-                while (prev->next_ != i) {
-                    prev = node_algo::next_for_erase(prev);
-                }
-            }
-
-            // Delete the nodes.
-            // Is it inefficient to call fix_bucket for every node?
-            do {
-                this->delete_node(prev);
-                bucket_index = this->fix_bucket(bucket_index, prev);
-            } while (prev->next_ != j);
-
-            return prev;
-        }
-
-        // Reserve and rehash
-
-        void reserve_for_insert(std::size_t);
-        void rehash(std::size_t);
-        void reserve(std::size_t);
     };
 
     ////////////////////////////////////////////////////////////////////////////
     // Reserve & Rehash
 
     // basic exception safety
-    template <typename Policies, typename H, typename P, typename A>
-    inline void table<Policies, H, P, A>::reserve_for_insert(std::size_t s)
+    template <typename NA, typename SetMapPolicies>
+    inline void table_memory<NA, SetMapPolicies>::reserve_for_insert(std::size_t s)
     {
         if (!this->buckets_) {
             this->create_buckets((std::max)(this->bucket_count_,
@@ -3456,8 +3465,8 @@ namespace boost { namespace unordered { namespace detail {
     // if hash function throws, basic exception safety
     // strong otherwise.
 
-    template <typename Policies, typename H, typename P, typename A>
-    inline void table<Policies, H, P, A>::rehash(std::size_t min_buckets)
+    template <typename NA, typename SetMapPolicies>
+    inline void table_memory<NA, SetMapPolicies>::rehash(std::size_t min_buckets)
     {
         using namespace std;
 
@@ -3476,8 +3485,8 @@ namespace boost { namespace unordered { namespace detail {
         }
     }
 
-    template <typename Policies, typename H, typename P, typename A>
-    inline void table<Policies, H, P, A>::reserve(std::size_t num_elements)
+    template <typename NA, typename SetMapPolicies>
+    inline void table_memory<NA, SetMapPolicies>::reserve(std::size_t num_elements)
     {
         rehash(static_cast<std::size_t>(
             std::ceil(static_cast<double>(num_elements) / this->mlf_)));
