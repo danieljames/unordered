@@ -12,21 +12,6 @@
 
 namespace noexcept_tests
 {
-    // Test the noexcept is set correctly for the move constructor.
- 
-    struct hash_possible_exception : boost::hash<int>
-    {
-        hash_possible_exception(hash_possible_exception const&) {}
-    };
-
-    struct equal_to_possible_exception : std::equal_to<int>
-    {
-        equal_to_possible_exception(equal_to_possible_exception const&) {}
-    };
-
-    // Test that the move constructor does actually move without throwing
-    // an exception when it claims to.
-
     struct test_exception {};
 
     bool throwing_test_exception = false;
@@ -36,6 +21,22 @@ namespace noexcept_tests
             throw test_exception();
         }
     }
+
+    struct hash_possible_exception : boost::hash<int>
+    {
+        hash_possible_exception() {}
+        hash_possible_exception(hash_possible_exception const&) {
+            test_throw("Construct hash");
+        }
+    };
+
+    struct equal_to_possible_exception : std::equal_to<int>
+    {
+        equal_to_possible_exception() {}
+        equal_to_possible_exception(equal_to_possible_exception const&) {
+            test_throw("Construct equal_to");
+        }
+    };
 
     class hash_nothrow_move : boost::hash<int>
     {
@@ -118,28 +119,75 @@ namespace noexcept_tests
         typedef boost::unordered_set<int,
                 hash_nothrow_move, equal_to_nothrow_move> throwing_set;
 
-        if (have_is_nothrow_move)
-        {
+        if (have_is_nothrow_move) {
             BOOST_TEST(boost::is_nothrow_move_constructible<throwing_set>::value);
-
-            throwing_test_exception = false;
-
-            throwing_set x1;
-            x1.insert(10);
-            x1.insert(50);
-
-            try {
-                throwing_test_exception = true;
-
-                throwing_set x2 = boost::move(x1);
-                BOOST_TEST(x2.size() == 2);
-                BOOST_TEST(*x2.begin() == 10 || *x2.begin() == 50);
-            } catch(test_exception) {
-                BOOST_TEST(false);
-            }
-
-            throwing_test_exception = false;
         }
+
+#if defined(BOOST_UNORDERED_USE_MOVE) || !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
+
+        throwing_test_exception = false;
+
+        throwing_set x1;
+        x1.insert(10);
+        x1.insert(50);
+
+        try {
+            throwing_test_exception = true;
+
+            throwing_set x2 = boost::move(x1);
+            BOOST_TEST(x2.size() == 2);
+            BOOST_TEST(*x2.begin() == 10 || *x2.begin() == 50);
+        } catch(test_exception) {
+            BOOST_TEST(false);
+        }
+
+        throwing_test_exception = false;
+
+#endif
+    }
+
+    UNORDERED_AUTO_TEST(test_throw_in_hash)
+    {
+        typedef boost::unordered_multimap<int, int,
+            hash_possible_exception, equal_to_nothrow_move> map;
+
+        throwing_test_exception = false;
+
+        map x1;
+        x1.emplace(25, 63);
+        x1.emplace(17, 18);
+
+        try {
+            throwing_test_exception = true;
+
+            map x2 = boost::move(x1);
+            BOOST_TEST(false);
+        } catch (test_exception) {
+        }
+
+        throwing_test_exception = false;
+    }
+
+    UNORDERED_AUTO_TEST(test_throw_in_equal)
+    {
+        typedef boost::unordered_multimap<int, int,
+            hash_nothrow_move, equal_to_possible_exception> map;
+
+        throwing_test_exception = false;
+
+        map x1;
+        x1.emplace(25, 63);
+        x1.emplace(17, 18);
+
+        try {
+            throwing_test_exception = true;
+
+            map x2 = boost::move(x1);
+            BOOST_TEST(false);
+        } catch (test_exception) {
+        }
+
+        throwing_test_exception = false;
     }
 }
 
