@@ -2896,7 +2896,6 @@ namespace boost { namespace unordered { namespace detail {
         {
             // Strong exception safety.
             set_hash_functions new_func_this(*this, x);
-            new_func_this.commit();
             mlf_ = x.mlf_;
             recalculate_max_load();
 
@@ -2909,6 +2908,7 @@ namespace boost { namespace unordered { namespace detail {
                 clear_buckets();
             }
 
+            new_func_this.commit();
             static_cast<table_impl*>(this)->assign_buckets(x);
         }
 
@@ -2975,11 +2975,13 @@ namespace boost { namespace unordered { namespace detail {
             }
             else {
                 set_hash_functions new_func_this(*this, x);
-                new_func_this.commit();
                 mlf_ = x.mlf_;
                 recalculate_max_load();
 
-                if (!size_ && !x.size_) return;
+                if (!size_ && !x.size_) {
+                    new_func_this.commit();
+                    return;
+                }
 
                 if (x.size_ >= max_load_) {
                     create_buckets(min_buckets_for_size(x.size_));
@@ -2988,6 +2990,7 @@ namespace boost { namespace unordered { namespace detail {
                     clear_buckets();
                 }
 
+                new_func_this.commit();
                 static_cast<table_impl*>(this)->move_assign_buckets(x);
             }
         }
