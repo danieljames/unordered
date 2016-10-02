@@ -693,6 +693,18 @@ namespace boost { namespace unordered { namespace detail {
             this->destroy(current_);
         }
 
+        void move_assign_functions(functions& x) {
+            if (nothrow_move_assignable) {
+                current().move_assign(x.current());
+            }
+            else {
+                // Using move construction to a temporary because can't be sure
+                // if move assignment will work safely.
+                set_hash_functions new_func_this(*this, x, move_tag());
+                new_func_this.commit();
+            }
+        }
+
         H const& hash_function() const {
             return current().first();
         }
@@ -727,6 +739,14 @@ namespace boost { namespace unordered { namespace detail {
             tmp_functions_(!f.current_)
         {
             f.construct(tmp_functions_, other.current());
+        }
+
+        set_hash_functions(functions_type& f, functions_type& other,
+                boost::unordered::detail::move_tag m)
+          : functions_(f),
+            tmp_functions_(!f.current_)
+        {
+            f.construct(tmp_functions_, other.current(), m);
         }
 
         ~set_hash_functions()
@@ -764,6 +784,12 @@ namespace boost { namespace unordered { namespace detail {
             functions_(f),
             hash_(other.hash_function()),
             pred_(other.key_eq()) {}
+
+        set_hash_functions(functions_type& f, functions_type& other,
+                boost::unordered::detail::move_tag) :
+            functions_(f),
+            hash_(boost::move(other.hash_function())),
+            pred_(boost::move(other.key_eq())) {}
 
         void commit()
         {

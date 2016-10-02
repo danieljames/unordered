@@ -641,25 +641,25 @@ namespace boost { namespace unordered { namespace detail {
         void move_assign(table& x, true_type)
         {
             delete_buckets();
-            set_hash_functions new_func_this(*this, x);
+            this->move_assign_functions(x);
             allocators_.move_assign(x.allocators_);
+
             // No throw from here.
             mlf_ = x.mlf_;
             max_load_ = x.max_load_;
             move_buckets_from(x);
-            new_func_this.commit();
         }
 
         void move_assign(table& x, false_type)
         {
             if (node_alloc() == x.node_alloc()) {
                 delete_buckets();
-                set_hash_functions new_func_this(*this, x);
+                this->move_assign_functions(x);
+
                 // No throw from here.
                 mlf_ = x.mlf_;
                 max_load_ = x.max_load_;
                 move_buckets_from(x);
-                new_func_this.commit();
             }
             else {
                 set_hash_functions new_func_this(*this, x);
