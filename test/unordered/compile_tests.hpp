@@ -45,7 +45,7 @@ template <class T> int implicit_construct()
 #if !defined(BOOST_NO_CXX11_NOEXCEPT)
 #define TEST_NOEXCEPT_EXPR(x) BOOST_STATIC_ASSERT((BOOST_NOEXCEPT_EXPR(x)));
 #else
-#define TEST_NOEXCEPT_EXPR(x) sink(x)
+#define TEST_NOEXCEPT_EXPR(x)
 #endif
 
 template <class X, class T> void container_test(X& r, T const&)
