@@ -101,6 +101,7 @@ template <class K, class T, class H, class P, class A> class unordered_map
         BOOST_NOEXCEPT_IF(table::nothrow_move_constructible)
         : table_(other.table_, boost::unordered::detail::move_tag())
     {
+        // The move is done in table_
     }
 #endif
 
@@ -923,6 +924,7 @@ template <class K, class T, class H, class P, class A> class unordered_multimap
         BOOST_NOEXCEPT_IF(table::nothrow_move_constructible)
         : table_(other.table_, boost::unordered::detail::move_tag())
     {
+        // The move is done in table_
     }
 #endif
 
@@ -1429,6 +1431,9 @@ template <class K, class T, class H, class P, class A>
 unordered_map<K, T, H, P, A>::unordered_map(unordered_map const& other)
     : table_(other.table_)
 {
+    if (other.table_.size_) {
+        table_.copy_buckets(other.table_);
+    }
 }
 
 template <class K, class T, class H, class P, class A>
@@ -1443,6 +1448,9 @@ unordered_map<K, T, H, P, A>::unordered_map(
     unordered_map const& other, allocator_type const& a)
     : table_(other.table_, a)
 {
+    if (other.table_.size_) {
+        table_.copy_buckets(other.table_);
+    }
 }
 
 template <class K, class T, class H, class P, class A>
@@ -1450,6 +1458,12 @@ unordered_map<K, T, H, P, A>::unordered_map(
     BOOST_RV_REF(unordered_map) other, allocator_type const& a)
     : table_(other.table_, a, boost::unordered::detail::move_tag())
 {
+    if (table_.node_alloc() == other.table_.node_alloc()) {
+        table_.move_buckets_from(other.table_);
+    } else if (other.table_.size_) {
+        // TODO: Could pick new bucket size?
+        table_.move_buckets(other.table_);
+    }
 }
 
 #if !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
@@ -1905,6 +1919,9 @@ unordered_multimap<K, T, H, P, A>::unordered_multimap(
     unordered_multimap const& other)
     : table_(other.table_)
 {
+    if (other.table_.size_) {
+        table_.copy_buckets(other.table_);
+    }
 }
 
 template <class K, class T, class H, class P, class A>
@@ -1919,6 +1936,9 @@ unordered_multimap<K, T, H, P, A>::unordered_multimap(
     unordered_multimap const& other, allocator_type const& a)
     : table_(other.table_, a)
 {
+    if (other.table_.size_) {
+        table_.copy_buckets(other.table_);
+    }
 }
 
 template <class K, class T, class H, class P, class A>
@@ -1926,6 +1946,12 @@ unordered_multimap<K, T, H, P, A>::unordered_multimap(
     BOOST_RV_REF(unordered_multimap) other, allocator_type const& a)
     : table_(other.table_, a, boost::unordered::detail::move_tag())
 {
+    if (table_.node_alloc() == other.table_.node_alloc()) {
+        table_.move_buckets_from(other.table_);
+    } else if (other.table_.size()) {
+        // TODO: Could pick new bucket size?
+        table_.move_buckets_equiv(other.table_);
+    }
 }
 
 #if !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
