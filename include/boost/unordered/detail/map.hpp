@@ -18,6 +18,11 @@ template <typename A, typename K, typename M, typename H, typename P> struct map
     typedef P key_equal;
     typedef K const const_key_type;
 
+    enum
+    {
+        is_unique = true
+    };
+
     typedef typename ::boost::unordered::detail::rebind_wrap<A,
         value_type>::type value_allocator;
     typedef boost::unordered::detail::allocator_traits<value_allocator>
@@ -29,7 +34,7 @@ template <typename A, typename K, typename M, typename H, typename P> struct map
     typedef typename pick::link_pointer link_pointer;
     typedef typename pick::node_algo node_algo;
 
-    typedef boost::unordered::detail::table_unique<types> table;
+    typedef boost::unordered::detail::table<types> table;
     typedef boost::unordered::detail::map_extractor<value_type> extractor;
 
     typedef typename boost::unordered::detail::pick_policy<K>::type policy;
@@ -56,6 +61,11 @@ struct multimap
     typedef P key_equal;
     typedef K const const_key_type;
 
+    enum
+    {
+        is_unique = false
+    };
+
     typedef typename ::boost::unordered::detail::rebind_wrap<A,
         value_type>::type value_allocator;
     typedef boost::unordered::detail::allocator_traits<value_allocator>
@@ -71,7 +81,7 @@ struct multimap
     typedef typename pick::link_pointer link_pointer;
     typedef typename pick::node_algo node_algo;
 
-    typedef boost::unordered::detail::table_equiv<types> table;
+    typedef boost::unordered::detail::table<types> table;
     typedef boost::unordered::detail::map_extractor<value_type> extractor;
 
     typedef typename boost::unordered::detail::pick_policy<K>::type policy;
