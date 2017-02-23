@@ -414,8 +414,8 @@ template <class T, class H, class P, class A> class unordered_set
     void quick_erase(const_iterator it) { erase(it); }
     void erase_return_void(const_iterator it) { erase(it); }
 
-    void clear();
     void swap(unordered_set&);
+    void clear();
 
     template <typename H2, typename P2>
     void merge(boost::unordered_set<T, H2, P2, A>& source);
@@ -883,8 +883,8 @@ template <class T, class H, class P, class A> class unordered_multiset
     void quick_erase(const_iterator it) { erase(it); }
     void erase_return_void(const_iterator it) { erase(it); }
 
-    void clear();
     void swap(unordered_multiset&);
+    void clear();
 
     template <typename H2, typename P2>
     void merge(boost::unordered_multiset<T, H2, P2, A>& source);
@@ -1171,15 +1171,21 @@ typename unordered_set<T, H, P, A>::iterator unordered_set<T, H, P, A>::erase(
 }
 
 template <class T, class H, class P, class A>
+void unordered_set<T, H, P, A>::swap(unordered_set& other)
+{
+    table_.swap(other.table_);
+}
+
+template <class T, class H, class P, class A>
 void unordered_set<T, H, P, A>::clear()
 {
     table_.clear();
 }
 
 template <class T, class H, class P, class A>
-void unordered_set<T, H, P, A>::swap(unordered_set& other)
+void unordered_multiset<T, H, P, A>::clear()
 {
-    table_.swap(other.table_);
+    table_.clear();
 }
 
 // observers
@@ -1533,12 +1539,6 @@ typename unordered_multiset<T, H, P, A>::iterator
 unordered_multiset<T, H, P, A>::erase(const_iterator first, const_iterator last)
 {
     return table_.erase_range(first, last);
-}
-
-template <class T, class H, class P, class A>
-void unordered_multiset<T, H, P, A>::clear()
-{
-    table_.clear();
 }
 
 template <class T, class H, class P, class A>
