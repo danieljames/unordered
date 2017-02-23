@@ -55,6 +55,7 @@ template <class K, class T, class H, class P, class A> class unordered_map
     typedef boost::unordered::detail::map<A, K, T, H, P> types;
     typedef typename types::value_allocator_traits value_allocator_traits;
     typedef typename types::table table;
+    typedef typename table::node_pointer node_pointer;
     typedef typename table::link_pointer link_pointer;
 
   public:
@@ -876,6 +877,7 @@ template <class K, class T, class H, class P, class A> class unordered_multimap
     typedef boost::unordered::detail::multimap<A, K, T, H, P> types;
     typedef typename types::value_allocator_traits value_allocator_traits;
     typedef typename types::table table;
+    typedef typename table::node_pointer node_pointer;
     typedef typename table::link_pointer link_pointer;
 
   public:
@@ -1581,14 +1583,22 @@ template <class K, class T, class H, class P, class A>
 typename unordered_map<K, T, H, P, A>::iterator
 unordered_map<K, T, H, P, A>::erase(iterator position)
 {
-    return table_.erase(position);
+    node_pointer node = table::get_node(position);
+    BOOST_ASSERT(node);
+    node_pointer next = table::node_algo::next_node(node);
+    table_.erase_nodes(node, next);
+    return iterator(next);
 }
 
 template <class K, class T, class H, class P, class A>
 typename unordered_map<K, T, H, P, A>::iterator
 unordered_map<K, T, H, P, A>::erase(const_iterator position)
 {
-    return table_.erase(position);
+    node_pointer node = table::get_node(position);
+    BOOST_ASSERT(node);
+    node_pointer next = table::node_algo::next_node(node);
+    table_.erase_nodes(node, next);
+    return iterator(next);
 }
 
 template <class K, class T, class H, class P, class A>
@@ -1602,7 +1612,11 @@ template <class K, class T, class H, class P, class A>
 typename unordered_map<K, T, H, P, A>::iterator
 unordered_map<K, T, H, P, A>::erase(const_iterator first, const_iterator last)
 {
-    return table_.erase_range(first, last);
+    node_pointer last_node = table::get_node(last);
+    if (first == last)
+        return iterator(last_node);
+    table_.erase_nodes(table::get_node(first), last_node);
+    return iterator(last_node);
 }
 
 template <class K, class T, class H, class P, class A>
@@ -2024,14 +2038,22 @@ template <class K, class T, class H, class P, class A>
 typename unordered_multimap<K, T, H, P, A>::iterator
 unordered_multimap<K, T, H, P, A>::erase(iterator position)
 {
-    return table_.erase(position);
+    node_pointer node = table::get_node(position);
+    BOOST_ASSERT(node);
+    node_pointer next = table::node_algo::next_node(node);
+    table_.erase_nodes(node, next);
+    return iterator(next);
 }
 
 template <class K, class T, class H, class P, class A>
 typename unordered_multimap<K, T, H, P, A>::iterator
 unordered_multimap<K, T, H, P, A>::erase(const_iterator position)
 {
-    return table_.erase(position);
+    node_pointer node = table::get_node(position);
+    BOOST_ASSERT(node);
+    node_pointer next = table::node_algo::next_node(node);
+    table_.erase_nodes(node, next);
+    return iterator(next);
 }
 
 template <class K, class T, class H, class P, class A>
@@ -2046,7 +2068,11 @@ typename unordered_multimap<K, T, H, P, A>::iterator
 unordered_multimap<K, T, H, P, A>::erase(
     const_iterator first, const_iterator last)
 {
-    return table_.erase_range(first, last);
+    node_pointer last_node = table::get_node(last);
+    if (first == last)
+        return iterator(last_node);
+    table_.erase_nodes(table::get_node(first), last_node);
+    return iterator(last_node);
 }
 
 template <class K, class T, class H, class P, class A>
