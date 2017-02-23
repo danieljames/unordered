@@ -152,6 +152,10 @@ template <class K, class T, class H, class P, class A> class unordered_map
     }
 
     unordered_map& operator=(BOOST_RV_REF(unordered_map) x)
+    // C++17 support: BOOST_NOEXCEPT_IF(
+    //    value_allocator_traits::is_always_equal::value &&
+    //    is_nothrow_move_assignable_v<H> &&
+    //    is_nothrow_move_assignable_v<P>)
     {
         table_.move_assign(x.table_);
         return *this;
@@ -165,6 +169,10 @@ template <class K, class T, class H, class P, class A> class unordered_map
 
 #if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
     unordered_map& operator=(unordered_map&& x)
+    // C++17 support: BOOST_NOEXCEPT_IF(
+    //    value_allocator_traits::is_always_equal::value &&
+    //    is_nothrow_move_assignable_v<H> &&
+    //    is_nothrow_move_assignable_v<P>)
     {
         table_.move_assign(x.table_);
         return *this;
@@ -844,6 +852,10 @@ template <class K, class T, class H, class P, class A> class unordered_multimap
     }
 
     unordered_multimap& operator=(BOOST_RV_REF(unordered_multimap) x)
+    // C++17 support: BOOST_NOEXCEPT_IF(
+    //    value_allocator_traits::is_always_equal::value &&
+    //    is_nothrow_move_assignable_v<H> &&
+    //    is_nothrow_move_assignable_v<P>)
     {
         table_.move_assign(x.table_);
         return *this;
@@ -857,6 +869,10 @@ template <class K, class T, class H, class P, class A> class unordered_multimap
 
 #if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
     unordered_multimap& operator=(unordered_multimap&& x)
+    // C++17 support: BOOST_NOEXCEPT_IF(
+    //    value_allocator_traits::is_always_equal::value &&
+    //    is_nothrow_move_assignable_v<H> &&
+    //    is_nothrow_move_assignable_v<P>)
     {
         table_.move_assign(x.table_);
         return *this;
