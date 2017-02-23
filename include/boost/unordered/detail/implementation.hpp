@@ -2159,22 +2159,22 @@ struct ptr_bucket
 template <typename SizeT> struct prime_policy
 {
     template <typename Hash, typename T>
-    static inline SizeT apply_hash(Hash const& hf, T const& x)
+    static BOOST_FORCEINLINE SizeT apply_hash(Hash const& hf, T const& x)
     {
         return hf(x);
     }
 
-    static inline SizeT to_bucket(SizeT bucket_count, SizeT hash)
+    static BOOST_FORCEINLINE SizeT to_bucket(SizeT bucket_count, SizeT hash)
     {
         return hash % bucket_count;
     }
 
-    static inline SizeT new_bucket_count(SizeT min)
+    static BOOST_FORCEINLINE SizeT new_bucket_count(SizeT min)
     {
         return boost::unordered::detail::next_prime(min);
     }
 
-    static inline SizeT prev_bucket_count(SizeT max)
+    static BOOST_FORCEINLINE SizeT prev_bucket_count(SizeT max)
     {
         return boost::unordered::detail::prev_prime(max);
     }
@@ -2196,7 +2196,7 @@ template <typename SizeT> struct mix64_policy
         return key;
     }
 
-    static inline SizeT to_bucket(SizeT bucket_count, SizeT hash)
+    static BOOST_FORCEINLINE SizeT to_bucket(SizeT bucket_count, SizeT hash)
     {
         return hash & (bucket_count - 1);
     }
@@ -2583,33 +2583,46 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
     ////////////////////////////////////////////////////////////////////////
     // Data access
 
-    bucket_allocator const& bucket_alloc() const { return allocators_.first(); }
+    BOOST_FORCEINLINE bucket_allocator const& bucket_alloc() const
+    {
+        return allocators_.first();
+    }
 
-    node_allocator const& node_alloc() const { return allocators_.second(); }
+    BOOST_FORCEINLINE node_allocator const& node_alloc() const
+    {
+        return allocators_.second();
+    }
 
-    bucket_allocator& bucket_alloc() { return allocators_.first(); }
+    BOOST_FORCEINLINE bucket_allocator& bucket_alloc()
+    {
+        return allocators_.first();
+    }
 
-    node_allocator& node_alloc() { return allocators_.second(); }
+    BOOST_FORCEINLINE node_allocator& node_alloc()
+    {
+        return allocators_.second();
+    }
 
-    std::size_t max_bucket_count() const
+    BOOST_FORCEINLINE std::size_t max_bucket_count() const
     {
         // -1 to account for the start bucket.
         return policy::prev_bucket_count(
             bucket_allocator_traits::max_size(bucket_alloc()) - 1);
     }
 
-    bucket_pointer get_bucket(std::size_t bucket_index) const
+    BOOST_FORCEINLINE bucket_pointer get_bucket(std::size_t bucket_index) const
     {
         BOOST_ASSERT(buckets_);
         return buckets_ + static_cast<std::ptrdiff_t>(bucket_index);
     }
 
-    link_pointer get_previous_start() const
+    BOOST_FORCEINLINE link_pointer get_previous_start() const
     {
         return get_bucket(bucket_count_)->first_from_start();
     }
 
-    link_pointer get_previous_start(std::size_t bucket_index) const
+    BOOST_FORCEINLINE link_pointer get_previous_start(
+        std::size_t bucket_index) const
     {
         return get_bucket(bucket_index)->next_;
     }
@@ -2628,7 +2641,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         return prev ? node_algo::next_node(prev) : node_pointer();
     }
 
-    std::size_t hash_to_bucket(std::size_t hash_value) const
+    BOOST_FORCEINLINE std::size_t hash_to_bucket(std::size_t hash_value) const
     {
         return policy::to_bucket(bucket_count_, hash_value);
     }
@@ -2746,14 +2759,14 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
     ////////////////////////////////////////////////////////////////////////
     // Initialisation.
 
-    void init(table const& x)
+    BOOST_FORCEINLINE void init(table const& x)
     {
         if (x.size_) {
             static_cast<table_impl*>(this)->copy_buckets(x);
         }
     }
 
-    void move_init(table& x)
+    BOOST_FORCEINLINE void move_init(table& x)
     {
         if (node_alloc() == x.node_alloc()) {
             move_buckets_from(x);
@@ -2843,7 +2856,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
     ////////////////////////////////////////////////////////////////////////
     // Swap and Move
 
-    void swap_allocators(table& other, false_type)
+    BOOST_FORCEINLINE void swap_allocators(table& other, false_type)
     {
         boost::unordered::detail::func::ignore_unused_variable_warning(other);
 
@@ -2853,7 +2866,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         BOOST_ASSERT(node_alloc() == other.node_alloc());
     }
 
-    void swap_allocators(table& other, true_type)
+    BOOST_FORCEINLINE void swap_allocators(table& other, true_type)
     {
         allocators_.swap(other.allocators_);
     }
@@ -3009,7 +3022,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         }
     }
 
-    void assign(table const& x, false_type)
+    BOOST_FORCEINLINE void assign(table const& x, false_type)
     {
         // Strong exception safety.
         set_hash_functions new_func_this(*this, x);
@@ -3031,7 +3044,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         static_cast<table_impl*>(this)->assign_buckets(x);
     }
 
-    void assign(table const& x, true_type)
+    BOOST_FORCEINLINE void assign(table const& x, true_type)
     {
         if (node_alloc() == x.node_alloc()) {
             allocators_.assign(x.allocators_);
@@ -3067,7 +3080,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         }
     }
 
-    void move_assign(table& x, true_type)
+    BOOST_FORCEINLINE void move_assign(table& x, true_type)
     {
         delete_buckets();
         set_hash_functions new_func_this(*this, x);
@@ -3079,7 +3092,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         new_func_this.commit();
     }
 
-    void move_assign(table& x, false_type)
+    BOOST_FORCEINLINE void move_assign(table& x, false_type)
     {
         if (node_alloc() == x.node_alloc()) {
             delete_buckets();
@@ -3112,12 +3125,12 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
 
     // Accessors
 
-    const_key_type& get_key(node_pointer n) const
+    BOOST_FORCEINLINE const_key_type& get_key(node_pointer n) const
     {
         return extractor::extract(n->value());
     }
 
-    std::size_t hash(const_key_type& k) const
+    BOOST_FORCEINLINE std::size_t hash(const_key_type& k) const
     {
         return policy::apply_hash(this->hash_function(), k);
     }
@@ -3131,12 +3144,13 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         return this->find_node_impl(policy::apply_hash(hf, k), k, eq);
     }
 
-    node_pointer find_node(std::size_t key_hash, const_key_type& k) const
+    BOOST_FORCEINLINE node_pointer find_node(
+        std::size_t key_hash, const_key_type& k) const
     {
         return this->find_node_impl(key_hash, k, this->key_eq());
     }
 
-    node_pointer find_node(const_key_type& k) const
+    BOOST_FORCEINLINE node_pointer find_node(const_key_type& k) const
     {
         return this->find_node_impl(hash(k), k, this->key_eq());
     }
@@ -3330,21 +3344,28 @@ template <class ValueType> struct set_extractor
     typedef ValueType value_type;
     typedef ValueType key_type;
 
-    static key_type const& extract(value_type const& v) { return v; }
+    static BOOST_FORCEINLINE key_type const& extract(value_type const& v)
+    {
+        return v;
+    }
 
-    static no_key extract() { return no_key(); }
+    static BOOST_FORCEINLINE no_key extract() { return no_key(); }
 
-    template <class Arg> static no_key extract(Arg const&) { return no_key(); }
+    template <class Arg> static BOOST_FORCEINLINE no_key extract(Arg const&)
+    {
+        return no_key();
+    }
 
 #if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
     template <class Arg1, class Arg2, class... Args>
-    static no_key extract(Arg1 const&, Arg2 const&, Args const&...)
+    static BOOST_FORCEINLINE no_key extract(
+        Arg1 const&, Arg2 const&, Args const&...)
     {
         return no_key();
     }
 #else
     template <class Arg1, class Arg2>
-    static no_key extract(Arg1 const&, Arg2 const&)
+    static BOOST_FORCEINLINE no_key extract(Arg1 const&, Arg2 const&)
     {
         return no_key();
     }
@@ -3357,39 +3378,49 @@ template <class ValueType> struct map_extractor
     typedef typename boost::remove_const<typename boost::unordered::detail::
             pair_traits<ValueType>::first_type>::type key_type;
 
-    static key_type const& extract(value_type const& v) { return v.first; }
-
-    template <class Second>
-    static key_type const& extract(std::pair<key_type, Second> const& v)
+    static BOOST_FORCEINLINE key_type const& extract(value_type const& v)
     {
         return v.first;
     }
 
     template <class Second>
-    static key_type const& extract(std::pair<key_type const, Second> const& v)
+    static BOOST_FORCEINLINE key_type const& extract(
+        std::pair<key_type, Second> const& v)
+    {
+        return v.first;
+    }
+
+    template <class Second>
+    static BOOST_FORCEINLINE key_type const& extract(
+        std::pair<key_type const, Second> const& v)
     {
         return v.first;
     }
 
     template <class Arg1>
-    static key_type const& extract(key_type const& k, Arg1 const&)
+    static BOOST_FORCEINLINE key_type const& extract(
+        key_type const& k, Arg1 const&)
     {
         return k;
     }
 
-    static no_key extract() { return no_key(); }
+    static BOOST_FORCEINLINE no_key extract() { return no_key(); }
 
-    template <class Arg> static no_key extract(Arg const&) { return no_key(); }
+    template <class Arg> static BOOST_FORCEINLINE no_key extract(Arg const&)
+    {
+        return no_key();
+    }
 
     template <class Arg1, class Arg2>
-    static no_key extract(Arg1 const&, Arg2 const&)
+    static no_key BOOST_FORCEINLINE extract(Arg1 const&, Arg2 const&)
     {
         return no_key();
     }
 
 #if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
     template <class Arg1, class Arg2, class Arg3, class... Args>
-    static no_key extract(Arg1 const&, Arg2 const&, Arg3 const&, Args const&...)
+    static no_key BOOST_FORCEINLINE extract(
+        Arg1 const&, Arg2 const&, Arg3 const&, Args const&...)
     {
         return no_key();
     }
@@ -3399,14 +3430,15 @@ template <class ValueType> struct map_extractor
 
 #define BOOST_UNORDERED_KEY_FROM_TUPLE(namespace_)                             \
     template <typename T2>                                                     \
-    static no_key extract(boost::unordered::piecewise_construct_t,             \
-        namespace_ tuple<> const&, T2 const&)                                  \
+    static BOOST_FORCEINLINE no_key extract(                                   \
+        boost::unordered::piecewise_construct_t, namespace_ tuple<> const&,    \
+        T2 const&)                                                             \
     {                                                                          \
         return no_key();                                                       \
     }                                                                          \
                                                                                \
     template <typename T, typename T2>                                         \
-    static typename is_key<key_type, T>::type extract(                         \
+    static BOOST_FORCEINLINE typename is_key<key_type, T>::type extract(       \
         boost::unordered::piecewise_construct_t, namespace_ tuple<T> const& k, \
         T2 const&)                                                             \
     {                                                                          \
@@ -3416,14 +3448,14 @@ template <class ValueType> struct map_extractor
 #else
 
 #define BOOST_UNORDERED_KEY_FROM_TUPLE(namespace_)                             \
-    static no_key extract(                                                     \
+    static BOOST_FORCEINLINE no_key extract(                                   \
         boost::unordered::piecewise_construct_t, namespace_ tuple<> const&)    \
     {                                                                          \
         return no_key();                                                       \
     }                                                                          \
                                                                                \
     template <typename T>                                                      \
-    static typename is_key<key_type, T>::type extract(                         \
+    static BOOST_FORCEINLINE typename is_key<key_type, T>::type extract(       \
         boost::unordered::piecewise_construct_t, namespace_ tuple<T> const& k) \
     {                                                                          \
         return typename is_key<key_type, T>::type(namespace_ get<0>(k));       \
@@ -3459,7 +3491,7 @@ struct unique_node : boost::unordered::detail::value_base<T>
 
     unique_node() : next_(), hash_(0) {}
 
-    void init(node_pointer) {}
+    BOOST_FORCEINLINE void init(node_pointer) {}
 
   private:
     unique_node& operator=(unique_node const&);
@@ -3478,7 +3510,7 @@ template <typename T> struct ptr_node : boost::unordered::detail::ptr_bucket
 
     ptr_node() : bucket_base(), hash_(0) {}
 
-    void init(node_pointer) {}
+    BOOST_FORCEINLINE void init(node_pointer) {}
 
     void* address() { return value_base_.address(); }
     value_type& value() { return value_base_.value(); }
