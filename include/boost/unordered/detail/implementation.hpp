@@ -3980,12 +3980,6 @@ struct table_unique : boost::unordered::detail::table<Types>
     // if hash function throws, or inserting > 1 element, basic exception
     // safety strong otherwise
 
-    template <class InputIt> void insert_range(InputIt i, InputIt j)
-    {
-        if (i != j)
-            return insert_range_impl(extractor::extract(*i), i, j);
-    }
-
     template <class InputIt>
     void insert_range_impl(const_key_type& k, InputIt i, InputIt j)
     {
@@ -3995,11 +3989,6 @@ struct table_unique : boost::unordered::detail::table<Types>
             // Note: can't use get_key as '*i' might not be value_type - it
             // could be a pair with first_types as key_type without const or
             // a different second_type.
-            //
-            // TODO: Might be worth storing the value_type instead of the
-            // key here. Could be more efficient if '*i' is expensive. Could
-            // be less efficient if copying the full value_type is
-            // expensive.
             insert_range_impl2(extractor::extract(*i), i, j);
         }
     }
