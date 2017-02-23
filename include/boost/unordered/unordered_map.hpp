@@ -1432,7 +1432,7 @@ unordered_map<K, T, H, P, A>::unordered_map(unordered_map const& other)
     : table_(other.table_)
 {
     if (other.table_.size_) {
-        table_.copy_buckets(other.table_);
+        table_.copy_buckets_unique(other.table_);
     }
 }
 
@@ -1449,7 +1449,7 @@ unordered_map<K, T, H, P, A>::unordered_map(
     : table_(other.table_, a)
 {
     if (other.table_.size_) {
-        table_.copy_buckets(other.table_);
+        table_.copy_buckets_unique(other.table_);
     }
 }
 
@@ -1920,7 +1920,7 @@ unordered_multimap<K, T, H, P, A>::unordered_multimap(
     : table_(other.table_)
 {
     if (other.table_.size_) {
-        table_.copy_buckets(other.table_);
+        table_.copy_buckets_equiv(other.table_);
     }
 }
 
@@ -1937,7 +1937,7 @@ unordered_multimap<K, T, H, P, A>::unordered_multimap(
     : table_(other.table_, a)
 {
     if (other.table_.size_) {
-        table_.copy_buckets(other.table_);
+        table_.copy_buckets_equiv(other.table_);
     }
 }
 
