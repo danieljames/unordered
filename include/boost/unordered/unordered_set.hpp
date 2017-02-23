@@ -518,6 +518,18 @@ template <class T, class H, class P, class A> class unordered_set
 #endif
 }; // class template unordered_set
 
+template <class T, class H, class P, class A>
+inline bool operator==(
+    unordered_set<T, H, P, A> const&, unordered_set<T, H, P, A> const&);
+
+template <class T, class H, class P, class A>
+inline bool operator!=(
+    unordered_set<T, H, P, A> const&, unordered_set<T, H, P, A> const&);
+
+template <class T, class H, class P, class A>
+inline void swap(unordered_set<T, H, P, A>& m1, unordered_set<T, H, P, A>& m2)
+    BOOST_NOEXCEPT_IF(BOOST_NOEXCEPT_EXPR(m1.swap(m2)));
+
 template <class T, class H, class P, class A> class unordered_multiset
 {
 #if defined(BOOST_UNORDERED_USE_MOVE)
@@ -990,6 +1002,19 @@ template <class T, class H, class P, class A> class unordered_multiset
         <T, H, P, A>(unordered_multiset const&, unordered_multiset const&);
 #endif
 }; // class template unordered_multiset
+
+template <class T, class H, class P, class A>
+inline bool operator==(unordered_multiset<T, H, P, A> const&,
+    unordered_multiset<T, H, P, A> const&);
+
+template <class T, class H, class P, class A>
+inline bool operator!=(unordered_multiset<T, H, P, A> const&,
+    unordered_multiset<T, H, P, A> const&);
+
+template <class T, class H, class P, class A>
+inline void swap(
+    unordered_multiset<T, H, P, A>& m1, unordered_multiset<T, H, P, A>& m2)
+    BOOST_NOEXCEPT_IF(BOOST_NOEXCEPT_EXPR(m1.swap(m2)));
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class T, class H, class P, class A>

@@ -819,6 +819,19 @@ template <class K, class T, class H, class P, class A> class unordered_map
 #endif
 }; // class template unordered_map
 
+template <class K, class T, class H, class P, class A>
+inline bool operator==(
+    unordered_map<K, T, H, P, A> const&, unordered_map<K, T, H, P, A> const&);
+
+template <class K, class T, class H, class P, class A>
+inline bool operator!=(
+    unordered_map<K, T, H, P, A> const&, unordered_map<K, T, H, P, A> const&);
+
+template <class K, class T, class H, class P, class A>
+inline void swap(
+    unordered_map<K, T, H, P, A>& m1, unordered_map<K, T, H, P, A>& m2)
+    BOOST_NOEXCEPT_IF(BOOST_NOEXCEPT_EXPR(m1.swap(m2)));
+
 template <class K, class T, class H, class P, class A> class unordered_multimap
 {
 #if defined(BOOST_UNORDERED_USE_MOVE)
@@ -1318,6 +1331,19 @@ template <class K, class T, class H, class P, class A> class unordered_multimap
         <K, T, H, P, A>(unordered_multimap const&, unordered_multimap const&);
 #endif
 }; // class template unordered_multimap
+
+template <class K, class T, class H, class P, class A>
+inline bool operator==(unordered_multimap<K, T, H, P, A> const&,
+    unordered_multimap<K, T, H, P, A> const&);
+
+template <class K, class T, class H, class P, class A>
+inline bool operator!=(unordered_multimap<K, T, H, P, A> const&,
+    unordered_multimap<K, T, H, P, A> const&);
+
+template <class K, class T, class H, class P, class A>
+inline void swap(unordered_multimap<K, T, H, P, A>& m1,
+    unordered_multimap<K, T, H, P, A>& m2)
+    BOOST_NOEXCEPT_IF(BOOST_NOEXCEPT_EXPR(m1.swap(m2)));
 
 ////////////////////////////////////////////////////////////////////////////////
 
