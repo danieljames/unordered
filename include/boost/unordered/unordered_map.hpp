@@ -1697,7 +1697,8 @@ typename unordered_map<K, T, H, P, A>::iterator
 unordered_map<K, T, H, P, A>::find(CompatibleKey const& k,
     CompatibleHash const& hash, CompatiblePredicate const& eq)
 {
-    return iterator(table_.generic_find_node(k, hash, eq));
+    return iterator(
+        table_.find_node_impl(table::policy::apply_hash(hash, k), k, eq));
 }
 
 template <class K, class T, class H, class P, class A>
@@ -1706,7 +1707,8 @@ typename unordered_map<K, T, H, P, A>::const_iterator
 unordered_map<K, T, H, P, A>::find(CompatibleKey const& k,
     CompatibleHash const& hash, CompatiblePredicate const& eq) const
 {
-    return const_iterator(table_.generic_find_node(k, hash, eq));
+    return const_iterator(
+        table_.find_node_impl(table::policy::apply_hash(hash, k), k, eq));
 }
 
 template <class K, class T, class H, class P, class A>
@@ -2146,7 +2148,8 @@ typename unordered_multimap<K, T, H, P, A>::iterator
 unordered_multimap<K, T, H, P, A>::find(CompatibleKey const& k,
     CompatibleHash const& hash, CompatiblePredicate const& eq)
 {
-    return iterator(table_.generic_find_node(k, hash, eq));
+    return iterator(
+        table_.find_node_impl(table::policy::apply_hash(hash, k), k, eq));
 }
 
 template <class K, class T, class H, class P, class A>
@@ -2155,7 +2158,8 @@ typename unordered_multimap<K, T, H, P, A>::const_iterator
 unordered_multimap<K, T, H, P, A>::find(CompatibleKey const& k,
     CompatibleHash const& hash, CompatiblePredicate const& eq) const
 {
-    return const_iterator(table_.generic_find_node(k, hash, eq));
+    return const_iterator(
+        table_.find_node_impl(table::policy::apply_hash(hash, k), k, eq));
 }
 
 template <class K, class T, class H, class P, class A>

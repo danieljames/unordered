@@ -3120,13 +3120,6 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
 
     // Find Node
 
-    template <typename Key, typename Hash, typename Pred>
-    node_pointer generic_find_node(
-        Key const& k, Hash const& hf, Pred const& eq) const
-    {
-        return this->find_node_impl(policy::apply_hash(hf, k), k, eq);
-    }
-
     BOOST_FORCEINLINE node_pointer find_node(
         std::size_t key_hash, const_key_type& k) const
     {
