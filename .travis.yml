@@ -18,46 +18,26 @@ addons:
 matrix:
     include:
       - compiler: gcc
-        env: >
+        env: |
             label="gcc C++03";
-            user_config="using gcc :
-              : g++-4.8 -fsanitize=address
-              : <warnings-as-errors>on
-                <cxxflags>--std=c++03
-            ;"
+            user_config="using gcc : : g++-4.8 -fsanitize=address -Werror --std=c++03 ;"
       - compiler: gcc
-        env: >
+        env: |
             label="gcc C++11";
-            user_config="using gcc :
-              : g++-4.8 -fsanitize=address
-              : <warnings-as-errors>on
-                <cxxflags>--std=c++11
-            ;"
+            user_config="using gcc : : g++-4.8 -fsanitize=address -Werror --std=c++11 ;"
       - compiler: gcc
-        env: >
+        env: |
             label="gcc 32 bit C++11";
-            user_config="using gcc :
-              : g++-4.8 -m32 -fsanitize=address
-              : <warnings-as-errors>on
-                <cxxflags>--std=c++11
-            ;"
+            user_config="using gcc : : g++-4.8 -m32 -fsanitize=address -Werror --std=c++11 ;"
       - compiler: clang
-        env: >
+        env: |
             label="clang C++11";
-            user_config="using clang++ :
-              : clang++ -fsanitize=address
-              : <warnings-as-errors>on
-                <cxxflags>--std=c++11
-            ;"
+            user_config="using clang++ : : clang++ -fsanitize=address -Werror --std=c++11 ;"
         # sanitized=address not available for 32-bit clang on travis.
       - compiler: clang
-        env: >
+        env: |
             label="clang 32 bit";
-            user_config="using clang++ :
-                : clang++ -m32
-                : <warnings-as-errors>on
-                  <cxxflags>--std=c++03
-            ;"
+            user_config="using clang++ : : clang++ -m32 -Werror --std=c++03 ;"
 
 before_script:
     - cd ${TRAVIS_BUILD_DIR}
