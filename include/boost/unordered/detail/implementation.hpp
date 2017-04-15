@@ -4121,7 +4121,12 @@ struct table_unique : boost::unordered::detail::table<Types>
     ////////////////////////////////////////////////////////////////////////
     // fill_buckets_unique
 
-    void copy_buckets(table const& src)
+    BOOST_FORCEINLINE void copy_buckets(table const& src)
+    {
+        this->copy_buckets_unique(src);
+    }
+
+    void copy_buckets_unique(table const& src)
     {
         this->create_buckets(this->bucket_count_);
 
@@ -4145,7 +4150,12 @@ struct table_unique : boost::unordered::detail::table<Types>
         }
     }
 
-    void assign_buckets(table const& src)
+    BOOST_FORCEINLINE void assign_buckets(table const& src)
+    {
+        this->assign_buckets_unique(src);
+    }
+
+    void assign_buckets_unique(table const& src)
     {
         node_holder<node_allocator> holder(*this);
         for (node_pointer n = src.begin(); n; n = node_algo::next_node(n)) {
@@ -4153,7 +4163,12 @@ struct table_unique : boost::unordered::detail::table<Types>
         }
     }
 
-    void move_assign_buckets(table& src)
+    BOOST_FORCEINLINE void move_assign_buckets(table const& src)
+    {
+        this->move_assign_buckets_unique(src);
+    }
+
+    void move_assign_buckets_unique(table& src)
     {
         node_holder<node_allocator> holder(*this);
         for (node_pointer n = src.begin(); n; n = node_algo::next_node(n)) {
@@ -4763,7 +4778,12 @@ struct table_equiv : boost::unordered::detail::table<Types>
     ////////////////////////////////////////////////////////////////////////
     // fill_buckets
 
-    void copy_buckets(table const& src)
+    BOOST_FORCEINLINE void copy_buckets(table const& src)
+    {
+        this->copy_buckets_equiv(src);
+    }
+
+    void copy_buckets_equiv(table const& src)
     {
         this->create_buckets(this->bucket_count_);
 
@@ -4805,7 +4825,12 @@ struct table_equiv : boost::unordered::detail::table<Types>
         }
     }
 
-    void assign_buckets(table const& src)
+    BOOST_FORCEINLINE void assign_buckets(table const& src)
+    {
+        this->assign_buckets_equiv(src);
+    }
+
+    void assign_buckets_equiv(table const& src)
     {
         node_holder<node_allocator> holder(*this);
         for (node_pointer n = src.begin(); n;) {
@@ -4820,7 +4845,12 @@ struct table_equiv : boost::unordered::detail::table<Types>
         }
     }
 
-    void move_assign_buckets(table& src)
+    BOOST_FORCEINLINE void move_assign_buckets(table const& src)
+    {
+        this->move_assign_buckets_equiv(src);
+    }
+
+    void move_assign_buckets_equiv(table& src)
     {
         node_holder<node_allocator> holder(*this);
         for (node_pointer n = src.begin(); n;) {
