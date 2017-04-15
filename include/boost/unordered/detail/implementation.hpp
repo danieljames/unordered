@@ -3868,7 +3868,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
             pos->next_ = n;
             if (n->next_) {
                 std::size_t next_bucket = this->node_bucket(next_node(n));
-                if (next_bucket != this->hash_to_bucket(key_hash)) {
+                if (next_bucket != bucket) {
                     this->get_bucket(next_bucket)->next_ = n;
                 }
             }
