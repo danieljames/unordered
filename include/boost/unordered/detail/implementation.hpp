@@ -3599,7 +3599,7 @@ template <typename N> struct node_algo
 
     // Add node 'n' after 'pos'.
     // This results in a different order to the grouped implementation.
-    static inline void add_to_node_group(node_pointer n, node_pointer pos)
+    static inline void add_to_node(node_pointer n, node_pointer pos)
     {
         n->next_ = pos->next_;
         pos->next_ = n;
@@ -3736,7 +3736,7 @@ struct table_unique : boost::unordered::detail::table<Types>
 
     // equals
 
-    bool equals(table_unique const& other) const
+    bool equals_unique(table const& other) const
     {
         if (this->size_ != other.size_)
             return false;
@@ -3754,7 +3754,7 @@ struct table_unique : boost::unordered::detail::table<Types>
 
     // Emplace/Insert
 
-    inline node_pointer add_node(node_pointer n, std::size_t key_hash)
+    inline node_pointer add_node_unique(node_pointer n, std::size_t key_hash)
     {
         n->hash_ = key_hash;
 
@@ -3781,27 +3781,28 @@ struct table_unique : boost::unordered::detail::table<Types>
         return n;
     }
 
-    inline node_pointer resize_and_add_node(
+    inline node_pointer resize_and_add_node_unique(
         node_pointer n, std::size_t key_hash)
     {
         node_tmp b(n, this->node_alloc());
         this->reserve_for_insert(this->size_ + 1);
-        return this->add_node(b.release(), key_hash);
+        return this->add_node_unique(b.release(), key_hash);
     }
 
     template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
-    iterator emplace_hint_impl(
+    iterator emplace_hint_unique(
         c_iterator hint, const_key_type& k, BOOST_UNORDERED_EMPLACE_ARGS)
     {
         if (hint.node_ && this->key_eq()(k, this->get_key(hint.node_))) {
             return iterator(hint.node_);
         } else {
-            return emplace_impl(k, BOOST_UNORDERED_EMPLACE_FORWARD).first;
+            return emplace_unique(k, BOOST_UNORDERED_EMPLACE_FORWARD).first;
         }
     }
 
     template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
-    emplace_return emplace_impl(const_key_type& k, BOOST_UNORDERED_EMPLACE_ARGS)
+    emplace_return emplace_unique(
+        const_key_type& k, BOOST_UNORDERED_EMPLACE_ARGS)
     {
         std::size_t key_hash = this->hash(k);
         node_pointer pos = this->find_node(key_hash, k);
@@ -3809,7 +3810,7 @@ struct table_unique : boost::unordered::detail::table<Types>
             return emplace_return(iterator(pos), false);
         } else {
             return emplace_return(
-                iterator(this->resize_and_add_node(
+                iterator(this->resize_and_add_node_unique(
                     boost::unordered::detail::func::construct_node_from_args(
                         this->node_alloc(), BOOST_UNORDERED_EMPLACE_FORWARD),
                     key_hash)),
@@ -3818,7 +3819,7 @@ struct table_unique : boost::unordered::detail::table<Types>
     }
 
     template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
-    iterator emplace_hint_impl(
+    iterator emplace_hint_unique(
         c_iterator hint, no_key, BOOST_UNORDERED_EMPLACE_ARGS)
     {
         node_tmp b(boost::unordered::detail::func::construct_node_from_args(
@@ -3833,12 +3834,13 @@ struct table_unique : boost::unordered::detail::table<Types>
         if (pos) {
             return iterator(pos);
         } else {
-            return iterator(this->resize_and_add_node(b.release(), key_hash));
+            return iterator(
+                this->resize_and_add_node_unique(b.release(), key_hash));
         }
     }
 
     template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
-    emplace_return emplace_impl(no_key, BOOST_UNORDERED_EMPLACE_ARGS)
+    emplace_return emplace_unique(no_key, BOOST_UNORDERED_EMPLACE_ARGS)
     {
         node_tmp b(boost::unordered::detail::func::construct_node_from_args(
                        this->node_alloc(), BOOST_UNORDERED_EMPLACE_FORWARD),
@@ -3849,14 +3851,14 @@ struct table_unique : boost::unordered::detail::table<Types>
         if (pos) {
             return emplace_return(iterator(pos), false);
         } else {
-            return emplace_return(
-                iterator(this->resize_and_add_node(b.release(), key_hash)),
+            return emplace_return(iterator(this->resize_and_add_node_unique(
+                                      b.release(), key_hash)),
                 true);
         }
     }
 
     template <typename Key>
-    emplace_return try_emplace_impl(BOOST_FWD_REF(Key) k)
+    emplace_return try_emplace_unique(BOOST_FWD_REF(Key) k)
     {
         std::size_t key_hash = this->hash(k);
         node_pointer pos = this->find_node(key_hash, k);
@@ -3864,7 +3866,7 @@ struct table_unique : boost::unordered::detail::table<Types>
             return emplace_return(iterator(pos), false);
         } else {
             return emplace_return(
-                iterator(this->resize_and_add_node(
+                iterator(this->resize_and_add_node_unique(
                     boost::unordered::detail::func::construct_node_pair(
                         this->node_alloc(), boost::forward<Key>(k)),
                     key_hash)),
@@ -3873,17 +3875,17 @@ struct table_unique : boost::unordered::detail::table<Types>
     }
 
     template <typename Key>
-    iterator try_emplace_hint_impl(c_iterator hint, BOOST_FWD_REF(Key) k)
+    iterator try_emplace_hint_unique(c_iterator hint, BOOST_FWD_REF(Key) k)
     {
         if (hint.node_ && this->key_eq()(hint->first, k)) {
             return iterator(hint.node_);
         } else {
-            return try_emplace_impl(k).first;
+            return try_emplace_unique(k).first;
         }
     }
 
     template <typename Key, BOOST_UNORDERED_EMPLACE_TEMPLATE>
-    emplace_return try_emplace_impl(
+    emplace_return try_emplace_unique(
         BOOST_FWD_REF(Key) k, BOOST_UNORDERED_EMPLACE_ARGS)
     {
         std::size_t key_hash = this->hash(k);
@@ -3892,7 +3894,7 @@ struct table_unique : boost::unordered::detail::table<Types>
             return emplace_return(iterator(pos), false);
         } else {
             return emplace_return(
-                iterator(this->resize_and_add_node(
+                iterator(this->resize_and_add_node_unique(
                     boost::unordered::detail::func::
                         construct_node_pair_from_args(this->node_alloc(),
                             boost::forward<Key>(k),
@@ -3903,18 +3905,18 @@ struct table_unique : boost::unordered::detail::table<Types>
     }
 
     template <typename Key, BOOST_UNORDERED_EMPLACE_TEMPLATE>
-    iterator try_emplace_hint_impl(
+    iterator try_emplace_hint_unique(
         c_iterator hint, BOOST_FWD_REF(Key) k, BOOST_UNORDERED_EMPLACE_ARGS)
     {
         if (hint.node_ && this->key_eq()(hint->first, k)) {
             return iterator(hint.node_);
         } else {
-            return try_emplace_impl(k, BOOST_UNORDERED_EMPLACE_FORWARD).first;
+            return try_emplace_unique(k, BOOST_UNORDERED_EMPLACE_FORWARD).first;
         }
     }
 
     template <typename Key, typename M>
-    emplace_return insert_or_assign_impl(
+    emplace_return insert_or_assign_unique(
         BOOST_FWD_REF(Key) k, BOOST_FWD_REF(M) obj)
     {
         std::size_t key_hash = this->hash(k);
@@ -3925,7 +3927,7 @@ struct table_unique : boost::unordered::detail::table<Types>
             return emplace_return(iterator(pos), false);
         } else {
             return emplace_return(
-                iterator(this->resize_and_add_node(
+                iterator(this->resize_and_add_node_unique(
                     boost::unordered::detail::func::construct_node_pair(
                         this->node_alloc(), boost::forward<Key>(k),
                         boost::forward<M>(obj)),
@@ -3935,7 +3937,7 @@ struct table_unique : boost::unordered::detail::table<Types>
     }
 
     template <typename NodeType, typename InsertReturnType>
-    void move_insert_node_type(NodeType& np, InsertReturnType& result)
+    void move_insert_node_type_unique(NodeType& np, InsertReturnType& result)
     {
         if (np) {
             const_key_type& k = this->get_key(np.ptr_);
@@ -3947,7 +3949,8 @@ struct table_unique : boost::unordered::detail::table<Types>
                 result.position = iterator(pos);
             } else {
                 this->reserve_for_insert(this->size_ + 1);
-                result.position = iterator(this->add_node(np.ptr_, key_hash));
+                result.position =
+                    iterator(this->add_node_unique(np.ptr_, key_hash));
                 result.inserted = true;
                 np.ptr_ = node_pointer();
             }
@@ -3955,7 +3958,8 @@ struct table_unique : boost::unordered::detail::table<Types>
     }
 
     template <typename NodeType>
-    iterator move_insert_node_type_with_hint(c_iterator hint, NodeType& np)
+    iterator move_insert_node_type_with_hint_unique(
+        c_iterator hint, NodeType& np)
     {
         if (!np) {
             return iterator();
@@ -3968,14 +3972,14 @@ struct table_unique : boost::unordered::detail::table<Types>
         node_pointer pos = this->find_node(key_hash, k);
         if (!pos) {
             this->reserve_for_insert(this->size_ + 1);
-            pos = this->add_node(np.ptr_, key_hash);
+            pos = this->add_node_unique(np.ptr_, key_hash);
             np.ptr_ = node_pointer();
         }
         return iterator(pos);
     }
 
     template <typename Types2>
-    void merge_impl(boost::unordered::detail::table<Types2>& other)
+    void merge_unique(boost::unordered::detail::table<Types2>& other)
     {
         typedef boost::unordered::detail::table<Types2> other_table;
         BOOST_STATIC_ASSERT(
@@ -4000,7 +4004,7 @@ struct table_unique : boost::unordered::detail::table<Types>
                     prev->next_ = n->next_;
                     --other.size_;
                     other.fix_bucket(other.hash_to_bucket(n->hash_), prev);
-                    this->add_node(n, key_hash);
+                    this->add_node_unique(n, key_hash);
                 }
             }
         }
@@ -4013,20 +4017,20 @@ struct table_unique : boost::unordered::detail::table<Types>
     // safety strong otherwise
 
     template <class InputIt>
-    void insert_range_impl(const_key_type& k, InputIt i, InputIt j)
+    void insert_range_unique(const_key_type& k, InputIt i, InputIt j)
     {
-        insert_range_impl2(k, i, j);
+        insert_range_unique2(k, i, j);
 
         while (++i != j) {
             // Note: can't use get_key as '*i' might not be value_type - it
             // could be a pair with first_types as key_type without const or
             // a different second_type.
-            insert_range_impl2(extractor::extract(*i), i, j);
+            insert_range_unique2(extractor::extract(*i), i, j);
         }
     }
 
     template <class InputIt>
-    void insert_range_impl2(const_key_type& k, InputIt i, InputIt j)
+    void insert_range_unique2(const_key_type& k, InputIt i, InputIt j)
     {
         // No side effects in this initial code
         std::size_t key_hash = this->hash(k);
@@ -4039,12 +4043,12 @@ struct table_unique : boost::unordered::detail::table<Types>
             if (this->size_ + 1 > this->max_load_)
                 this->reserve_for_insert(
                     this->size_ + boost::unordered::detail::insert_size(i, j));
-            this->add_node(b.release(), key_hash);
+            this->add_node_unique(b.release(), key_hash);
         }
     }
 
     template <class InputIt>
-    void insert_range_impl(no_key, InputIt i, InputIt j)
+    void insert_range_unique(no_key, InputIt i, InputIt j)
     {
         node_constructor a(this->node_alloc());
 
@@ -4066,7 +4070,7 @@ struct table_unique : boost::unordered::detail::table<Types>
                 // reserve has basic exception safety if the hash function
                 // throws, strong otherwise.
                 this->reserve_for_insert(this->size_ + 1);
-                this->add_node(b.release(), key_hash);
+                this->add_node_unique(b.release(), key_hash);
             }
         } while (++i != j);
     }
@@ -4074,7 +4078,7 @@ struct table_unique : boost::unordered::detail::table<Types>
     ////////////////////////////////////////////////////////////////////////
     // Extract
 
-    inline node_pointer extract_by_iterator(c_iterator i)
+    inline node_pointer extract_by_iterator_unique(c_iterator i)
     {
         node_pointer n = i.node_;
         BOOST_ASSERT(n);
@@ -4096,7 +4100,7 @@ struct table_unique : boost::unordered::detail::table<Types>
     //
     // no throw
 
-    std::size_t erase_key(const_key_type& k)
+    std::size_t erase_key_unique(const_key_type& k)
     {
         if (!this->size_)
             return 0;
@@ -4111,7 +4115,7 @@ struct table_unique : boost::unordered::detail::table<Types>
         return 1;
     }
 
-    void erase_nodes(node_pointer i, node_pointer j)
+    void erase_nodes_unique(node_pointer i, node_pointer j)
     {
         std::size_t bucket_index = this->hash_to_bucket(i->hash_);
 
@@ -4128,15 +4132,16 @@ struct table_unique : boost::unordered::detail::table<Types>
     }
 
     ////////////////////////////////////////////////////////////////////////
-    // fill_buckets
+    // fill_buckets_unique
 
     void copy_buckets(table const& src)
     {
         this->create_buckets(this->bucket_count_);
 
         for (node_pointer n = src.begin(); n; n = node_algo::next_node(n)) {
-            this->add_node(boost::unordered::detail::func::construct_node(
-                               this->node_alloc(), n->value()),
+            this->add_node_unique(
+                boost::unordered::detail::func::construct_node(
+                    this->node_alloc(), n->value()),
                 n->hash_);
         }
     }
@@ -4146,8 +4151,9 @@ struct table_unique : boost::unordered::detail::table<Types>
         this->create_buckets(this->bucket_count_);
 
         for (node_pointer n = src.begin(); n; n = node_algo::next_node(n)) {
-            this->add_node(boost::unordered::detail::func::construct_node(
-                               this->node_alloc(), boost::move(n->value())),
+            this->add_node_unique(
+                boost::unordered::detail::func::construct_node(
+                    this->node_alloc(), boost::move(n->value())),
                 n->hash_);
         }
     }
@@ -4156,7 +4162,7 @@ struct table_unique : boost::unordered::detail::table<Types>
     {
         node_holder<node_allocator> holder(*this);
         for (node_pointer n = src.begin(); n; n = node_algo::next_node(n)) {
-            this->add_node(holder.copy_of(n->value()), n->hash_);
+            this->add_node_unique(holder.copy_of(n->value()), n->hash_);
         }
     }
 
@@ -4164,7 +4170,7 @@ struct table_unique : boost::unordered::detail::table<Types>
     {
         node_holder<node_allocator> holder(*this);
         for (node_pointer n = src.begin(); n; n = node_algo::next_node(n)) {
-            this->add_node(holder.move_copy_of(n->value()), n->hash_);
+            this->add_node_unique(holder.move_copy_of(n->value()), n->hash_);
         }
     }
 };
@@ -4272,7 +4278,7 @@ template <typename N> struct grouped_node_algo
     // If 'pos' is the first node in group, add to the end of the group,
     // otherwise add before 'pos'. Other versions will probably behave
     // differently.
-    static inline void add_to_node_group(node_pointer n, node_pointer pos)
+    static inline void add_to_node(node_pointer n, node_pointer pos)
     {
         n->next_ = pos->group_prev_->next_;
         n->group_prev_ = pos->group_prev_;
@@ -4433,13 +4439,13 @@ struct table_equiv : boost::unordered::detail::table<Types>
             this->move_buckets_from(x);
         } else if (x.size_) {
             // TODO: Could pick new bucket size?
-            this->move_buckets(x);
+            this->move_buckets_equiv(x);
         }
     }
 
     // Equality
 
-    bool equals(table_equiv const& other) const
+    bool equals_equiv(table const& other) const
     {
         if (this->size_ != other.size_)
             return false;
@@ -4450,7 +4456,7 @@ struct table_equiv : boost::unordered::detail::table<Types>
                 return false;
             node_pointer end1 = node_algo::next_group(n1, this);
             node_pointer end2 = node_algo::next_group(n2, this);
-            if (!group_equals(n1, end1, n2, end2))
+            if (!group_equals_equiv(n1, end1, n2, end2))
                 return false;
             n1 = end1;
         }
@@ -4458,7 +4464,7 @@ struct table_equiv : boost::unordered::detail::table<Types>
         return true;
     }
 
-    static bool group_equals(
+    static bool group_equals_equiv(
         node_pointer n1, node_pointer end1, node_pointer n2, node_pointer end2)
     {
         for (;;) {
@@ -4492,12 +4498,12 @@ struct table_equiv : boost::unordered::detail::table<Types>
         node_pointer start = n1;
         for (; n1 != end1; n1 = node_algo::next_node(n1)) {
             value_type const& v = n1->value();
-            if (!find(start, n1, v)) {
-                std::size_t matches = count_equal(n2, end2, v);
+            if (!find_equiv(start, n1, v)) {
+                std::size_t matches = count_equal_equiv(n2, end2, v);
                 if (!matches)
                     return false;
                 if (matches !=
-                    1 + count_equal(node_algo::next_node(n1), end1, v))
+                    1 + count_equal_equiv(node_algo::next_node(n1), end1, v))
                     return false;
             }
         }
@@ -4505,7 +4511,8 @@ struct table_equiv : boost::unordered::detail::table<Types>
         return true;
     }
 
-    static bool find(node_pointer n, node_pointer end, value_type const& v)
+    static bool find_equiv(
+        node_pointer n, node_pointer end, value_type const& v)
     {
         for (; n != end; n = node_algo::next_node(n))
             if (n->value() == v)
@@ -4513,7 +4520,7 @@ struct table_equiv : boost::unordered::detail::table<Types>
         return false;
     }
 
-    static std::size_t count_equal(
+    static std::size_t count_equal_equiv(
         node_pointer n, node_pointer end, value_type const& v)
     {
         std::size_t count = 0;
@@ -4525,12 +4532,12 @@ struct table_equiv : boost::unordered::detail::table<Types>
 
     // Emplace/Insert
 
-    inline node_pointer add_node(
+    inline node_pointer add_node_equiv(
         node_pointer n, std::size_t key_hash, node_pointer pos)
     {
         n->hash_ = key_hash;
         if (pos) {
-            node_algo::add_to_node_group(n, pos);
+            node_algo::add_to_node(n, pos);
             if (n->next_) {
                 std::size_t next_bucket =
                     this->hash_to_bucket(node_algo::next_node(n)->hash_);
@@ -4563,10 +4570,10 @@ struct table_equiv : boost::unordered::detail::table<Types>
         return n;
     }
 
-    inline node_pointer add_using_hint(node_pointer n, node_pointer hint)
+    inline node_pointer add_using_hint_equiv(node_pointer n, node_pointer hint)
     {
         n->hash_ = hint->hash_;
-        node_algo::add_to_node_group(n, hint);
+        node_algo::add_to_node(n, hint);
         if (n->next_ != hint && n->next_) {
             std::size_t next_bucket =
                 this->hash_to_bucket(node_algo::next_node(n)->hash_);
@@ -4578,41 +4585,44 @@ struct table_equiv : boost::unordered::detail::table<Types>
         return n;
     }
 
-    iterator emplace_impl(node_pointer n)
+    iterator emplace_equiv(node_pointer n)
     {
         node_tmp a(n, this->node_alloc());
         const_key_type& k = this->get_key(a.node_);
         std::size_t key_hash = this->hash(k);
         node_pointer position = this->find_node(key_hash, k);
         this->reserve_for_insert(this->size_ + 1);
-        return iterator(this->add_node(a.release(), key_hash, position));
+        return iterator(this->add_node_equiv(a.release(), key_hash, position));
     }
 
-    iterator emplace_hint_impl(c_iterator hint, node_pointer n)
+    iterator emplace_hint_equiv(c_iterator hint, node_pointer n)
     {
         node_tmp a(n, this->node_alloc());
         const_key_type& k = this->get_key(a.node_);
         if (hint.node_ && this->key_eq()(k, this->get_key(hint.node_))) {
             this->reserve_for_insert(this->size_ + 1);
-            return iterator(this->add_using_hint(a.release(), hint.node_));
+            return iterator(
+                this->add_using_hint_equiv(a.release(), hint.node_));
         } else {
             std::size_t key_hash = this->hash(k);
             node_pointer position = this->find_node(key_hash, k);
             this->reserve_for_insert(this->size_ + 1);
-            return iterator(this->add_node(a.release(), key_hash, position));
+            return iterator(
+                this->add_node_equiv(a.release(), key_hash, position));
         }
     }
 
-    void emplace_impl_no_rehash(node_pointer n)
+    void emplace_no_rehash_equiv(node_pointer n)
     {
         node_tmp a(n, this->node_alloc());
         const_key_type& k = this->get_key(a.node_);
         std::size_t key_hash = this->hash(k);
         node_pointer position = this->find_node(key_hash, k);
-        this->add_node(a.release(), key_hash, position);
+        this->add_node_equiv(a.release(), key_hash, position);
     }
 
-    template <typename NodeType> iterator move_insert_node_type(NodeType& np)
+    template <typename NodeType>
+    iterator move_insert_node_type_equiv(NodeType& np)
     {
         iterator result;
 
@@ -4621,7 +4631,7 @@ struct table_equiv : boost::unordered::detail::table<Types>
             std::size_t key_hash = this->hash(k);
             node_pointer pos = this->find_node(key_hash, k);
             this->reserve_for_insert(this->size_ + 1);
-            result = iterator(this->add_node(np.ptr_, key_hash, pos));
+            result = iterator(this->add_node_equiv(np.ptr_, key_hash, pos));
             np.ptr_ = node_pointer();
         }
 
@@ -4629,7 +4639,8 @@ struct table_equiv : boost::unordered::detail::table<Types>
     }
 
     template <typename NodeType>
-    iterator move_insert_node_type_with_hint(c_iterator hint, NodeType& np)
+    iterator move_insert_node_type_with_hint_equiv(
+        c_iterator hint, NodeType& np)
     {
         iterator result;
 
@@ -4638,12 +4649,13 @@ struct table_equiv : boost::unordered::detail::table<Types>
 
             if (hint.node_ && this->key_eq()(k, this->get_key(hint.node_))) {
                 this->reserve_for_insert(this->size_ + 1);
-                result = iterator(this->add_using_hint(np.ptr_, hint.node_));
+                result =
+                    iterator(this->add_using_hint_equiv(np.ptr_, hint.node_));
             } else {
                 std::size_t key_hash = this->hash(k);
                 node_pointer pos = this->find_node(key_hash, k);
                 this->reserve_for_insert(this->size_ + 1);
-                result = iterator(this->add_node(np.ptr_, key_hash, pos));
+                result = iterator(this->add_node_equiv(np.ptr_, key_hash, pos));
             }
             np.ptr_ = node_pointer();
         }
@@ -4657,7 +4669,7 @@ struct table_equiv : boost::unordered::detail::table<Types>
     // if hash function throws, or inserting > 1 element, basic exception
     // safety. Strong otherwise
     template <class I>
-    void insert_range(I i, I j,
+    void insert_range_equiv(I i, I j,
         typename boost::unordered::detail::enable_if_forward<I, void*>::type =
             0)
     {
@@ -4666,14 +4678,14 @@ struct table_equiv : boost::unordered::detail::table<Types>
 
         std::size_t distance = static_cast<std::size_t>(std::distance(i, j));
         if (distance == 1) {
-            emplace_impl(boost::unordered::detail::func::construct_node(
+            emplace_equiv(boost::unordered::detail::func::construct_node(
                 this->node_alloc(), *i));
         } else {
             // Only require basic exception safety here
             this->reserve_for_insert(this->size_ + distance);
 
             for (; i != j; ++i) {
-                emplace_impl_no_rehash(
+                emplace_no_rehash_equiv(
                     boost::unordered::detail::func::construct_node(
                         this->node_alloc(), *i));
             }
@@ -4681,12 +4693,12 @@ struct table_equiv : boost::unordered::detail::table<Types>
     }
 
     template <class I>
-    void insert_range(I i, I j,
+    void insert_range_equiv(I i, I j,
         typename boost::unordered::detail::disable_if_forward<I, void*>::type =
             0)
     {
         for (; i != j; ++i) {
-            emplace_impl(boost::unordered::detail::func::construct_node(
+            emplace_equiv(boost::unordered::detail::func::construct_node(
                 this->node_alloc(), *i));
         }
     }
@@ -4694,7 +4706,7 @@ struct table_equiv : boost::unordered::detail::table<Types>
     ////////////////////////////////////////////////////////////////////////
     // Extract
 
-    inline node_pointer extract_by_iterator(c_iterator n)
+    inline node_pointer extract_by_iterator_equiv(c_iterator n)
     {
         node_pointer i = n.node_;
         BOOST_ASSERT(i);
@@ -4728,7 +4740,7 @@ struct table_equiv : boost::unordered::detail::table<Types>
     //
     // no throw
 
-    std::size_t erase_key(const_key_type& k)
+    std::size_t erase_key_equiv(const_key_type& k)
     {
         if (!this->size_)
             return 0;
@@ -4747,7 +4759,7 @@ struct table_equiv : boost::unordered::detail::table<Types>
         return deleted_count;
     }
 
-    link_pointer erase_nodes(node_pointer i, node_pointer j)
+    link_pointer erase_nodes_equiv(node_pointer i, node_pointer j)
     {
         std::size_t bucket_index = this->hash_to_bucket(i->hash_);
 
@@ -4786,34 +4798,36 @@ struct table_equiv : boost::unordered::detail::table<Types>
         for (node_pointer n = src.begin(); n;) {
             std::size_t key_hash = n->hash_;
             node_pointer group_end(node_algo::next_group(n, this));
-            node_pointer pos =
-                this->add_node(boost::unordered::detail::func::construct_node(
-                                   this->node_alloc(), n->value()),
-                    key_hash, node_pointer());
+            node_pointer pos = this->add_node_equiv(
+                boost::unordered::detail::func::construct_node(
+                    this->node_alloc(), n->value()),
+                key_hash, node_pointer());
             for (n = node_algo::next_node(n); n != group_end;
                  n = node_algo::next_node(n)) {
-                this->add_node(boost::unordered::detail::func::construct_node(
-                                   this->node_alloc(), n->value()),
+                this->add_node_equiv(
+                    boost::unordered::detail::func::construct_node(
+                        this->node_alloc(), n->value()),
                     key_hash, pos);
             }
         }
     }
 
-    void move_buckets(table const& src)
+    void move_buckets_equiv(table const& src)
     {
         this->create_buckets(this->bucket_count_);
 
         for (node_pointer n = src.begin(); n;) {
             std::size_t key_hash = n->hash_;
             node_pointer group_end(node_algo::next_group(n, this));
-            node_pointer pos =
-                this->add_node(boost::unordered::detail::func::construct_node(
-                                   this->node_alloc(), boost::move(n->value())),
-                    key_hash, node_pointer());
+            node_pointer pos = this->add_node_equiv(
+                boost::unordered::detail::func::construct_node(
+                    this->node_alloc(), boost::move(n->value())),
+                key_hash, node_pointer());
             for (n = node_algo::next_node(n); n != group_end;
                  n = node_algo::next_node(n)) {
-                this->add_node(boost::unordered::detail::func::construct_node(
-                                   this->node_alloc(), boost::move(n->value())),
+                this->add_node_equiv(
+                    boost::unordered::detail::func::construct_node(
+                        this->node_alloc(), boost::move(n->value())),
                     key_hash, pos);
             }
         }
@@ -4825,11 +4839,11 @@ struct table_equiv : boost::unordered::detail::table<Types>
         for (node_pointer n = src.begin(); n;) {
             std::size_t key_hash = n->hash_;
             node_pointer group_end(node_algo::next_group(n, this));
-            node_pointer pos = this->add_node(
+            node_pointer pos = this->add_node_equiv(
                 holder.copy_of(n->value()), key_hash, node_pointer());
             for (n = node_algo::next_node(n); n != group_end;
                  n = node_algo::next_node(n)) {
-                this->add_node(holder.copy_of(n->value()), key_hash, pos);
+                this->add_node_equiv(holder.copy_of(n->value()), key_hash, pos);
             }
         }
     }
@@ -4840,11 +4854,12 @@ struct table_equiv : boost::unordered::detail::table<Types>
         for (node_pointer n = src.begin(); n;) {
             std::size_t key_hash = n->hash_;
             node_pointer group_end(node_algo::next_group(n, this));
-            node_pointer pos = this->add_node(
+            node_pointer pos = this->add_node_equiv(
                 holder.move_copy_of(n->value()), key_hash, node_pointer());
             for (n = node_algo::next_node(n); n != group_end;
                  n = node_algo::next_node(n)) {
-                this->add_node(holder.move_copy_of(n->value()), key_hash, pos);
+                this->add_node_equiv(
+                    holder.move_copy_of(n->value()), key_hash, pos);
             }
         }
     }
