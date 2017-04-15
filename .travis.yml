@@ -58,24 +58,6 @@ matrix:
                 : <warnings-as-errors>on
                   <cxxflags>--std=c++03
             ;"
-      - compiler: gcc
-        env: >
-            label="gcc C++03 interopable1";
-            user_config="using gcc :
-                : g++-4.8 -fsanitize=address
-                : <warnings-as-errors>on
-                  <cxxflags>--std=c++03
-                  <define>BOOST_UNORDERED_INTEROPERABLE_NODES=1
-            ;"
-      - compiler: clang
-        env: >
-            label="gcc C++11 interopable2";
-            user_config="using clang++ :
-                : clang -fsanitize=address
-                : <warnings-as-errors>on
-                  <cxxflags>--std=c++03
-                  <define>BOOST_UNORDERED_INTEROPERABLE_NODES=2
-            ;"
 
 before_script:
     - cd ${TRAVIS_BUILD_DIR}
