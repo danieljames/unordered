@@ -3087,16 +3087,17 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
     ////////////////////////////////////////////////////////////////////////
     // Assignment
 
-    void assign(table const& x)
+    void assign(table const& x, bool is_unique)
     {
         if (this != boost::addressof(x)) {
-            assign(x, boost::unordered::detail::integral_constant<bool,
-                          allocator_traits<node_allocator>::
-                              propagate_on_container_copy_assignment::value>());
+            assign(x, is_unique,
+                boost::unordered::detail::integral_constant<bool,
+                       allocator_traits<node_allocator>::
+                           propagate_on_container_copy_assignment::value>());
         }
     }
 
-    void assign(table const& x, false_type)
+    void assign(table const& x, bool is_unique, false_type)
     {
         // Strong exception safety.
         set_hash_functions new_func_this(*this, x);
@@ -3111,18 +3112,18 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
 
         new_func_this.commit();
 
-        if (Types::is_unique) {
+        if (is_unique) {
             assign_buckets_unique(x);
         } else {
             assign_buckets_equiv(x);
         }
     }
 
-    void assign(table const& x, true_type)
+    void assign(table const& x, bool is_unique, true_type)
     {
         if (node_alloc() == x.node_alloc()) {
             allocators_.assign(x.allocators_);
-            assign(x, false_type());
+            assign(x, is_unique, false_type());
         } else {
             set_hash_functions new_func_this(*this, x);
 
@@ -3138,7 +3139,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
 
             // Finally copy the elements.
             if (x.size_) {
-                if (Types::is_unique) {
+                if (is_unique) {
                     copy_buckets_unique(x);
                 } else {
                     copy_buckets_equiv(x);
@@ -3147,17 +3148,18 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         }
     }
 
-    void move_assign(table& x)
+    void move_assign(table& x, bool is_unique)
     {
         if (this != boost::addressof(x)) {
             move_assign(
-                x, boost::unordered::detail::integral_constant<bool,
-                       allocator_traits<node_allocator>::
-                           propagate_on_container_move_assignment::value>());
+                x, is_unique,
+                boost::unordered::detail::integral_constant<bool,
+                    allocator_traits<node_allocator>::
+                        propagate_on_container_move_assignment::value>());
         }
     }
 
-    void move_assign(table& x, true_type)
+    void move_assign(table& x, bool is_unique, true_type)
     {
         delete_buckets();
         set_hash_functions new_func_this(*this, x);
@@ -3168,7 +3170,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         new_func_this.commit();
     }
 
-    void move_assign(table& x, false_type)
+    void move_assign(table& x, bool is_unique, false_type)
     {
         if (node_alloc() == x.node_alloc()) {
             delete_buckets();
@@ -3190,7 +3192,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
 
             new_func_this.commit();
 
-            if (Types::is_unique) {
+            if (is_unique) {
                 move_assign_buckets_unique(x);
             } else {
                 move_assign_buckets_equiv(x);
