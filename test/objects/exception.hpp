@@ -533,7 +533,7 @@ template <class T> class allocator2
 
     ~allocator2() { test::detail::tracker.allocator_unref(); }
 
-    allocator2& operator=(allocator2 const& x) { return *this; }
+    allocator2& operator=(allocator2 const&) { return *this; }
 
     // If address throws, then it can't be used in erase or the
     // destructor, which is very limiting. I need to check up on
