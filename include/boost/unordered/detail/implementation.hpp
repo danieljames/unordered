@@ -2696,7 +2696,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         return n1;
     }
 
-    std::size_t count(node_pointer n) const
+    std::size_t group_count(node_pointer n) const
     {
         std::size_t x = 0;
         node_pointer it = n;
@@ -3159,7 +3159,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         }
     }
 
-    void move_assign(table& x, bool is_unique, true_type)
+    void move_assign(table& x, bool, true_type)
     {
         delete_buckets();
         set_hash_functions new_func_this(*this, x);

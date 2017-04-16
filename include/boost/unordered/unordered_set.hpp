@@ -1772,7 +1772,7 @@ typename unordered_multiset<T, H, P, A>::size_type
 unordered_multiset<T, H, P, A>::count(const key_type& k) const
 {
     node_pointer n = table_.find_node(k);
-    return n ? table_.count(n) : 0;
+    return n ? table_.group_count(n) : 0;
 }
 
 template <class T, class H, class P, class A>
