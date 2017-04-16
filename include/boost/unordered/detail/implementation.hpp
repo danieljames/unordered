@@ -3728,10 +3728,11 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         this->create_buckets(this->bucket_count_);
 
         for (node_pointer n = src.begin(); n; n = next_node(n)) {
+            std::size_t key_hash = this->hash(this->get_key(n));
             this->add_node_unique(
                 boost::unordered::detail::func::construct_node(
                     this->node_alloc(), n->value()),
-                this->hash(this->get_key(n)));
+                key_hash);
         }
     }
 
@@ -3741,10 +3742,11 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         this->create_buckets(this->bucket_count_);
 
         for (node_pointer n = src.begin(); n; n = next_node(n)) {
+            std::size_t key_hash = this->hash(this->get_key(n));
             this->add_node_unique(
                 boost::unordered::detail::func::construct_node(
                     this->node_alloc(), boost::move(n->value())),
-                this->hash(this->get_key(n)));
+                key_hash);
         }
     }
 
@@ -3752,8 +3754,8 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
     {
         node_holder<node_allocator> holder(*this);
         for (node_pointer n = src.begin(); n; n = next_node(n)) {
-            this->add_node_unique(
-                holder.copy_of(n->value()), this->hash(this->get_key(n)));
+            std::size_t key_hash = this->hash(this->get_key(n));
+            this->add_node_unique(holder.copy_of(n->value()), key_hash);
         }
     }
 
@@ -3761,8 +3763,8 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
     {
         node_holder<node_allocator> holder(*this);
         for (node_pointer n = src.begin(); n; n = next_node(n)) {
-            this->add_node_unique(
-                holder.move_copy_of(n->value()), this->hash(this->get_key(n)));
+            std::size_t key_hash = this->hash(this->get_key(n));
+            this->add_node_unique(holder.move_copy_of(n->value()), key_hash);
         }
     }
 
@@ -4229,8 +4231,8 @@ inline void table<Types>::rehash_impl(std::size_t num_buckets)
     {
         while (prev->next_) {
             node_pointer n = next_node(prev);
-            std::size_t bucket_index =
-                this->hash_to_bucket(this->hash(this->get_key(n)));
+            std::size_t key_hash = this->hash(this->get_key(n));
+            std::size_t bucket_index = this->hash_to_bucket(key_hash);
 
             n->bucket_info_ = bucket_index;
             n->set_first_in_group();
