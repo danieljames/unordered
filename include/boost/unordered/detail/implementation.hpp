@@ -4399,6 +4399,8 @@ template <class ValueType> struct map_extractor
 #if !defined(BOOST_NO_CXX11_HDR_TUPLE)
     BOOST_UNORDERED_KEY_FROM_TUPLE(std::)
 #endif
+
+#undef BOOST_UNORDERED_KEY_FROM_TUPLE
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -4537,5 +4539,12 @@ template <typename A, typename T> struct pick_node
 }
 }
 }
+
+#undef BOOST_UNORDERED_EMPLACE_TEMPLATE
+#undef BOOST_UNORDERED_EMPLACE_ARGS
+#undef BOOST_UNORDERED_EMPLACE_FORWARD
+#undef BOOST_UNORDERED_CALL_CONSTRUCT0
+#undef BOOST_UNORDERED_CALL_CONSTRUCT1
+#undef BOOST_UNORDERED_CALL_DESTROY
 
 #endif
