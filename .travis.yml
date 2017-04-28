@@ -38,7 +38,7 @@ before_script:
     - rm -r boost/boost/unordered
 
 after_success:
-    if [ -n $enable_coverage ]; then coveralls --verbose -r ${TRAVIS_BUILD_DIR}/bin -b ${TRAVIS_BUILD_DIR}/test ; fi
+    if [ -n $enable_coverage ]; then coveralls --verbose -r ${TRAVIS_BUILD_DIR}/test/bin -b ${TRAVIS_BUILD_DIR}/test ; fi
 
 script:
     - cd ${TRAVIS_BUILD_DIR}/test
