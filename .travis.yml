@@ -50,9 +50,19 @@ before_script:
     - cd $HOME
     - echo $user_config > ~/user-config.jam
     - cat ~/user-config.jam
-    - wget -O boost.tar.bz2 https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
-    - tar -xjf boost.tar.bz2
-    - mv boost_1_64_0 boost
+    #- wget -O boost.tar.bz2 https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
+    #- tar -xjf boost.tar.bz2
+    - |
+      curl https://api.bintray.com/packages/boostorg/develop/snapshot/files |
+        python -c "import os.path, sys, json; x = json.load(sys.stdin); print '\n'.join(a['path'] for a in x if os.path.splitext(a['path'])[1] == '.gz')" |
+        head -n 1 |
+        sed 's/^/wget -O boost.tar.bz2 http:\/\/dl.bintray.com\/boostorg\/develop\//' |
+        bash
+    - mkdir extract
+    - cd extract
+    - tar -xjf ../boost.tar.bz2
+    - mv * ../boost
+    - cd ..
     - rm -r boost/boost/unordered
 
 after_success:
