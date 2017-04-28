@@ -22,24 +22,6 @@ matrix:
             label="gcc C++03";
             user_config="using gcc : : g++-4.8 --coverage -fsanitize=address -Werror --std=c++03 ;"
             enable_coverage=1
-      - compiler: gcc
-        env: |
-            label="gcc C++11";
-            user_config="using gcc : : g++-4.8 --coverage -fsanitize=address -Werror --std=c++11 ;"
-            enable_coverage=1
-      - compiler: gcc
-        env: |
-            label="gcc 32 bit C++11";
-            user_config="using gcc : : g++-4.8 -m32 -fsanitize=address -Werror --std=c++11 ;"
-      - compiler: clang
-        env: |
-            label="clang C++11";
-            user_config="using clang : : clang++ -fsanitize=address -Werror --std=c++11 ;"
-        # sanitized=address not available for 32-bit clang on travis.
-      - compiler: clang
-        env: |
-            label="clang 32 bit";
-            user_config="using clang : : clang++ -m32 -Werror --std=c++03 ;"
 
 before_install:
     - if [ -n $enable_coverage ]; then pip install --user cpp-coveralls; fi
@@ -50,17 +32,19 @@ before_script:
     - cd $HOME
     - echo $user_config > ~/user-config.jam
     - cat ~/user-config.jam
+    - mkdir $HOME/download
+    - mkdir $HOME/extract
     #- wget -O boost.tar.bz2 https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
     #- tar -xjf boost.tar.bz2
+    - cd $HOME/download
     - |
       curl https://api.bintray.com/packages/boostorg/develop/snapshot/files |
         python -c "import os.path, sys, json; x = json.load(sys.stdin); print '\n'.join(a['path'] for a in x if os.path.splitext(a['path'])[1] == '.gz')" |
         head -n 1 |
         sed 's/^/wget -O boost.tar.bz2 http:\/\/dl.bintray.com\/boostorg\/develop\//' |
         bash
-    - mkdir extract
-    - cd extract
-    - tar -xjf ../boost.tar.bz2
+    - cd $HOME/extract
+    - tar -xjf $HOME/download/boost.tar.bz2
     - mv * ../boost
     - cd ..
     - rm -r boost/boost/unordered
@@ -70,5 +54,5 @@ after_success:
 
 script:
     - cd ${TRAVIS_BUILD_DIR}/test
-    - bjam -q include=${HOME}/boost include=${TRAVIS_BUILD_DIR}/include
+    - bjam compile_set -q include=${HOME}/boost include=${TRAVIS_BUILD_DIR}/include
     - xmllint --noout ${TRAVIS_BUILD_DIR}/doc/ref.xml
