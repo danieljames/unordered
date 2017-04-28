@@ -38,7 +38,7 @@ before_script:
     - rm -r boost/boost/unordered
 
 after_success:
-    if [ -n $enable_coverage ]; then coveralls --verbose -r ${TRAVIS_BUILD_DIR}/test/bin -b ${TRAVIS_BUILD_DIR}/test --gcov-options '\-lp' ; fi
+    if [ -n $enable_coverage ]; then coveralls --verbose -r ${TRAVIS_BUILD_DIR}/test/bin -b ${TRAVIS_BUILD_DIR}/test --gcov-options '\-lp' --include /home/travis/build/danieljames/unordered/include/boost/unordered/ ; fi
 
 script:
     - cd ${TRAVIS_BUILD_DIR}/test
