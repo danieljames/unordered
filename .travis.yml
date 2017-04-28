@@ -39,7 +39,7 @@ before_script:
     - cd $HOME/download
     - |
       curl https://api.bintray.com/packages/boostorg/develop/snapshot/files |
-        python -c "import os.path, sys, json; x = json.load(sys.stdin); print '\n'.join(a['path'] for a in x if os.path.splitext(a['path'])[1] == '.gz')" |
+        python -c "import os.path, sys, json; x = json.load(sys.stdin); print '\n'.join(a['path'] for a in x if os.path.splitext(a['path'])[1] == '.bz2')" |
         head -n 1 |
         sed 's/^/wget -O boost.tar.bz2 http:\/\/dl.bintray.com\/boostorg\/develop\//' |
         bash
