@@ -689,105 +689,6 @@ template <class T> inline void destroy(T* x) { x->~T(); }
 #if defined(BOOST_MSVC)
 #pragma warning(pop)
 #endif
-
-////////////////////////////////////////////////////////////////////////////
-// Expression test mechanism
-//
-// When SFINAE expressions are available, define
-// BOOST_UNORDERED_HAS_FUNCTION which can check if a function call is
-// supported by a class, otherwise define BOOST_UNORDERED_HAS_MEMBER which
-// can detect if a class has the specified member, but not that it has the
-// correct type, this is good enough for a passable impression of
-// allocator_traits.
-
-#if !defined(BOOST_NO_SFINAE_EXPR)
-
-template <typename T, long unsigned int> struct expr_test;
-template <typename T> struct expr_test<T, sizeof(char)> : T
-{
-};
-
-#define BOOST_UNORDERED_CHECK_EXPRESSION(count, result, expression)            \
-    template <typename U>                                                      \
-    static typename boost::unordered::detail::expr_test<BOOST_PP_CAT(          \
-                                                            choice, result),   \
-        sizeof(for_expr_test(((expression), 0)))>::type                        \
-        test(BOOST_PP_CAT(choice, count))
-
-#define BOOST_UNORDERED_DEFAULT_EXPRESSION(count, result)                      \
-    template <typename U>                                                      \
-    static BOOST_PP_CAT(choice, result)::type test(                            \
-        BOOST_PP_CAT(choice, count))
-
-#define BOOST_UNORDERED_HAS_FUNCTION(name, thing, args, _)                     \
-    struct BOOST_PP_CAT(has_, name)                                            \
-    {                                                                          \
-        template <typename U> static char for_expr_test(U const&);             \
-        BOOST_UNORDERED_CHECK_EXPRESSION(                                      \
-            1, 1, boost::unordered::detail::make<thing>().name args);          \
-        BOOST_UNORDERED_DEFAULT_EXPRESSION(2, 2);                              \
-                                                                               \
-        enum                                                                   \
-        {                                                                      \
-            value = sizeof(test<T>(choose())) == sizeof(choice1::type)         \
-        };                                                                     \
-    }
-
-#else
-
-template <typename T> struct identity
-{
-    typedef T type;
-};
-
-#define BOOST_UNORDERED_CHECK_MEMBER(count, result, name, member)              \
-                                                                               \
-    typedef typename boost::unordered::detail::identity<member>::type          \
-        BOOST_PP_CAT(check, count);                                            \
-                                                                               \
-    template <BOOST_PP_CAT(check, count) e> struct BOOST_PP_CAT(test, count)   \
-    {                                                                          \
-        typedef BOOST_PP_CAT(choice, result) type;                             \
-    };                                                                         \
-                                                                               \
-    template <class U>                                                         \
-    static typename BOOST_PP_CAT(test, count)<&U::name>::type test(            \
-        BOOST_PP_CAT(choice, count))
-
-#define BOOST_UNORDERED_DEFAULT_MEMBER(count, result)                          \
-    template <class U>                                                         \
-    static BOOST_PP_CAT(choice, result)::type test(                            \
-        BOOST_PP_CAT(choice, count))
-
-#define BOOST_UNORDERED_HAS_MEMBER(name)                                       \
-    struct BOOST_PP_CAT(has_, name)                                            \
-    {                                                                          \
-        struct impl                                                            \
-        {                                                                      \
-            struct base_mixin                                                  \
-            {                                                                  \
-                int name;                                                      \
-            };                                                                 \
-            struct base : public T, public base_mixin                          \
-            {                                                                  \
-            };                                                                 \
-                                                                               \
-            BOOST_UNORDERED_CHECK_MEMBER(1, 1, name, int base_mixin::*);       \
-            BOOST_UNORDERED_DEFAULT_MEMBER(2, 2);                              \
-                                                                               \
-            enum                                                               \
-            {                                                                  \
-                value = sizeof(choice2::type) == sizeof(test<base>(choose()))  \
-            };                                                                 \
-        };                                                                     \
-                                                                               \
-        enum                                                                   \
-        {                                                                      \
-            value = impl::value                                                \
-        };                                                                     \
-    }
-
-#endif
 }
 }
 }
@@ -807,6 +708,9 @@ template <typename T> struct identity
 namespace boost {
 namespace unordered {
 namespace detail {
+
+////////////////////////////////////////////////////////////////////////////////
+// Rebind mechanism
 
 template <typename Alloc, typename T> struct rebind_alloc;
 
@@ -866,6 +770,156 @@ template <typename Alloc, typename T> struct rebind_wrap
     typedef typename boost::detail::if_true<value>::BOOST_NESTED_TEMPLATE then<
         Alloc, fallback>::type::BOOST_NESTED_TEMPLATE rebind<T>::other type;
 };
+
+////////////////////////////////////////////////////////////////////////////
+// Expression test mechanism
+
+#if !defined(BOOST_NO_SFINAE_EXPR)
+
+// When SFINAE expressions are available, define
+// BOOST_UNORDERED_HAS_FUNCTION which can check if a function call is
+// supported by a class
+
+template <typename T, long unsigned int> struct expr_test;
+template <typename T> struct expr_test<T, sizeof(char)> : T
+{
+};
+
+#define BOOST_UNORDERED_CHECK_EXPRESSION(count, result, expression)            \
+    template <typename U>                                                      \
+    static typename boost::unordered::detail::expr_test<BOOST_PP_CAT(          \
+                                                            choice, result),   \
+        sizeof(for_expr_test(((expression), 0)))>::type                        \
+        test(BOOST_PP_CAT(choice, count))
+
+#define BOOST_UNORDERED_DEFAULT_EXPRESSION(count, result)                      \
+    template <typename U>                                                      \
+    static BOOST_PP_CAT(choice, result)::type test(                            \
+        BOOST_PP_CAT(choice, count))
+
+#define BOOST_UNORDERED_HAS_FUNCTION(name, thing, args, _)                     \
+    struct BOOST_PP_CAT(has_, name)                                            \
+    {                                                                          \
+        template <typename U> static char for_expr_test(U const&);             \
+        BOOST_UNORDERED_CHECK_EXPRESSION(                                      \
+            1, 1, boost::unordered::detail::make<thing>().name args);          \
+        BOOST_UNORDERED_DEFAULT_EXPRESSION(2, 2);                              \
+                                                                               \
+        enum                                                                   \
+        {                                                                      \
+            value = sizeof(test<T>(choose())) == sizeof(choice1::type)         \
+        };                                                                     \
+    }
+
+template <typename T>
+BOOST_UNORDERED_HAS_FUNCTION(
+    select_on_container_copy_construction, U const, (), 0);
+
+template <typename T> BOOST_UNORDERED_HAS_FUNCTION(max_size, U const, (), 0);
+
+#if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
+
+template <typename T, typename ValueType, typename... Args>
+BOOST_UNORDERED_HAS_FUNCTION(
+    construct, U, (boost::unordered::detail::make<ValueType*>(),
+                      boost::unordered::detail::make<Args const>()...),
+    2);
+
+#else
+
+template <typename T, typename ValueType>
+BOOST_UNORDERED_HAS_FUNCTION(
+    construct, U, (boost::unordered::detail::make<ValueType*>(),
+                      boost::unordered::detail::make<ValueType const>()),
+    2);
+
+#endif
+
+template <typename T, typename ValueType>
+BOOST_UNORDERED_HAS_FUNCTION(
+    destroy, U, (boost::unordered::detail::make<ValueType*>()), 1);
+
+#undef BOOST_UNORDERED_CHECK_EXPRESSION
+#undef BOOST_UNORDERED_DEFAULT_EXPRESSION
+#undef BOOST_UNORDERED_HAS_FUNCTION
+
+#else
+
+// When SFINAE expressions are not available, define BOOST_UNORDERED_HAS_MEMBER
+// which can detect if a class has the specified member, but not that it has
+// the correct type, this is good enough for a passable impression of
+// allocator_traits.
+
+template <typename T> struct identity
+{
+    typedef T type;
+};
+
+#define BOOST_UNORDERED_CHECK_MEMBER(count, result, name, member)              \
+                                                                               \
+    typedef typename boost::unordered::detail::identity<member>::type          \
+        BOOST_PP_CAT(check, count);                                            \
+                                                                               \
+    template <BOOST_PP_CAT(check, count) e> struct BOOST_PP_CAT(test, count)   \
+    {                                                                          \
+        typedef BOOST_PP_CAT(choice, result) type;                             \
+    };                                                                         \
+                                                                               \
+    template <class U>                                                         \
+    static typename BOOST_PP_CAT(test, count)<&U::name>::type test(            \
+        BOOST_PP_CAT(choice, count))
+
+#define BOOST_UNORDERED_DEFAULT_MEMBER(count, result)                          \
+    template <class U>                                                         \
+    static BOOST_PP_CAT(choice, result)::type test(                            \
+        BOOST_PP_CAT(choice, count))
+
+#define BOOST_UNORDERED_HAS_MEMBER(name)                                       \
+    struct BOOST_PP_CAT(has_, name)                                            \
+    {                                                                          \
+        struct impl                                                            \
+        {                                                                      \
+            struct base_mixin                                                  \
+            {                                                                  \
+                int name;                                                      \
+            };                                                                 \
+            struct base : public T, public base_mixin                          \
+            {                                                                  \
+            };                                                                 \
+                                                                               \
+            BOOST_UNORDERED_CHECK_MEMBER(1, 1, name, int base_mixin::*);       \
+            BOOST_UNORDERED_DEFAULT_MEMBER(2, 2);                              \
+                                                                               \
+            enum                                                               \
+            {                                                                  \
+                value = sizeof(choice2::type) == sizeof(test<base>(choose()))  \
+            };                                                                 \
+        };                                                                     \
+                                                                               \
+        enum                                                                   \
+        {                                                                      \
+            value = impl::value                                                \
+        };                                                                     \
+    }
+
+template <typename T>
+BOOST_UNORDERED_HAS_MEMBER(select_on_container_copy_construction);
+
+template <typename T> BOOST_UNORDERED_HAS_MEMBER(max_size);
+
+template <typename T, typename ValueType> BOOST_UNORDERED_HAS_MEMBER(construct);
+
+template <typename T, typename ValueType> BOOST_UNORDERED_HAS_MEMBER(destroy);
+
+#undef BOOST_UNORDERED_CHECK_MEMBER
+#undef BOOST_UNORDERED_DEFAULT_MEMBER
+#undef BOOST_UNORDERED_HAS_MEMBER
+
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Default types for allocator
 
 #if defined(BOOST_MSVC) && BOOST_MSVC <= 1400
 
@@ -937,48 +991,9 @@ BOOST_UNORDERED_DEFAULT_TYPE_TMPLT(propagate_on_container_copy_assignment);
 BOOST_UNORDERED_DEFAULT_TYPE_TMPLT(propagate_on_container_move_assignment);
 BOOST_UNORDERED_DEFAULT_TYPE_TMPLT(propagate_on_container_swap);
 
-#if !defined(BOOST_NO_SFINAE_EXPR)
-
-template <typename T>
-BOOST_UNORDERED_HAS_FUNCTION(
-    select_on_container_copy_construction, U const, (), 0);
-
-template <typename T> BOOST_UNORDERED_HAS_FUNCTION(max_size, U const, (), 0);
-
-#if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
-
-template <typename T, typename ValueType, typename... Args>
-BOOST_UNORDERED_HAS_FUNCTION(
-    construct, U, (boost::unordered::detail::make<ValueType*>(),
-                      boost::unordered::detail::make<Args const>()...),
-    2);
-
-#else
-
-template <typename T, typename ValueType>
-BOOST_UNORDERED_HAS_FUNCTION(
-    construct, U, (boost::unordered::detail::make<ValueType*>(),
-                      boost::unordered::detail::make<ValueType const>()),
-    2);
-
-#endif
-
-template <typename T, typename ValueType>
-BOOST_UNORDERED_HAS_FUNCTION(
-    destroy, U, (boost::unordered::detail::make<ValueType*>()), 1);
-
-#else
-
-template <typename T>
-BOOST_UNORDERED_HAS_MEMBER(select_on_container_copy_construction);
-
-template <typename T> BOOST_UNORDERED_HAS_MEMBER(max_size);
-
-template <typename T, typename ValueType> BOOST_UNORDERED_HAS_MEMBER(construct);
-
-template <typename T, typename ValueType> BOOST_UNORDERED_HAS_MEMBER(destroy);
-
-#endif
+////////////////////////////////////////////////////////////////////////////////
+//
+// Call optional members
 
 namespace func {
 
@@ -1019,6 +1034,10 @@ inline SizeType call_max_size(const Alloc&,
 }
 
 } // namespace func.
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// boost::unordered::detail::allocator_traits
 
 template <typename Alloc> struct allocator_traits
 {
