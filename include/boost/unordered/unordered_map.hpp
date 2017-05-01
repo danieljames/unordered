@@ -2339,8 +2339,8 @@ template <typename N, class K, class T, class A> class node_handle_map
     {
         if (has_alloc_ && ptr_) {
             node_allocator node_alloc(alloc_.value());
-            boost::unordered::detail::node_tmp<node_allocator> tmp(
-                ptr_, node_alloc);
+            boost::unordered::detail::node_constructor<node_allocator> tmp(
+                node_alloc, ptr_);
         }
         if (has_alloc_) {
             alloc_.value_ptr()->~value_allocator();
@@ -2369,8 +2369,8 @@ template <typename N, class K, class T, class A> class node_handle_map
 
         if (ptr_) {
             node_allocator node_alloc(alloc_.value());
-            boost::unordered::detail::node_tmp<node_allocator> tmp(
-                ptr_, node_alloc);
+            boost::unordered::detail::node_constructor<node_allocator> tmp(
+                node_alloc, ptr_);
             ptr_ = node_pointer();
         }
 

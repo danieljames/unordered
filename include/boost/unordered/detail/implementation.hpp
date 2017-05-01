@@ -1660,8 +1660,17 @@ template <typename NodeAlloc> struct node_constructor
 
     node_allocator& alloc_;
     node_pointer node_;
+    bool value_constructed_;
 
-    node_constructor(node_allocator& n) : alloc_(n), node_() {}
+    explicit node_constructor(node_allocator& a)
+        : alloc_(a), node_(), value_constructed_(false)
+    {
+    }
+
+    explicit node_constructor(node_allocator& a, node_pointer n)
+        : alloc_(a), node_(n), value_constructed_(true)
+    {
+    }
 
     ~node_constructor();
 
@@ -1680,6 +1689,14 @@ template <typename NodeAlloc> struct node_constructor
     {
         BOOST_ASSERT(!node_);
         node_ = p;
+        value_constructed_ = true;
+        destroy_value();
+    }
+
+    void destroy_value()
+    {
+        BOOST_ASSERT(node_ && value_constructed_);
+        value_constructed_ = false;
         BOOST_UNORDERED_CALL_DESTROY(
             node_allocator_traits, alloc_, node_->value_ptr());
     }
@@ -1692,6 +1709,10 @@ template <typename NodeAlloc> struct node_constructor
 template <typename Alloc> node_constructor<Alloc>::~node_constructor()
 {
     if (node_) {
+        if (value_constructed_) {
+            BOOST_UNORDERED_CALL_DESTROY(
+                node_allocator_traits, alloc_, node_->value_ptr());
+        }
         boost::unordered::detail::func::destroy(boost::addressof(*node_));
         node_allocator_traits::deallocate(alloc_, node_, 1);
     }
@@ -1701,39 +1722,8 @@ template <typename Alloc> void node_constructor<Alloc>::create_node()
 {
     BOOST_ASSERT(!node_);
     node_ = node_allocator_traits::allocate(alloc_, 1);
+    value_constructed_ = false;
     new (boost::addressof(*node_)) node();
-}
-
-template <typename NodeAlloc> struct node_tmp
-{
-    typedef boost::unordered::detail::allocator_traits<NodeAlloc>
-        node_allocator_traits;
-    typedef typename node_allocator_traits::pointer node_pointer;
-
-    NodeAlloc& alloc_;
-    node_pointer node_;
-
-    explicit node_tmp(node_pointer n, NodeAlloc& a) : alloc_(a), node_(n) {}
-
-    ~node_tmp();
-
-    // no throw
-    node_pointer release()
-    {
-        node_pointer p = node_;
-        node_ = node_pointer();
-        return p;
-    }
-};
-
-template <typename Alloc> node_tmp<Alloc>::~node_tmp()
-{
-    if (node_) {
-        BOOST_UNORDERED_CALL_DESTROY(
-            node_allocator_traits, alloc_, node_->value_ptr());
-        boost::unordered::detail::func::destroy(boost::addressof(*node_));
-        node_allocator_traits::deallocate(alloc_, node_, 1);
-    }
 }
 }
 }
@@ -2695,7 +2685,6 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
     typedef typename bucket_allocator_traits::pointer bucket_pointer;
     typedef boost::unordered::detail::node_constructor<node_allocator>
         node_constructor;
-    typedef boost::unordered::detail::node_tmp<node_allocator> node_tmp;
 
     typedef std::pair<iterator, bool> emplace_return;
 
@@ -3359,7 +3348,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
     inline node_pointer resize_and_add_node_unique(
         node_pointer n, std::size_t key_hash)
     {
-        node_tmp b(n, this->node_alloc());
+        node_constructor b(this->node_alloc(), n);
         this->reserve_for_insert(this->size_ + 1);
         return this->add_node_unique(b.release(), key_hash);
     }
@@ -3397,9 +3386,10 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
     iterator emplace_hint_unique(
         c_iterator hint, no_key, BOOST_UNORDERED_EMPLACE_ARGS)
     {
-        node_tmp b(boost::unordered::detail::func::construct_node_from_args(
-                       this->node_alloc(), BOOST_UNORDERED_EMPLACE_FORWARD),
-            this->node_alloc());
+        node_constructor b(
+            this->node_alloc(),
+            boost::unordered::detail::func::construct_node_from_args(
+                this->node_alloc(), BOOST_UNORDERED_EMPLACE_FORWARD));
         const_key_type& k = this->get_key(b.node_);
         if (hint.node_ && this->key_eq()(k, this->get_key(hint.node_))) {
             return iterator(hint.node_);
@@ -3417,9 +3407,10 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
     template <BOOST_UNORDERED_EMPLACE_TEMPLATE>
     emplace_return emplace_unique(no_key, BOOST_UNORDERED_EMPLACE_ARGS)
     {
-        node_tmp b(boost::unordered::detail::func::construct_node_from_args(
-                       this->node_alloc(), BOOST_UNORDERED_EMPLACE_FORWARD),
-            this->node_alloc());
+        node_constructor b(
+            this->node_alloc(),
+            boost::unordered::detail::func::construct_node_from_args(
+                this->node_alloc(), BOOST_UNORDERED_EMPLACE_FORWARD));
         const_key_type& k = this->get_key(b.node_);
         std::size_t key_hash = this->hash(k);
         node_pointer pos = this->find_node(key_hash, k);
@@ -3614,9 +3605,9 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
         node_pointer pos = this->find_node(key_hash, k);
 
         if (!pos) {
-            node_tmp b(boost::unordered::detail::func::construct_node(
-                           this->node_alloc(), *i),
-                this->node_alloc());
+            node_constructor b(this->node_alloc(),
+                boost::unordered::detail::func::construct_node(
+                                   this->node_alloc(), *i));
             if (this->size_ + 1 > this->max_load_)
                 this->reserve_for_insert(
                     this->size_ + boost::unordered::detail::insert_size(i, j));
@@ -3635,19 +3626,19 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
             }
             BOOST_UNORDERED_CALL_CONSTRUCT1(
                 node_allocator_traits, a.alloc_, a.node_->value_ptr(), *i);
-            node_tmp b(a.release(), a.alloc_);
+            a.value_constructed_ = true;
 
-            const_key_type& k = this->get_key(b.node_);
+            const_key_type& k = this->get_key(a.node_);
             std::size_t key_hash = this->hash(k);
             node_pointer pos = this->find_node(key_hash, k);
 
             if (pos) {
-                a.reclaim(b.release());
+                a.destroy_value();
             } else {
                 // reserve has basic exception safety if the hash function
                 // throws, strong otherwise.
                 this->reserve_for_insert(this->size_ + 1);
-                this->add_node_unique(b.release(), key_hash);
+                this->add_node_unique(a.release(), key_hash);
             }
         } while (++i != j);
     }
@@ -3912,7 +3903,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
 
     iterator emplace_equiv(node_pointer n)
     {
-        node_tmp a(n, this->node_alloc());
+        node_constructor a(this->node_alloc(), n);
         const_key_type& k = this->get_key(a.node_);
         std::size_t key_hash = this->hash(k);
         node_pointer position = this->find_node(key_hash, k);
@@ -3922,7 +3913,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
 
     iterator emplace_hint_equiv(c_iterator hint, node_pointer n)
     {
-        node_tmp a(n, this->node_alloc());
+        node_constructor a(this->node_alloc(), n);
         const_key_type& k = this->get_key(a.node_);
         if (hint.node_ && this->key_eq()(k, this->get_key(hint.node_))) {
             this->reserve_for_insert(this->size_ + 1);
@@ -3939,7 +3930,7 @@ struct table : boost::unordered::detail::functions<typename Types::hasher,
 
     void emplace_no_rehash_equiv(node_pointer n)
     {
-        node_tmp a(n, this->node_alloc());
+        node_constructor a(this->node_alloc(), n);
         const_key_type& k = this->get_key(a.node_);
         std::size_t key_hash = this->hash(k);
         node_pointer position = this->find_node(key_hash, k);
