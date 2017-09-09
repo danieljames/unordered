@@ -8,6 +8,10 @@ dist: trusty
 
 language: c++
 
+branches:
+    except:
+        - /^boost-[\d.]*(-beta\d*)?$/
+
 addons:
     apt:
         packages:
