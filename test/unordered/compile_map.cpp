@@ -27,6 +27,7 @@
   template class UNORDERED_NAMESPACE::unordered::detail::instantiate_##type
 #endif
 
+#if !UNORDERED_TEST_LOOSE
 INSTANTIATE(map)<int, int, UNORDERED_NAMESPACE::hash<int>, std::equal_to<int>,
   test::minimal::allocator<int> >;
 INSTANTIATE(multimap)<int const, int const, UNORDERED_NAMESPACE::hash<int>,
@@ -42,6 +43,7 @@ INSTANTIATE(multimap)<test::minimal::assignable, test::minimal::assignable,
   test::minimal::equal_to<test::minimal::assignable>,
   test::minimal::allocator<
     std::pair<test::minimal::assignable const, test::minimal::assignable> > >;
+#endif
 
 UNORDERED_AUTO_TEST (test0) {
   test::minimal::constructor_param x;

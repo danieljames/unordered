@@ -30,6 +30,14 @@
 #define BOOST_UNORDERED_CHECK_ADDR_OPERATOR_NOT_USED 0
 #endif
 
+#if UNORDERED_TEST_LOOST
+// On GCC node_handle's default constructor needs the
+// pointer to be noexcet default constructible.
+#define UNORDERED_TEST_NOEXCEPT BOOST_NOEXCEPT
+#else
+#define UNORDERED_TEST_NOEXCEPT 
+#endif
+
 namespace test {
   namespace minimal {
     class destructible;
@@ -267,7 +275,7 @@ namespace test {
       void* ptr_;
 
     public:
-      void_ptr() : ptr_(0) {}
+      void_ptr() UNORDERED_TEST_NOEXCEPT : ptr_(0) {}
 
       template <typename T> explicit void_ptr(ptr<T> const& x) : ptr_(x.ptr_) {}
 
@@ -296,7 +304,7 @@ namespace test {
       void* ptr_;
 
     public:
-      void_const_ptr() : ptr_(0) {}
+      void_const_ptr() UNORDERED_TEST_NOEXCEPT : ptr_(0) {}
 
       template <typename T>
       explicit void_const_ptr(const_ptr<T> const& x) : ptr_(x.ptr_)
@@ -331,7 +339,7 @@ namespace test {
       ptr(T* x) : ptr_(x) {}
 
     public:
-      ptr() : ptr_(0) {}
+      ptr() UNORDERED_TEST_NOEXCEPT : ptr_(0) {}
       explicit ptr(void_ptr const& x) : ptr_((T*)x.ptr_) {}
 
       T& operator*() const { return *ptr_; }
@@ -389,7 +397,7 @@ namespace test {
 
       T const* ptr_;
 
-      const_ptr(T const* ptr) : ptr_(ptr) {}
+      const_ptr(T const* ptr) UNORDERED_TEST_NOEXCEPT : ptr_(ptr) {}
 
     public:
       const_ptr() : ptr_(0) {}

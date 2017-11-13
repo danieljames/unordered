@@ -7,6 +7,8 @@
 #if UNORDERED_TEST_STD
 #include <unordered_map>
 #include <unordered_set>
+#include <boost/move/move.hpp>
+#include <boost/utility/addressof.hpp>
 #else
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
@@ -16,7 +18,6 @@
 #include "../helpers/helpers.hpp"
 #include "../helpers/metafunctions.hpp"
 #include "../helpers/test.hpp"
-#include <boost/move/move.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <set>
