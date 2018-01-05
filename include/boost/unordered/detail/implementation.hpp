@@ -2784,18 +2784,18 @@ namespace boost {
       public:
         functions(H const& hf, P const& eq) : current_(0)
         {
-          construct(current_, hf, eq);
+          construct_functions(current_, hf, eq);
         }
 
         functions(functions const& bf) : current_(0)
         {
-          construct(current_, bf.current_functions());
+          construct_functions(current_, bf.current_functions());
         }
 
         functions(functions& bf, boost::unordered::detail::move_tag)
             : current_(0)
         {
-          construct(current_, bf.current_functions(),
+          construct_functions(current_, bf.current_functions(),
             boost::unordered::detail::integral_constant<bool,
               nothrow_move_constructible>());
         }
@@ -2803,7 +2803,7 @@ namespace boost {
         ~functions()
         {
           BOOST_ASSERT(!(current_ & 2));
-          this->destroy(current_);
+          destroy_functions(current_);
         }
 
         H const& hash_function() const { return current_functions().first(); }
@@ -2825,7 +2825,7 @@ namespace boost {
         void construct_spare_functions(function_pair const& f)
         {
           BOOST_ASSERT(!(current_ & 2));
-          construct(current_ ^ 1, f);
+          construct_functions(current_ ^ 1, f);
           current_ |= 2;
         }
 
@@ -2833,37 +2833,38 @@ namespace boost {
         {
           if (current_ & 2) {
             current_ &= 1;
-            destroy(current_ ^ 1);
+            destroy_functions(current_ ^ 1);
           }
         }
 
         void switch_functions()
         {
           BOOST_ASSERT(current_ & 2);
-          destroy(current_ & 1);
+          destroy_functions(current_ & 1);
           current_ ^= 3;
         }
 
-        void construct(bool which, H const& hf, P const& eq)
+      private:
+        void construct_functions(bool which, H const& hf, P const& eq)
         {
           new ((void*)&funcs_[which]) function_pair(hf, eq);
         }
 
-        void construct(bool which, function_pair const& f,
+        void construct_functions(bool which, function_pair const& f,
           boost::unordered::detail::false_type =
             boost::unordered::detail::false_type())
         {
           new ((void*)&funcs_[which]) function_pair(f);
         }
 
-        void construct(
+        void construct_functions(
           bool which, function_pair& f, boost::unordered::detail::true_type)
         {
           new ((void*)&funcs_[which])
             function_pair(f, boost::unordered::detail::move_tag());
         }
 
-        void destroy(bool which)
+        void destroy_functions(bool which)
         {
           boost::unordered::detail::func::destroy(
             (function_pair*)(&funcs_[which]));
