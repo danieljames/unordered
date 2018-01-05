@@ -2782,66 +2782,6 @@ namespace boost {
         aligned_function funcs_[2];
 
       public:
-        function_pair const& current_functions() const
-        {
-          return *static_cast<function_pair const*>(
-            static_cast<void const*>(funcs_[current_ & 1].address()));
-        }
-
-        function_pair& current_functions()
-        {
-          return *static_cast<function_pair*>(
-            static_cast<void*>(funcs_[current_ & 1].address()));
-        }
-
-        void construct_spare_functions(function_pair const& f)
-        {
-          BOOST_ASSERT(!(current_ & 2));
-          construct(current_ ^ 1, f);
-          current_ |= 2;
-        }
-
-      private:
-        void construct(bool which, H const& hf, P const& eq)
-        {
-          new ((void*)&funcs_[which]) function_pair(hf, eq);
-        }
-
-        void construct(bool which, function_pair const& f,
-          boost::unordered::detail::false_type =
-            boost::unordered::detail::false_type())
-        {
-          new ((void*)&funcs_[which]) function_pair(f);
-        }
-
-        void construct(
-          bool which, function_pair& f, boost::unordered::detail::true_type)
-        {
-          new ((void*)&funcs_[which])
-            function_pair(f, boost::unordered::detail::move_tag());
-        }
-
-        void cleanup_spare_functions()
-        {
-          if (current_ & 2) {
-            current_ &= 1;
-            destroy(current_ ^ 1);
-          }
-        }
-
-        void destroy(bool which)
-        {
-          boost::unordered::detail::func::destroy(
-            (function_pair*)(&funcs_[which]));
-        }
-
-        void switch_functions()
-        {
-          BOOST_ASSERT(current_ & 2);
-          destroy(current_ & 1);
-          current_ ^= 3;
-        }
-
         functions(H const& hf, P const& eq) : current_(0)
         {
           construct(current_, hf, eq);
@@ -2869,6 +2809,65 @@ namespace boost {
         H const& hash_function() const { return current_functions().first(); }
 
         P const& key_eq() const { return current_functions().second(); }
+
+        function_pair const& current_functions() const
+        {
+          return *static_cast<function_pair const*>(
+            static_cast<void const*>(funcs_[current_ & 1].address()));
+        }
+
+        function_pair& current_functions()
+        {
+          return *static_cast<function_pair*>(
+            static_cast<void*>(funcs_[current_ & 1].address()));
+        }
+
+        void construct_spare_functions(function_pair const& f)
+        {
+          BOOST_ASSERT(!(current_ & 2));
+          construct(current_ ^ 1, f);
+          current_ |= 2;
+        }
+
+        void cleanup_spare_functions()
+        {
+          if (current_ & 2) {
+            current_ &= 1;
+            destroy(current_ ^ 1);
+          }
+        }
+
+        void switch_functions()
+        {
+          BOOST_ASSERT(current_ & 2);
+          destroy(current_ & 1);
+          current_ ^= 3;
+        }
+
+        void construct(bool which, H const& hf, P const& eq)
+        {
+          new ((void*)&funcs_[which]) function_pair(hf, eq);
+        }
+
+        void construct(bool which, function_pair const& f,
+          boost::unordered::detail::false_type =
+            boost::unordered::detail::false_type())
+        {
+          new ((void*)&funcs_[which]) function_pair(f);
+        }
+
+        void construct(
+          bool which, function_pair& f, boost::unordered::detail::true_type)
+        {
+          new ((void*)&funcs_[which])
+            function_pair(f, boost::unordered::detail::move_tag());
+        }
+
+        void destroy(bool which)
+        {
+          boost::unordered::detail::func::destroy(
+            (function_pair*)(&funcs_[which]));
+        }
       };
 
 ////////////////////////////////////////////////////////////////////////////
